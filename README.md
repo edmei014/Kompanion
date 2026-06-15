@@ -1,75 +1,44 @@
-# Live Companion
+# Kemper Live Companion
 
-Live Companion is a desktop companion application for the Kemper Profiler.
+A real-time visual companion for the Kemper Profiler that displays live rig, amp, cabinet and effect information via MIDI SysEx.
 
-The application communicates directly with the Kemper Profiler via MIDI SysEx and provides a fast, visually enhanced overview of the currently loaded rig. It displays amplifier, cabinet and effect information in real time and automatically updates whenever a rig or effect state changes.
-
-Live Companion is designed as a visual companion rather than an editor. Its purpose is to make live rigs easier to identify and understand at a glance while playing, recording or browsing profiles.
-
----
+The application automatically detects rig changes and updates the displayed information, including amp, cabinet and effect images.
 
 ## Features
 
 * Real-time Kemper Profiler monitoring
 * Automatic rig change detection
-* Live amplifier identification
-* Cabinet identification and configuration display
-* Gain visualization
-* Active effect detection
-* Effect on/off monitoring
+* Live amp information
+* Live cabinet information
+* Live gain display
+* Live effect slot monitoring
 * Automatic image matching for amps, cabinets and effects
-* Fast MIDI SysEx communication
-* Desktop application built with Tauri
-
----
-
-## What Live Companion Does
-
-The application continuously reads information from the Kemper Profiler and presents it in a more visual and informative format.
-
-Examples:
-
-* Displaying the currently loaded amplifier model
-* Displaying cabinet manufacturer and configuration
-* Showing active effects
-* Visualizing gain levels
-* Displaying amplifier and cabinet images
-* Monitoring rig changes in real time
-
-The goal is to provide additional context and visual feedback that is not available directly on the Kemper display.
-
----
-
-## What Live Companion Does NOT Do
-
-Live Companion is intentionally read-only.
-
-The application currently does not:
-
-* Edit rigs
-* Modify amplifier parameters
-* Change effect settings
-* Send parameter changes to the Kemper
-* Store presets
-* Manage performances
-
-All communication is focused on reading and displaying information from the Profiler.
-
----
+* Native Windows desktop application built with Tauri
 
 ## Requirements
 
-* Kemper Profiler
-* MIDI connection to the Kemper Profiler (required)
 * Windows
-* Node.js
-* Rust (required for Tauri development)
+* Kemper Profiler
+* Kemper Rig Manager
+* MIDI SysEx support enabled
+* USB connection between Kemper and computer
 
-Without an active MIDI connection, Live Companion cannot retrieve any information from the Profiler.
+## Installation
 
----
+### Option 1: Use a Release Build
 
-## Development Setup
+Download the latest installer from the GitHub Releases page and install the application normally.
+
+After installation, launch **Kemper Live Companion** from the Windows Start Menu.
+
+### Option 2: Build from Source
+
+Clone the repository:
+
+```bash
+git clone https://github.com/edmei014/Kemper-Live-Companion.git
+cd Kemper-Live-Companion
+```
 
 Install dependencies:
 
@@ -77,52 +46,66 @@ Install dependencies:
 npm install
 ```
 
-Start the application in development mode:
-
-```bash
-npm run tauri dev
-```
-
-Create a production build:
+Build the application:
 
 ```bash
 npm run tauri build
 ```
 
-This command creates a distributable release version of the application. Tauri compiles the frontend and Rust backend, bundles all required assets and generates an installer (for example an `.msi` installer on Windows) inside the build output directory.
+After a successful build, the executable can be found at:
 
-Unlike development mode, the production build runs without the development server and is intended for distribution to other users.
+```text
+src-tauri\target\release\live_companion.exe
+```
 
----
+The generated installer can be found at:
 
-## How Communication Works
+```text
+src-tauri\target\release\bundle\msi
+```
 
-Live Companion communicates directly with the Kemper Profiler using MIDI SysEx messages.
+## How It Works
 
-The application automatically detects the available Kemper MIDI ports and continuously requests information such as:
+The application communicates directly with the Kemper Profiler using MIDI SysEx messages via the Web MIDI API.
+
+Live Companion is a read-only companion application.
+
+It does not modify rigs, presets or settings on the Profiler.
+
+The application only reads information from the device and presents it in a visual format.
+
+Currently the application retrieves:
 
 * Rig Name
-* Amplifier Name
-* Amplifier Manufacturer
-* Amplifier Model
+* Amp Name
+* Amp Model
+* Amp Manufacturer
+* Amp Production Year
 * Cabinet Information
 * Gain Value
-* Effect Slot Status
-* Effect Type Information
+* Effect Slot Names
+* Effect Slot States (On / Off)
 
-The data is parsed directly from Kemper SysEx responses and displayed inside the application.
+## Custom Images
 
-No cloud services, APIs or external servers are involved.
+Amp, cabinet and effect images are stored in:
 
-All communication happens locally between the application and the Kemper Profiler.
+```text
+public/images/amps
+public/images/cabinets
+public/images/effects
+```
 
----
+Users can add their own images to support additional equipment.
 
-## Image Matching System
+Recommended workflow:
 
-One of the core features of Live Companion is automatic image matching.
-
-When an amplifier, cabinet or effect is detected, the application attempts to match the received Kemper data against known aliases and image mappings.
+1. Find a suitable image.
+2. Remove the background.
+3. Crop the image tightly.
+4. Save as PNG with transparency.
+5. Place the file into the appropriate image folder.
+6. Add matching aliases inside the corresponding image map file.
 
 Relevant files:
 
@@ -132,111 +115,39 @@ src/cabinetImageMap.js
 src/effectImageMap.js
 ```
 
-This allows different naming variations to resolve to the same visual asset.
+Photopea is a useful free tool for background removal and image preparation.
 
----
+## Optional Startup Script
 
-## Adding New Amplifier Images
+For convenience, Live Companion can be launched together with Kemper Rig Manager using a Windows batch file.
 
-The included image library focuses primarily on the amplifiers used during development.
+Before using the script, adjust both paths to match your local installation.
 
-If a profile references an amplifier that is not currently recognized, additional mappings can easily be added.
+```bat
+@echo off
 
-### Step 1
+cd /d "C:\PATH\TO\YOUR\LIVE-COMPANION"
 
-Obtain an amplifier image.
+start "" "live_companion.exe"
 
-### Step 2
+timeout /t 5 >nul
 
-Remove the background and crop the image.
+start "" "C:\PATH\TO\YOUR\RIG-MANAGER\Rig Manager.exe"
 
-Transparent PNG files are recommended.
-
-For quick image preparation, Photopea is an excellent free tool:
-
-https://www.photopea.com
-
-### Step 3
-
-Place the image inside:
-
-```text
-images/amps/
+exit
 ```
 
-### Step 4
+The delay gives Live Companion time to initialize before Rig Manager connects to the Profiler.
 
-Add aliases in:
+## Limitations
 
-```text
-src/ampImageMap.js
-```
-
-Example:
-
-```javascript
-{
-  image: "my_amp.png",
-  aliases: [
-    "My Amp",
-    "MyAmp"
-  ]
-}
-```
-
-Once the aliases are added, Live Companion will automatically display the image whenever a matching amplifier is detected.
-
----
-
-## Adding New Cabinet Images
-
-Cabinet support can be extended in the same way.
-
-Image folder:
-
-```text
-images/cabinets/
-```
-
-Mapping file:
-
-```text
-src/cabinetImageMap.js
-```
-
----
-
-## Adding New Effect Images
-
-Effect images can be extended through:
-
-```text
-images/effects/
-```
-
-and
-
-```text
-src/effectImageMap.js
-```
-
----
-
-## Known Limitations
-
-* Image matching depends on available aliases.
-* Unknown amplifier names require manual mapping.
-* Unknown cabinet names require manual mapping.
-* Different profile creators may use different naming conventions.
-* Live Companion is currently a monitoring and visualization tool only.
-* Editing Kemper parameters is not supported.
-* Writing data back to the Profiler is not supported.
-* The application has been developed and tested with a specific collection of rigs and profiles. Additional image mappings may be required for broader profile libraries.
-
----
+* Read-only application
+* No rig editing
+* No profile management
+* No parameter modification
+* No write access to the Kemper Profiler
+* Image matching depends on available aliases and image files
 
 ## Project Status
 
-Live Companion is an actively developed personal project focused on creating a fast and visually rich companion experience for the Kemper Profiler.
-
-Contributions, suggestions, bug reports and additional image mappings are welcome.
+Personal project actively developed for live Kemper monitoring and visualization.
