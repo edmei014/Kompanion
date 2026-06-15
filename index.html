@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Companion</title>
+  </head>
+  <body>
+    <header class="topbar">
+      <details class="midi-settings">
+		<summary>MIDI</summary>
+        <label>
+          In
+          <select id="inputPort"></select>
+        </label>
+        <label>
+          Out
+          <select id="outputPort"></select>
+        </label>
+      </details>
+      
+    </header>
+
+    <main class="shell">
+      <section class="title-panel">
+  <div class="title-row">
+
+    <div class="title-brand">
+      <h1 class="app-title">LIVE COMPANION</h1>
+    </div>
+
+    <div id="liveStatus" class="live-status" data-state="idle" aria-live="polite">
+      <span class="live-status-dot" aria-hidden="true"></span>
+      <span>LIVE</span>
+    </div>
+
+  </div>
+
+  <div id="errorStatus" class="error-status" data-visible="false"></div>
+</section>
+
+      <section class="result">
+        <div class="rig-card">
+          <span>Current Rig</span>
+          <strong id="rigName">-</strong>
+        </div>
+        <div class="gear-section amp-section">
+          <div class="section-title">
+
+            <span>Amp</span>
+          </div>
+		  <div id="ampImageContainer" class="amp-image-container"></div>
+        <div class="amp-main-display">
+			<strong id="ampModel">-</strong>
+
+			<div class="amp-meta">
+				<span id="ampManufacturer">-</span>
+				<small id="productionYear"></small>
+			</div>
+		</div>
+        </div>
+        <div class="gear-section cabinet-section">
+			<div class="section-title">
+				<span>Cabinet</span>
+			</div>
+
+			<div class="gear-fields">
+				<div>
+					<span>Manufacturer</span>
+					<strong id="cabinetManufacturer">-</strong>
+				</div>
+
+				<div>
+				  <span>Model</span>
+				  <strong id="cabinetModel">-</strong>
+				</div>
+
+				<div>
+				  <span>Configuration</span>
+				  <strong id="cabinetConfiguration">-</strong>
+				</div>
+			</div>
+
+			<div id="cabinetImageContainer" class="cabinet-image-container"></div>
+		</div>   
+        <div class="gain-section">
+          <span>Gain</span>
+          <div class="gain-readout">
+            <div class="gain-meter" aria-hidden="true">
+              <div id="gainMeterFill" class="gain-meter-segments"></div>
+            </div>
+            <strong id="gainValue">-</strong>
+          </div>
+        </div>
+        <div class="effects-block">
+          <span>Effects</span>
+          <ul id="effectsList" class="effects-list"></ul>
+        </div>
+      </section>
+    </main>
+
+    <div id="ampZoomOverlay" class="amp-zoom-overlay" data-open="false" aria-hidden="true">
+      <img id="ampZoomImage" class="amp-zoom-image" alt="" />
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
