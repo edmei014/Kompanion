@@ -969,7 +969,7 @@ function updateEffectItem(item, effect) {
     item.dataset.effectImage = effect.image || "";
 
     if (effect.image) {
-      image.src = `/images/effects/${effect.image}`;
+      image.src = `./images/effects/${effect.image}`;
       image.alt = displayName;
       image.hidden = false;
     } else {

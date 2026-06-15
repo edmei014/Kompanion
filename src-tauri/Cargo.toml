@@ -1,5 +1,5 @@
 [package]
-name = "kemper_rig_amp_finder"
+name = "live_companion"
 version = "0.1.0"
 description = "Kemper Live Companion"
 authors = ["Codex"]

@@ -111,7 +111,8 @@ export const ampProfiles = [
     image: "dual_rectifier.png",
     aliases: [
       "dual rectifier",
-      "recto"
+      "recto",
+	  "rectifier"
     ]
   },
 
