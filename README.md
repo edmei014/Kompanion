@@ -1,4 +1,4 @@
-![Live Companion Main Interface](image.png)
+![Live Companion Main Interface](image-1.png)
 
 ## Video Demonstrations
 
