@@ -1,3 +1,5 @@
+![Live Companion Main Interface](image.png)
+
 ## Video Demonstrations
 
 ### Real-Time Monitoring Demo
