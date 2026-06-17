@@ -1,9 +1,10 @@
 export const CAB_BRAND_ALIASES = {
   marshall: ["mars"],
-  mesa: ["mesa boogie", "boogie"],
+  mesa: ["mesa boogie", "boogie", "mebo"],
   diezel: ["diesel"],
   friedman: ["fried man"],
-  bogner: ["bogus"]
+  bogner: ["bogus"],
+  fender: ["fan"]
 };
 
 export const cabinetImageMap = [
@@ -12,6 +13,15 @@ export const cabinetImageMap = [
     configuration: "1x12",
     aliases: [
       "palmer"
+    ]
+  },
+
+  {
+    image: "fender showman 1x12.png",
+    configuration: "1x12",
+    aliases: [
+      "showgirl",
+	  "fan showman"
     ]
   },
 
@@ -63,7 +73,8 @@ export const cabinetImageMap = [
     aliases: [
       "rectifier oversize",
       "oversize",
-      "oversized"
+      "oversized",
+      "mebo 412os"
     ]
   },
 
@@ -237,7 +248,8 @@ export const cabinetImageMap = [
       "bogner 2x12",
 	  "bogner 2 x 12",
       "bogner 212",
-      "bogus 2x12"
+      "bogus 2x12",
+	  "bogus 2*12"
     ]
   },
 

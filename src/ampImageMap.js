@@ -45,21 +45,35 @@ export const ampProfiles = [
     aliases: [
       "jcm2000",
       "mars dsl",
-	  "dual super lead"
+	  "dual super lead",
+	  "sl 100",
+	  "cm two thousand",
+	  "cm 2000"
+    ]
+  },
+
+{
+    image: "jtm45 mkii.png",
+    aliases: [
+      "jtm45",
+      "tm45",
+	  "45 2245",
+	  "tm forty"
     ]
   },
 
 {
     image: "peavey5150.png",
     aliases: [
-      "peavey 5150"
+      "peavey 5150",
+	  "pea v 5150"
     ]
   },
 
 {
     image: "peavey6505+.png",
     aliases: [
-      "peavey 6505"
+      "6505"
     ]
   },
 
@@ -112,7 +126,8 @@ export const ampProfiles = [
     aliases: [
       "dual rectifier",
       "recto",
-	  "rectifier"
+	  "rectifier",
+	  "rect"
     ]
   },
 
@@ -262,6 +277,15 @@ export const ampProfiles = [
 	  "fan bm"
     ]
   },
+  
+    {
+    image: "fender showman1962.png",
+    aliases: [
+      "showman",
+      "showgirl",
+	  "fan showman 1962"
+    ]
+  },
 
   {
     image: "tweet_deluxe_1953.png",
@@ -271,6 +295,15 @@ export const ampProfiles = [
       "fan deluxe",
 	  "fender deluxe",
 	  "tweet d'lux",
+    ]
+  },
+
+{
+    image: "fender deluxe reverb.png",
+    aliases: [
+      "fender deluxe",
+    "fan deluxe",
+    "lux reverb"
     ]
   },
 
@@ -346,6 +379,16 @@ export const ampProfiles = [
     aliases: [
       "orange matt amp",
       "oranje matt amp"
+    ]
+  },
+  
+  {
+    image: "redplate black reverb.png",
+    aliases: [
+      "redplate",
+      "redplate black reverb",
+	  "redflag black reverb",
+	  "black reverb"
     ]
   },
   {
