@@ -1,3 +1,5 @@
+# Live Companion
+
 ![Live Companion Main Interface](image-1.png)
 
 ## Video Demonstrations
@@ -11,7 +13,7 @@
 [[Video Link]](https://youtu.be/Fl0tA2Wt3qE)
 
 
-# Kemper Live Companion
+## What is Live Companion?
 
 A real-time visual companion for the Kemper Profiler that displays live rig, amp, cabinet and effect information via MIDI SysEx.
 
@@ -161,10 +163,15 @@ The delay gives Live Companion time to initialize before Rig Manager connects to
 * No write access to the Kemper Profiler
 * Image matching depends on available aliases and image files
 
+## Development Highlights
+
+- MIDI SysEx communication with the Kemper Profiler
+- Automatic rig change detection
+- Real-time hardware monitoring
+- Extensible image mapping system
+- Native desktop deployment using Tauri
+- Asset management for amps, cabinets and effects
+
 ## Project Status
 
 Personal project actively developed for live Kemper monitoring and visualization.
-
-
-
-
