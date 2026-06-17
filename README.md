@@ -1,3 +1,14 @@
+## Video Demonstrations
+
+### Real-Time Monitoring Demo
+
+[[Video Link]](https://youtu.be/3wBTPzdFYO0)
+
+### Adding Custom Amp Images
+
+[[Video Link]](https://youtu.be/Fl0tA2Wt3qE)
+
+
 # Kemper Live Companion
 
 A real-time visual companion for the Kemper Profiler that displays live rig, amp, cabinet and effect information via MIDI SysEx.
@@ -151,3 +162,7 @@ The delay gives Live Companion time to initialize before Rig Manager connects to
 ## Project Status
 
 Personal project actively developed for live Kemper monitoring and visualization.
+
+
+
+
