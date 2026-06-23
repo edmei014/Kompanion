@@ -42,7 +42,7 @@ The application communicates directly with the Kemper via MIDI SysEx and MIDI co
 
 ### Performance Browser
 
-![Performance Browser](public/images/performance-browser.png)
+![Performance Browser](public/images/performancebrowser.png)
 
 * Browse stored Kemper performances
 * Performance Explorer
