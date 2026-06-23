@@ -3,25 +3,128 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
     <title>Live Companion</title>
-  </head>
-  <body>
-    <header class="topbar">
-      <details class="midi-settings">
-		<summary>MIDI</summary>
-        <label>
-          In
-          <select id="inputPort"></select>
-        </label>
-        <label>
-          Out
-          <select id="outputPort"></select>
-        </label>
-      </details>
-      
-    </header>
+    <style id="boot-critical">
+      html {
+        color-scheme: dark;
+        background: #101110;
+      }
 
-    <main class="shell">
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #101110;
+        color: #f0eee7;
+      }
+
+      body[data-boot="loading"] > :not(#bootLoadingOverlay) {
+        visibility: hidden;
+      }
+
+      #bootLoadingOverlay {
+        visibility: visible;
+      }
+
+      .connection-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        display: grid;
+        place-items: center;
+        background:
+          linear-gradient(135deg, rgba(38, 41, 38, 0.96), rgba(12, 13, 13, 0.98)),
+          #101110;
+      }
+
+      .connection-overlay[data-visible="false"] {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .connection-overlay-content {
+        display: grid;
+        justify-items: center;
+        gap: 18px;
+        width: min(100%, 420px);
+        padding: 32px;
+        text-align: center;
+      }
+
+      .connection-overlay-title {
+        margin: 0;
+        color: #a4b08b;
+        font-size: clamp(1.8rem, 4vw, 3rem);
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+
+      .connection-overlay-message {
+        margin: 0;
+        color: #9aa39c;
+        font-size: clamp(0.95rem, 1.4vw, 1.15rem);
+        font-weight: 750;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .boot-loading-spinner {
+        width: 36px;
+        height: 36px;
+        border: 3px solid rgba(164, 176, 139, 0.18);
+        border-top-color: #a4b08b;
+        border-radius: 50%;
+        animation: bootSpin 820ms linear infinite;
+      }
+
+      @keyframes bootSpin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body data-boot="loading" data-connection="boot_loading">
+    <div id="bootLoadingOverlay" class="connection-overlay boot-loading-overlay" data-visible="true" aria-live="polite" aria-busy="true">
+      <div class="connection-overlay-content">
+        <h1 class="connection-overlay-title">Kemper Live Companion</h1>
+        <p class="connection-overlay-message">Load Data...</p>
+        <div class="boot-loading-spinner" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div id="noMidiOverlay" class="connection-overlay no-midi-overlay" data-visible="false" aria-live="polite" aria-hidden="true">
+      <div class="connection-overlay-content no-midi-content">
+        <h1 class="connection-overlay-title">Kemper Live Companion</h1>
+        <p class="no-midi-headline">>No Kemper Profiler connected</p>
+        <p class="no-midi-subline">Please:</p>
+        <ul class="no-midi-steps">
+          <li>Kemper turned on</li>
+          <li>Active MIDI-Connection</li>
+          <li>MIDI-Port Options</li>
+        </ul>
+        <div class="no-midi-ports">
+          <label>
+            In
+            <select id="inputPort"></select>
+          </label>
+          <label>
+            Out
+            <select id="outputPort"></select>
+          </label>
+        </div>
+        <button id="noMidiReconnectButton" class="no-midi-reconnect-button" type="button">
+          Reconnect
+        </button>
+      </div>
+    </div>
+
+    <header class="topbar"></header>
+
+    <main class="shell" aria-hidden="true">
       <section class="title-panel">
   <div class="title-row">
 
@@ -29,9 +132,22 @@
       <h1 class="app-title">LIVE COMPANION</h1>
     </div>
 
-    <div id="liveStatus" class="live-status" data-state="idle" aria-live="polite">
-      <span class="live-status-dot" aria-hidden="true"></span>
-      <span>LIVE</span>
+    <div class="title-row-controls">
+      <button
+        id="tunerToggleButton"
+        class="control-toggle-button control-toggle-button--header"
+        type="button"
+        data-accent="tuner"
+        data-state="off"
+        aria-pressed="false"
+      >
+        Tuner
+      </button>
+
+      <div id="liveStatus" class="live-status" data-state="boot_loading" aria-live="polite">
+        <span class="live-status-dot" aria-hidden="true"></span>
+        <span id="liveStatusLabel">LOADING</span>
+      </div>
     </div>
 
   </div>
@@ -40,9 +156,155 @@
 </section>
 
       <section class="result">
+        
+        <div id="performanceSection" class="performance-section" hidden>
+          <div class="performance-browser-header">
+            <div class="section-title">
+              <span>Performance Browser</span>
+            </div>
+            <button id="createLibraryButton" class="library-button" type="button">Rebuild Performance Library</button>
+          </div>
+
+          <p id="performanceEmptyState" class="performance-empty-state" hidden>
+            No Performance Library available
+          </p>
+
+          <div id="performanceBrowserPanel" class="performance-browser-panel">
+          <div id="performanceBrowserControls" class="performance-browser-controls" hidden>
+            <button id="performancePrevFastButton" class="performance-nav-button performance-nav-button--fast" type="button" aria-label="10 Performances zurück">
+              &lt;&lt;
+            </button>
+            <button id="performancePrevButton" class="performance-nav-button" type="button" aria-label="1 Performance zurück">
+              &lt;
+            </button>
+            <span id="performanceBrowserLabel" class="performance-browser-label">Performance 1</span>
+            <button id="performanceNextButton" class="performance-nav-button" type="button" aria-label="1 Performance vor">
+              &gt;
+            </button>
+            <button id="performanceNextFastButton" class="performance-nav-button performance-nav-button--fast" type="button" aria-label="10 Performances vor">
+              &gt;&gt;
+            </button>
+          </div>
+
+          <div id="performanceScanPanel" class="performance-scan-panel" hidden>
+            <p id="performanceScanStatus" class="performance-scan-status" hidden aria-hidden="true">Scanning Performance Library...</p>
+            <div id="performanceProgress" class="performance-progress">
+              <span id="performanceProgressFill"></span>
+            </div>
+          </div>
+
+          <div id="performanceSlotGrid" class="performance-slot-grid"></div>
+          </div>
+
+          <div id="performanceExplorerSection" class="performance-explorer-section" hidden>
+            <button
+              id="performanceExplorerToggle"
+              class="performance-explorer-toggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="performanceExplorerContent"
+            >
+              <span class="performance-explorer-toggle-icon" aria-hidden="true">▶</span>
+              <span class="performance-explorer-toggle-label">Performance Explorer</span>
+            </button>
+            <div id="performanceExplorerContent" class="performance-explorer-content" hidden>
+              <label class="performance-explorer-search-label" for="performanceExplorerSearch">
+                <span>Search</span>
+                <input
+                  id="performanceExplorerSearch"
+                  class="performance-explorer-search"
+                  type="search"
+                  placeholder="Rig- or Slotname…"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+              </label>
+              <p id="performanceExplorerEmpty" class="performance-explorer-empty" hidden>
+                No Rig Matches Found
+              </p>
+              <div id="performanceExplorerList" class="performance-explorer-list companion-scroll" role="list"></div>
+            </div>
+          </div>
+        </div>
         <div class="rig-card">
-          <span>Current Rig</span>
+          <div class="rig-card-header">
+            <span>Current Rig</span>
+            <div class="tempo-status" data-expanded="false">
+              <button
+                id="tempoPanelToggle"
+                class="tempo-status-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="tempoPanelControls"
+              >
+                <span class="tempo-status-label">Tempo</span>
+                <span class="tempo-status-separator" aria-hidden="true">·</span>
+                <span id="tempoCurrentValue" class="tempo-status-value">-</span>
+              </button>
+              <div id="tempoPanelControls" class="tempo-status-popover" hidden>
+                <div class="tempo-action-row">
+                  <button id="tempoTapButton" class="tempo-tap-button" type="button">Tap</button>
+                  <button id="tempoSetButton" class="tempo-set-button" type="button">Set</button>
+                </div>
+                <div class="tempo-auto-group">
+                  <button
+                    type="button"
+                    class="tempo-bpm-step"
+                    data-step="-1"
+                    aria-label="BPM verringern"
+                  >
+                    −
+                  </button>
+                  <input
+                    id="tempoBpmInput"
+                    class="tempo-bpm-input"
+                    type="number"
+                    inputmode="numeric"
+                    min="40"
+                    max="300"
+                    step="1"
+                    placeholder="BPM"
+                    aria-label="Tempo in BPM"
+                  />
+                  <button
+                    type="button"
+                    class="tempo-bpm-step"
+                    data-step="1"
+                    aria-label="BPM erhöhen"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
           <strong id="rigName">-</strong>
+        </div>
+        <!-- GAIN (3) | AMP (8) | CABINET (3) — amp centered under rig name -->
+        <div class="gain-section">
+          <div class="gain-section-body">
+            <div class="section-title">
+              <span>Gain</span>
+            </div>
+            <div class="gain-panel">
+              <div class="gain-readout">
+                <div class="gain-meter" aria-hidden="true">
+                  <div id="gainMeterFill" class="gain-meter-segments"></div>
+                </div>
+                <strong id="gainValue">-</strong>
+              </div>
+            </div>
+          </div>
+          <div class="gain-section-footer">
+            <button
+              id="morphActionButton"
+              class="control-action-button control-action-button--morph"
+              type="button"
+              aria-label="Morph senden"
+            >
+              Morph
+            </button>
+          </div>
         </div>
         <div class="gear-section amp-section">
           <div class="section-title">
@@ -82,25 +344,29 @@
 			</div>
 
 			<div id="cabinetImageContainer" class="cabinet-image-container"></div>
-		</div>   
-        <div class="gain-section">
-          <span>Gain</span>
-          <div class="gain-readout">
-            <div class="gain-meter" aria-hidden="true">
-              <div id="gainMeterFill" class="gain-meter-segments"></div>
-            </div>
-            <strong id="gainValue">-</strong>
-          </div>
-        </div>
+		</div>
         <div class="effects-block">
           <span>Effects</span>
-          <ul id="effectsList" class="effects-list"></ul>
+          <ul id="effectsList" class="effects-list companion-scroll"></ul>
         </div>
       </section>
     </main>
 
     <div id="ampZoomOverlay" class="amp-zoom-overlay" data-open="false" aria-hidden="true">
       <img id="ampZoomImage" class="amp-zoom-image" alt="" />
+    </div>
+
+    <div id="libraryConfirmDialog" class="library-confirm-dialog" data-open="false" aria-hidden="true">
+      <div class="library-confirm-card" role="dialog" aria-modal="true" aria-labelledby="libraryConfirmTitle">
+        <h2 id="libraryConfirmTitle">Rebuild Performance Library</h2>
+        <p>The current position on the Kemper will be changed during the scan.</p>
+        <p>The scan may take several minutes.</p>
+        <p>Do you want to continue?</p>
+        <div class="library-confirm-actions">
+          <button id="cancelLibraryScanButton" class="secondary-button" type="button">Cancel</button>
+          <button id="startLibraryScanButton" type="button">Start Scan</button>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="/src/main.js"></script>

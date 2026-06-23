@@ -295,6 +295,7 @@ export const ampProfiles = [
       "fan deluxe",
 	  "fender deluxe",
 	  "tweet d'lux",
+    "d'lux"
     ]
   },
 

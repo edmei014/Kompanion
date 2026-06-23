@@ -1,42 +1,87 @@
-# Live Companion
 
-![Live Companion Main Interface](image-1.png)
+
+# Live Companion v2.0
+
+![Live Companion Main Interface](public/images/image.png)
+
+A real-time monitoring and control companion for Kemper Profiler.
 
 ## Video Demonstrations
 
-### Real-Time Monitoring Demo
+### Live Companion v2.0 Overview
 
-[[Video Link]](https://youtu.be/3wBTPzdFYO0)
+[[Video Link]](https://youtu.be/eZKvXai_k7g)
 
 ### Adding Custom Amp Images
 
 [[Video Link]](https://youtu.be/Fl0tA2Wt3qE)
 
+---
 
 ## What is Live Companion?
 
-A real-time visual companion for the Kemper Profiler that displays live rig, amp, cabinet and effect information via MIDI SysEx.
+Live Companion is a real-time monitoring and control application for the Kemper Profiler.
 
-The application automatically detects rig changes and updates the displayed information, including amp, cabinet and effect images.
+It combines live rig visualization with practical performance controls, allowing guitarists to monitor and interact with their Profiler from a dedicated desktop application.
+
+The application communicates directly with the Kemper via MIDI SysEx and MIDI control messages and automatically updates all displayed information in real time.
+
+---
 
 ## Features
 
-* Real-time Kemper Profiler monitoring
-* Automatic rig change detection
+### Real-Time Monitoring
+
+* Live rig information
 * Live amp information
 * Live cabinet information
 * Live gain display
-* Live effect slot monitoring
+* Real-time effect monitoring
+* Automatic rig change detection
 * Automatic image matching for amps, cabinets and effects
+
+### Performance Browser
+
+![Performance Browser](public/images/performance-browser.png)
+
+* Browse stored Kemper performances
+* Performance Explorer
+* Search rigs across all scanned performances
+* Direct performance navigation
+* Direct slot selection
+* Local performance library
+
+### Live Control
+
+* Slot selection
+* Performance navigation
+* Effect on/off control
+* Tuner control
+* Morph trigger
+* Tap Tempo
+* BPM display
+* BPM input and setting
+
+### User Experience
+
+* Boot screen
+* No-MIDI connection screen
+* Automatic Kemper detection
+* Performance library rebuild
+* Scan progress indicator
 * Native Windows desktop application built with Tauri
+
+---
 
 ## Requirements
 
 * Windows
 * Kemper Profiler
-* Kemper Rig Manager
-* MIDI SysEx support enabled
 * USB connection between Kemper and computer
+
+Rig Manager is optional and not required.
+
+---
 
 ## Installation
 
@@ -79,17 +124,17 @@ The generated installer can be found at:
 src-tauri\target\release\bundle\msi
 ```
 
+---
+
 ## How It Works
 
-The application communicates directly with the Kemper Profiler using MIDI SysEx messages via the Web MIDI API.
+Live Companion communicates directly with the Kemper Profiler through MIDI SysEx and MIDI control messages.
 
-Live Companion is a read-only companion application.
+The application automatically requests and updates information from the Profiler while also providing selected control functions.
 
-It does not modify rigs, presets or settings on the Profiler.
+Currently supported:
 
-The application only reads information from the device and presents it in a visual format.
-
-Currently the application retrieves:
+### Read
 
 * Rig Name
 * Amp Name
@@ -99,7 +144,36 @@ Currently the application retrieves:
 * Cabinet Information
 * Gain Value
 * Effect Slot Names
-* Effect Slot States (On / Off)
+* Effect States
+* Current BPM
+
+### Control
+
+* Performance Selection
+* Slot Selection
+* Effect Toggle
+* Morph Trigger
+* Tuner Toggle
+* Tap Tempo
+* BPM Setting
+
+---
+
+## Performance Library
+
+The Performance Library allows users to build a local database of their Kemper performances.
+
+Features:
+
+* Performance scanning
+* Local storage
+* Fast browsing
+* Rig search across performances
+* Direct navigation from browser to performance slot
+
+The library can be rebuilt at any time using the integrated rebuild function.
+
+---
 
 ## Custom Images
 
@@ -113,15 +187,6 @@ public/images/effects
 
 Users can add their own images to support additional equipment.
 
-Recommended workflow:
-
-1. Find a suitable image.
-2. Remove the background.
-3. Crop the image tightly.
-4. Save as PNG with transparency.
-5. Place the file into the appropriate image folder.
-6. Add matching aliases inside the corresponding image map file.
-
 Relevant files:
 
 ```text
@@ -132,46 +197,43 @@ src/effectImageMap.js
 
 Photopea is a useful free tool for background removal and image preparation.
 
-## Optional Startup Script
-
-For convenience, Live Companion can be launched together with Kemper Rig Manager using a Windows batch file.
-
-Before using the script, adjust both paths to match your local installation.
-
-```bat
-@echo off
-
-cd /d "C:\PATH\TO\YOUR\LIVE-COMPANION"
-
-start "" "live_companion.exe"
-
-timeout /t 5 >nul
-
-start "" "C:\PATH\TO\YOUR\RIG-MANAGER\Rig Manager.exe"
-
-exit
-```
-
-The delay gives Live Companion time to initialize before Rig Manager connects to the Profiler.
+---
 
 ## Limitations
 
-* Read-only application
 * No rig editing
+* No profile creation
 * No profile management
-* No parameter modification
-* No write access to the Kemper Profiler
+* No deep parameter editing
 * Image matching depends on available aliases and image files
+
+---
 
 ## Development Highlights
 
-- MIDI SysEx communication with the Kemper Profiler
-- Automatic rig change detection
-- Real-time hardware monitoring
-- Extensible image mapping system
-- Native desktop deployment using Tauri
-- Asset management for amps, cabinets and effects
+* MIDI SysEx communication
+* MIDI control implementation
+* Real-time Kemper monitoring
+* Performance library system
+* Performance browser
+* Effect control system
+* Automatic image matching
+* Native desktop deployment using Tauri
+
+---
+
+## Disclaimer
+
+Live Companion is an independent third-party project.
+
+This application is not affiliated with, endorsed by, sponsored by, or approved by Kemper GmbH or the Kemper Profiler product team.
+
+"Kemper" and "Kemper Profiler" are trademarks of their respective owners and are referenced solely for compatibility and descriptive purposes.
+
+Live Companion is developed independently and is intended to provide additional monitoring and control functionality for users of the Kemper Profiler platform.
+
+---
 
 ## Project Status
 
-Personal project actively developed for live Kemper monitoring and visualization.
+Actively developed personal project focused on live Kemper monitoring and performance navigation.
