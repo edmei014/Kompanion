@@ -190,10 +190,14 @@ Users can add their own images to support additional equipment.
 Relevant files:
 
 ```text
-src/ampImageMap.js
-src/cabinetImageMap.js
-src/effectImageMap.js
+src/library/index.js    Public Gear Library API (import from here)
+src/data/amps/          Amp records by manufacturer
+docs/GEAR_LIBRARY.md    Architecture and contribution guide
 ```
+
+See [docs/GEAR_LIBRARY.md](docs/GEAR_LIBRARY.md) for how to add amps, manufacturers, and future categories.
+
+Legacy image map files (`src/ampImageMap.js`, etc.) have been replaced by the Gear Library.
 
 Photopea is a useful free tool for background removal and image preparation.
 

@@ -1,7 +1,16 @@
 import "./styles.css";
+import "./styles/gearLibraryDesignPreviews.css";
 import { invoke } from "@tauri-apps/api/core";
 import { effectImageMap } from "./effectImageMap.js";
-import { ampProfiles } from "./ampImageMap.js";
+import {
+  getAmpImage,
+  resolveAmpRecordFromTextSources
+} from "./library/index.js";
+import {
+  initializeGearLibrary,
+  registerViewChangeHandler
+} from "./gearLibrary.js";
+import { initializeAudioTools } from "./modules/audioTools/AudioToolsView.js";
 import {
   cabinetImageMap,
   CAB_BRAND_ALIASES
@@ -14,6 +23,7 @@ const SYSEX_HEADER = [0xf0, 0x00, 0x20, 0x33];
 const KEMPER_REQUEST_PREFIX = [0xf0, 0x00, 0x20, 0x33, 0x02, 0x7f];
 const STRING_TAGS = {
   rigName: [0x00, 0x01],
+  rigAuthor: [0x00, 0x02],
   ampName: [0x00, 0x10],
   ampManufacturer: [0x00, 0x15],
   ampModel: [0x00, 0x18],
@@ -218,37 +228,23 @@ const MANUFACTURER_PATTERNS = [
   ["roland", "Roland"],
   ["jc-120", "Roland"]
 ];
-const YEAR_PATTERNS = [
-  [/1959|plexi/i, "1959"],
-  [/jtm\s?45/i, "1962"],
-  [/ac30/i, "1959"],
-  [/ac15/i, "1958"],
-  [/bassman/i, "1952"],
-  [/twin/i, "1952"],
-  [/deluxe/i, "1948"],
-  [/jcm\s?800/i, "1981"],
-  [/jcm\s?900/i, "1990"],
-  [/jvm/i, "2007"],
-  [/dual rectifier|rectifier/i, "1992"],
-  [/mark\s?iic/i, "1983"],
-  [/slo/i, "1987"],
-  [/5150/i, "1992"],
-  [/6505/i, "2005"],
-  [/vh4/i, "1994"],
-  [/rockerverb/i, "2004"],
-  [/jc-?120/i, "1975"]
-];
 
 const inputPort = document.querySelector("#inputPort");
 const outputPort = document.querySelector("#outputPort");
 const rigName = document.querySelector("#rigName");
 const ampManufacturer = document.querySelector("#ampManufacturer");
 const ampModel = document.querySelector("#ampModel");
+const ampDetailsManufacturer = document.querySelector("#ampDetailsManufacturer");
+const ampDetailsModel = document.querySelector("#ampDetailsModel");
+const ampDetailsYear = document.querySelector("#ampDetailsYear");
+const ampDetailsYearRow = document.querySelector("#ampDetailsYearRow");
+const rigAuthor = document.querySelector("#rigAuthor");
+const ampDetailsOriginalRigName = document.querySelector("#ampDetailsOriginalRigName");
+const ampDetailsOriginalAmpName = document.querySelector("#ampDetailsOriginalAmpName");
 const productionYear = document.querySelector("#productionYear");
 const cabinetManufacturer = document.querySelector("#cabinetManufacturer");
 const cabinetModel = document.querySelector("#cabinetModel");
 const cabinetConfiguration = document.querySelector("#cabinetConfiguration");
-const gainValue = document.querySelector("#gainValue");
 const gainMeterFill = document.querySelector("#gainMeterFill");
 const tunerToggleButton = document.querySelector("#tunerToggleButton");
 const morphActionButton = document.querySelector("#morphActionButton");
@@ -295,7 +291,7 @@ const ampZoomImage = document.querySelector("#ampZoomImage");
 const bootLoadingOverlay = document.querySelector("#bootLoadingOverlay");
 const noMidiOverlay = document.querySelector("#noMidiOverlay");
 const noMidiReconnectButton = document.querySelector("#noMidiReconnectButton");
-const appShell = document.querySelector(".shell");
+const livePage = document.querySelector("#livePage");
 let midiAccess;
 let isRefreshingLiveData = false;
 let isCheckingRigName = false;
@@ -345,8 +341,10 @@ function updateConnectionPresentation(state) {
   const isBootLoading = state === CONNECTION_STATE.BOOT_LOADING;
   const showBootOverlay = !bootPresentationComplete || isBootLoading;
   const isNoMidi = state === CONNECTION_STATE.NO_MIDI;
+  const isLiveView = document.body.dataset.appView === "live";
   const isAppVisible =
     bootPresentationComplete &&
+    isLiveView &&
     (state === CONNECTION_STATE.CONNECTED || state === CONNECTION_STATE.REFRESHING);
 
   if (bootLoadingOverlay) {
@@ -356,8 +354,12 @@ function updateConnectionPresentation(state) {
   }
 
   if (noMidiOverlay) {
-    noMidiOverlay.dataset.visible = isNoMidi && bootPresentationComplete ? "true" : "false";
-    noMidiOverlay.setAttribute("aria-hidden", isNoMidi && bootPresentationComplete ? "false" : "true");
+    noMidiOverlay.dataset.visible =
+      isNoMidi && bootPresentationComplete && isLiveView ? "true" : "false";
+    noMidiOverlay.setAttribute(
+      "aria-hidden",
+      isNoMidi && bootPresentationComplete && isLiveView ? "false" : "true"
+    );
   }
 
   if (noMidiReconnectButton) {
@@ -368,8 +370,14 @@ function updateConnectionPresentation(state) {
   document.body.dataset.boot = showBootOverlay ? "loading" : "ready";
   document.body.dataset.connection = state ?? CONNECTION_STATE.BOOT_LOADING;
 
-  if (appShell) {
-    appShell.setAttribute("aria-hidden", isAppVisible ? "false" : "true");
+  if (livePage) {
+    const showLivePage =
+      bootPresentationComplete &&
+      isLiveView &&
+      (state === CONNECTION_STATE.CONNECTED ||
+        state === CONNECTION_STATE.REFRESHING ||
+        state === CONNECTION_STATE.NO_MIDI);
+    livePage.setAttribute("aria-hidden", showLivePage ? "false" : "true");
   }
 }
 
@@ -2301,39 +2309,29 @@ function deriveManufacturer(ampName, modelName) {
   return match ? match[1] : "Unknown";
 }
 
-function deriveProductionYear(ampName, modelName) {
-  const searchText = getAmpSearchText(ampName, modelName);
-  const match = YEAR_PATTERNS.find(([pattern]) => pattern.test(searchText));
-  return match ? match[1] : "Unknown";
+function formatLibraryAmpYear(introduced) {
+  if (introduced === undefined || introduced === null || introduced === "") return "";
+  const match = String(introduced).match(/\d{4}/);
+  return match ? match[0] : String(introduced).trim();
 }
 
-function getAmpImage(manufacturer, model, ampName) {
-  const search = `
-    ${ampName || ""}
-    ${manufacturer || ""}
-    ${model || ""}
-  `
-    .trim()
-    .toLowerCase();
-
-  let bestMatch = null;
-  let bestLength = 0;
-
-  for (const profile of ampProfiles) {
-    for (const alias of profile.aliases) {
-      const normalizedAlias = alias.toLowerCase();
-
-      if (
-        search.includes(normalizedAlias) &&
-        normalizedAlias.length > bestLength
-      ) {
-        bestMatch = profile.image;
-        bestLength = normalizedAlias.length;
-      }
-    }
-  }
-
-  return bestMatch || "";
+/**
+ * Resolves Kemper amp/rig strings to the canonical Gear Library AmpRecord.
+ * Amp name and rig name are scored independently; best alias wins.
+ * Creator names are lookup input only — never for display.
+ */
+function resolveLiveAmpRecord(
+  liveRigName,
+  liveAmpName,
+  liveAmpManufacturer,
+  liveAmpModel
+) {
+  return resolveAmpRecordFromTextSources(
+    liveAmpName,
+    liveRigName,
+    liveAmpManufacturer,
+    liveAmpModel
+  );
 }
 
 function normalizeCabinetSearch(text) {
@@ -2456,6 +2454,7 @@ async function requestEffectsData() {
 async function requestLiveKemperData() {
   const currentRigName = await requestCurrentRigName();
   const [
+    liveRigAuthor,
     liveAmpName,
     liveAmpManufacturer,
     liveAmpModel,
@@ -2467,6 +2466,7 @@ async function requestLiveKemperData() {
     liveTempoValue
   ] =
     await Promise.all([
+      requestStringTag(STRING_TAGS.rigAuthor),
       requestStringTag(STRING_TAGS.ampName),
       requestStringTag(STRING_TAGS.ampManufacturer),
       requestStringTag(STRING_TAGS.ampModel),
@@ -2480,6 +2480,13 @@ async function requestLiveKemperData() {
   const effects = await Promise.all(
   EFFECT_MODULES.map(module => requestEffectModule(module))
 );
+
+  const resolvedAmp = resolveLiveAmpRecord(
+    currentRigName,
+    liveAmpName,
+    liveAmpManufacturer,
+    liveAmpModel
+  );
 
   const resolvedCabinetManufacturer =
     liveCabinetManufacturer || deriveManufacturer(liveCabinetName, liveCabinetModel);
@@ -2496,12 +2503,20 @@ async function requestLiveKemperData() {
   );
   const cabinetConfiguration = cabinetConfigurationFromData || getCabinetConfiguration(cabinetImage);
 
+  const libraryYear = formatLibraryAmpYear(resolvedAmp?.introduced);
+
   return {
     rigName: currentRigName,
+    rigAuthor: liveRigAuthor || "",
+    ampId: resolvedAmp?.id ?? null,
     ampName: liveAmpName,
-    ampModel: liveAmpModel || liveAmpName,
-    manufacturer: liveAmpManufacturer || deriveManufacturer(liveAmpName, liveAmpModel),
-    productionYear: liveAmpYear || deriveProductionYear(liveAmpName, liveAmpModel),
+    manufacturer: resolvedAmp?.manufacturer ?? "",
+    ampModel: resolvedAmp?.model ?? "",
+    libraryYear,
+    productionYear: libraryYear || liveAmpYear || "",
+    originalRigName: currentRigName || "",
+    originalAmpName: liveAmpName || "",
+    ampImageSrc: resolvedAmp ? getAmpImage(resolvedAmp.id) : null,
     cabinetManufacturer: resolvedCabinetManufacturer,
     cabinetModel: removeCabinetConfiguration(resolvedCabinetModel, cabinetConfiguration),
     cabinetConfiguration,
@@ -2651,10 +2666,7 @@ function ensureGainMeterSegments() {
 }
 
 function applyGainDisplay(rawValue) {
-  if (!gainValue || !gainMeterFill) return;
-
-  const formatted = formatGain(rawValue);
-  gainValue.textContent = formatted ? `${formatted} / 10` : "-";
+  if (!gainMeterFill) return;
 
   ensureGainMeterSegments();
 
@@ -2681,13 +2693,12 @@ async function refreshGainAfterMorph() {
 }
 
 function renderGain(value, rawValue) {
-  if (!gainValue || !gainMeterFill) return;
+  if (!gainMeterFill) return;
 
   const hasFormattedValue = value !== null && value !== undefined && value !== "";
   const hasRawValue = rawValue !== null && rawValue !== undefined;
 
   if (!hasFormattedValue && !hasRawValue) {
-    gainValue.textContent = "-";
     ensureGainMeterSegments();
     gainMeterFill.querySelectorAll("i").forEach((segment) => {
       segment.dataset.active = "false";
@@ -2758,20 +2769,50 @@ async function refreshLiveData() {
     rigName.textContent = liveData.rigName || "-";
     ampManufacturer.textContent = liveData.manufacturer || "-";
     ampModel.textContent = liveData.ampModel || "-";
-	const ampImage = getAmpImage(
-	  liveData.manufacturer,
-	  liveData.ampModel,
-	  liveData.ampName
-	);
+    ampModel.title = liveData.ampModel || "";
 
-	ampImageContainer.innerHTML = ampImage
-	  ? `<img src="/images/amps/${ampImage}" class="amp-image" />`
-	  : "";
+    if (ampDetailsManufacturer) {
+      ampDetailsManufacturer.textContent = liveData.manufacturer || "-";
+      ampDetailsManufacturer.title = liveData.manufacturer || "";
+    }
+
+    if (ampDetailsModel) {
+      ampDetailsModel.textContent = liveData.ampModel || "-";
+      ampDetailsModel.title = liveData.ampModel || "";
+    }
+
+    if (ampDetailsYear) {
+      const year = liveData.libraryYear || "";
+      if (ampDetailsYearRow) {
+        ampDetailsYearRow.hidden = !year;
+      }
+      ampDetailsYear.textContent = year || "-";
+      ampDetailsYear.title = year;
+    }
+
+    if (rigAuthor) {
+      rigAuthor.textContent = liveData.rigAuthor || "-";
+      rigAuthor.title = liveData.rigAuthor || "";
+    }
+
+    if (ampDetailsOriginalRigName) {
+      ampDetailsOriginalRigName.textContent = liveData.originalRigName || "-";
+      ampDetailsOriginalRigName.title = liveData.originalRigName || "";
+    }
+
+    if (ampDetailsOriginalAmpName) {
+      ampDetailsOriginalAmpName.textContent = liveData.originalAmpName || "-";
+      ampDetailsOriginalAmpName.title = liveData.originalAmpName || "";
+    }
+
+    ampImageContainer.innerHTML = liveData.ampImageSrc
+      ? `<img src="${liveData.ampImageSrc}" class="amp-image" />`
+      : "";
+
     productionYear.textContent =
-	liveData.productionYear &&
-	liveData.productionYear !== "Unknown"
-    ? `Amp Year ${liveData.productionYear}`
-    : "";
+      liveData.productionYear && liveData.productionYear !== "Unknown"
+        ? `Amp Year ${liveData.productionYear}`
+        : "";
     cabinetManufacturer.textContent = liveData.cabinetManufacturer || "-";
     cabinetModel.textContent = liveData.cabinetModel || "-";
     cabinetConfiguration.textContent = liveData.cabinetConfiguration || "-";
@@ -2957,4 +2998,17 @@ if (noMidiReconnectButton) {
   noMidiReconnectButton.addEventListener("click", handleNoMidiReconnect);
 }
 
+const audioToolsView = initializeAudioTools();
+
+registerViewChangeHandler((view) => {
+  updateConnectionPresentation(connectionState);
+
+  if (view === "audio") {
+    audioToolsView.show();
+  } else {
+    audioToolsView.hide();
+  }
+});
+
+initializeGearLibrary();
 bootApplication();

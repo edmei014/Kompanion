@@ -26,15 +26,47 @@
         visibility: visible;
       }
 
+      .app-root {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .app-view-root {
+        display: none;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      body[data-app-view="live"] #liveView {
+        display: flex;
+        flex-direction: column;
+      }
+
+      body[data-app-view="gear"] #gearLibraryView {
+        display: flex;
+        flex-direction: column;
+      }
+
+      body[data-app-view="audio"] #audioToolsView {
+        display: flex;
+        flex-direction: column;
+      }
+
       .connection-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 200;
         display: grid;
         place-items: center;
         background:
           linear-gradient(135deg, rgba(38, 41, 38, 0.96), rgba(12, 13, 13, 0.98)),
           #101110;
+      }
+
+      .connection-overlay--fullscreen {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
       }
 
       .connection-overlay[data-visible="false"] {
@@ -87,8 +119,8 @@
     </style>
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
-  <body data-boot="loading" data-connection="boot_loading">
-    <div id="bootLoadingOverlay" class="connection-overlay boot-loading-overlay" data-visible="true" aria-live="polite" aria-busy="true">
+  <body data-boot="loading" data-connection="boot_loading" data-app-view="live">
+    <div id="bootLoadingOverlay" class="connection-overlay connection-overlay--fullscreen boot-loading-overlay" data-visible="true" aria-live="polite" aria-busy="true">
       <div class="connection-overlay-content">
         <h1 class="connection-overlay-title">Kemper Live Companion</h1>
         <p class="connection-overlay-message">Load Data...</p>
@@ -96,35 +128,61 @@
       </div>
     </div>
 
-    <div id="noMidiOverlay" class="connection-overlay no-midi-overlay" data-visible="false" aria-live="polite" aria-hidden="true">
-      <div class="connection-overlay-content no-midi-content">
-        <h1 class="connection-overlay-title">Kemper Live Companion</h1>
-        <p class="no-midi-headline">>No Kemper Profiler connected</p>
-        <p class="no-midi-subline">Please:</p>
-        <ul class="no-midi-steps">
-          <li>Kemper turned on</li>
-          <li>Active MIDI-Connection</li>
-          <li>MIDI-Port Options</li>
-        </ul>
-        <div class="no-midi-ports">
-          <label>
-            In
-            <select id="inputPort"></select>
-          </label>
-          <label>
-            Out
-            <select id="outputPort"></select>
-          </label>
+    <div id="appRoot" class="app-root">
+    <nav class="primary-nav" aria-label="Hauptnavigation">
+      <button
+        type="button"
+        class="primary-nav-button is-active"
+        data-view="live"
+        aria-current="page"
+      >
+        Live Companion
+      </button>
+      <button
+        type="button"
+        class="primary-nav-button"
+        data-view="gear"
+        aria-current="false"
+      >
+        Gear Library
+      </button>
+      <button
+        type="button"
+        class="primary-nav-button"
+        data-view="audio"
+        aria-current="false"
+      >
+        Audio Tools
+      </button>
+    </nav>
+
+    <div id="liveView" class="app-view-root" aria-hidden="false">
+      <div id="noMidiOverlay" class="no-midi-overlay" data-visible="false" aria-live="polite" aria-hidden="true">
+        <div class="connection-overlay-content no-midi-content">
+          <h1 class="connection-overlay-title">Kemper Live Companion</h1>
+          <p class="no-midi-headline">>No Kemper Profiler connected</p>
+          <p class="no-midi-subline">Please:</p>
+          <ul class="no-midi-steps">
+            <li>Kemper turned on</li>
+            <li>Active MIDI-Connection</li>
+            <li>MIDI-Port Options</li>
+          </ul>
+          <div class="no-midi-ports">
+            <label>
+              In
+              <select id="inputPort"></select>
+            </label>
+            <label>
+              Out
+              <select id="outputPort"></select>
+            </label>
+          </div>
+          <button id="noMidiReconnectButton" class="no-midi-reconnect-button" type="button">
+            Reconnect
+          </button>
         </div>
-        <button id="noMidiReconnectButton" class="no-midi-reconnect-button" type="button">
-          Reconnect
-        </button>
       </div>
-    </div>
-
-    <header class="topbar"></header>
-
-    <main class="shell" aria-hidden="true">
+      <div id="livePage" class="live-page" aria-hidden="true">
       <section class="title-panel">
   <div class="title-row">
 
@@ -155,6 +213,7 @@
   <div id="errorStatus" class="error-status" data-visible="false"></div>
 </section>
 
+      <div class="shell shell--live">
       <section class="result">
         
         <div id="performanceSection" class="performance-section" hidden>
@@ -280,22 +339,82 @@
           </div>
           <strong id="rigName">-</strong>
         </div>
-        <!-- GAIN (3) | AMP (8) | CABINET (3) — amp centered under rig name -->
-        <div class="gain-section">
-          <div class="gain-section-body">
+        <!-- AMP DETAILS (3) | AMP (8) | CABINET (3) — amp centered under rig name -->
+        <div class="gain-section amp-details-section">
+          <div class="gain-section-body amp-details-body">
             <div class="section-title">
-              <span>Gain</span>
+              <span>Amp Details</span>
             </div>
-            <div class="gain-panel">
-              <div class="gain-readout">
-                <div class="gain-meter" aria-hidden="true">
-                  <div id="gainMeterFill" class="gain-meter-segments"></div>
-                </div>
-                <strong id="gainValue">-</strong>
-              </div>
+
+            <div class="amp-details-stack">
+              <section
+                class="amp-details-group"
+                aria-labelledby="ampDetailsRecognizedHeading"
+              >
+                <h3 id="ampDetailsRecognizedHeading" class="amp-details-group-title">
+                  Recognized Amp
+                </h3>
+                <dl class="amp-details-list">
+                  <div class="amp-details-row">
+                    <dt>Manufacturer</dt>
+                    <dd id="ampDetailsManufacturer">-</dd>
+                  </div>
+                  <div class="amp-details-row">
+                    <dt>Model</dt>
+                    <dd id="ampDetailsModel">-</dd>
+                  </div>
+                  <div class="amp-details-row" id="ampDetailsYearRow" hidden>
+                    <dt>Year of Production</dt>
+                    <dd id="ampDetailsYear">-</dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section
+                class="amp-details-group"
+                aria-labelledby="ampDetailsRigHeading"
+              >
+                <h3 id="ampDetailsRigHeading" class="amp-details-group-title">
+                  Rig Information
+                </h3>
+                <dl class="amp-details-list">
+                  <div class="amp-details-row">
+                    <dt>Author</dt>
+                    <dd id="rigAuthor">-</dd>
+                  </div>
+                  <div class="amp-details-row">
+                    <dt>Original Rig Name</dt>
+                    <dd id="ampDetailsOriginalRigName">-</dd>
+                  </div>
+                  <div class="amp-details-row">
+                    <dt>Original Amp Name</dt>
+                    <dd id="ampDetailsOriginalAmpName">-</dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section
+                class="amp-details-group amp-details-group--controls"
+                aria-label="Amp controls"
+              >
+                <dl class="amp-details-list">
+                  <div class="amp-details-row amp-details-row--gain">
+                    <dt>Gain</dt>
+                    <dd>
+                      <div class="gain-panel">
+                        <div class="gain-readout">
+                          <div class="gain-meter" aria-hidden="true">
+                            <div id="gainMeterFill" class="gain-meter-segments"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </dd>
+                  </div>
+                </dl>
+              </section>
             </div>
           </div>
-          <div class="gain-section-footer">
+          <div class="gain-section-footer amp-details-footer">
             <button
               id="morphActionButton"
               class="control-action-button control-action-button--morph"
@@ -308,18 +427,16 @@
         </div>
         <div class="gear-section amp-section">
           <div class="section-title">
-
             <span>Amp</span>
           </div>
-		  <div id="ampImageContainer" class="amp-image-container"></div>
-        <div class="amp-main-display">
-			<strong id="ampModel">-</strong>
-
-			<div class="amp-meta">
-				<span id="ampManufacturer">-</span>
-				<small id="productionYear"></small>
-			</div>
-		</div>
+          <div id="ampImageContainer" class="amp-image-container"></div>
+          <div class="amp-main-display">
+            <span id="ampManufacturer" class="amp-manufacturer">-</span>
+            <strong id="ampModel">-</strong>
+            <div class="amp-meta">
+              <small id="productionYear"></small>
+            </div>
+          </div>
         </div>
         <div class="gear-section cabinet-section">
 			<div class="section-title">
@@ -350,7 +467,707 @@
           <ul id="effectsList" class="effects-list companion-scroll"></ul>
         </div>
       </section>
-    </main>
+      </div>
+      </div>
+    </div>
+
+    <div id="gearLibraryView" class="app-view-root" aria-hidden="true">
+      <div class="shell shell--gear">
+      <section class="gear-library-panel">
+        <header class="gear-library-header">
+          <div class="gear-library-heading">
+            <span class="gear-library-eyebrow">Gear Library</span>
+            <h2 id="gearLibraryTitle" class="gear-library-title">Amp Browser</h2>
+          </div>
+          <div class="gear-library-header-actions">
+            <label id="gearDesignPreview" class="gear-design-preview" hidden>
+              <span class="gear-design-preview-caption">Design Preview</span>
+              <select
+                id="gearDesignPreviewSelect"
+                class="gear-design-preview-select"
+                aria-label="Gear Library design preview"
+              ></select>
+            </label>
+            <nav
+              id="gearCategoryNav"
+              class="gear-category-nav"
+              aria-label="Gear categories"
+            ></nav>
+          </div>
+        </header>
+
+        <div class="gear-library-layout">
+          <div
+            id="gearCategoryShell"
+            class="gear-category-shell"
+            data-active-category="amps"
+          >
+            <div class="gear-library-toolbar">
+              <div id="gearLibraryStats" class="gear-library-stats"></div>
+              <div class="gear-library-controls">
+                <label class="gear-library-search-label" for="gearLibrarySearch">
+                  <span class="visually-hidden">Search gear library</span>
+                  <input
+                    id="gearLibrarySearch"
+                    class="gear-library-search"
+                    type="search"
+                    placeholder="Search manufacturer, model, alias…"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                </label>
+                <div
+                  id="gearAmpImageFilterWrap"
+                  class="gear-library-image-filter-wrap"
+                  role="group"
+                  aria-label="Amp image filter"
+                >
+                  <span class="gear-library-image-filter-caption">Images</span>
+                  <div id="gearAmpImageFilter" class="gear-library-image-filter">
+                    <button
+                      type="button"
+                      class="gear-library-image-filter-option is-active"
+                      data-image-filter="all"
+                      aria-pressed="true"
+                    >
+                      <span class="gear-library-image-filter-marker" aria-hidden="true"></span>
+                      All Amps
+                    </button>
+                    <button
+                      type="button"
+                      class="gear-library-image-filter-option"
+                      data-image-filter="available"
+                      aria-pressed="false"
+                    >
+                      <span class="gear-library-image-filter-marker" aria-hidden="true"></span>
+                      Image Available
+                    </button>
+                  </div>
+                </div>
+                <label
+                  id="gearLibraryViewWrap"
+                  class="gear-library-view-label"
+                  for="gearAmpViewSelect"
+                >
+                  <span class="gear-library-view-caption">View</span>
+                  <select
+                    id="gearAmpViewSelect"
+                    class="gear-library-view-select"
+                    aria-label="Amp browser view"
+                  ></select>
+                </label>
+              </div>
+            </div>
+
+            <div
+              id="gearAmpBrowserStage"
+              class="gear-amp-browser-stage"
+              data-amp-view="manufacturer"
+            >
+              <div id="gearLibraryScroll" class="gear-library-scroll companion-scroll">
+                <div
+                  id="manufacturerBrowserGrid"
+                  class="gear-category-pane manufacturer-browser-catalog"
+                  data-category="manufacturers"
+                  role="presentation"
+                  hidden
+                ></div>
+                <div
+                  id="ampBrowserGrid"
+                  class="gear-category-pane amp-browser-catalog"
+                  data-category="amps"
+                  data-amp-presentation="manufacturer"
+                  role="presentation"
+                ></div>
+                <p id="gearLibraryEmptyState" class="gear-library-empty" hidden>
+                  No amps match your filters.
+                </p>
+              </div>
+              <aside
+                id="gearAmpTimelineRail"
+                class="gear-amp-timeline-rail"
+                aria-label="Amplifier timeline"
+                hidden
+              >
+                <div
+                  id="gearAmpTimelineTrack"
+                  class="gear-amp-timeline-track"
+                  role="presentation"
+                ></div>
+              </aside>
+            </div>
+          </div>
+
+          <aside
+            id="gearDiscoverColumn"
+            class="gear-discover-column"
+            aria-label="Discover"
+          >
+            <div id="gearDiscoverBoard" class="gear-discover-board">
+              <article
+                class="gear-discover-entry"
+                data-discover-category="legendary_recording"
+                hidden
+              >
+                <span class="gear-discover-category"></span>
+                <h3 class="gear-discover-title"></h3>
+                <p class="gear-discover-text"></p>
+                <button class="gear-discover-amp-link" type="button" hidden></button>
+              </article>
+              <article
+                class="gear-discover-entry"
+                data-discover-category="amp_story"
+                hidden
+              >
+                <span class="gear-discover-category"></span>
+                <h3 class="gear-discover-title"></h3>
+                <p class="gear-discover-text"></p>
+                <button class="gear-discover-amp-link" type="button" hidden></button>
+              </article>
+              <article
+                class="gear-discover-entry"
+                data-discover-category="did_you_know"
+                hidden
+              >
+                <span class="gear-discover-category"></span>
+                <h3 class="gear-discover-title"></h3>
+                <p class="gear-discover-text"></p>
+                <button class="gear-discover-amp-link" type="button" hidden></button>
+              </article>
+            </div>
+          </aside>
+        </div>
+      </section>
+      </div>
+    </div>
+
+    <div id="audioToolsView" class="app-view-root" aria-hidden="true">
+      <div class="shell shell--audio">
+        <section class="audio-tools-panel" aria-labelledby="audioToolsTitle">
+          <header class="audio-tools-header">
+            <div>
+              <span class="audio-tools-eyebrow">Audio Tools</span>
+              <h2 id="audioToolsTitle" class="audio-tools-title">Audio Tools</h2>
+            </div>
+          </header>
+
+          <div class="audio-tools-body">
+            <div class="audio-tools-control-row">
+              <label class="audio-tools-field" for="audioToolsDeviceSelect">
+                <span>Input Device</span>
+                <select id="audioToolsDeviceSelect" class="audio-tools-select"></select>
+              </label>
+              <button
+                id="audioToolsConnectButton"
+                class="audio-tools-connect-button"
+                type="button"
+              >
+                Connect
+              </button>
+            </div>
+            <p id="audioToolsEmptyState" class="audio-tools-empty" hidden>No audio device detected.</p>
+
+            <section id="audioToolsHeroMeter" class="audio-tools-hero-meter" data-active="false">
+              <div class="audio-tools-hero-meter-track" aria-hidden="true">
+                <div class="audio-tools-hero-meter-scale">
+                  <span>-60</span>
+                  <span>-40</span>
+                  <span>-20</span>
+                  <span>0</span>
+                </div>
+                <div class="audio-tools-hero-meter-bar">
+                  <div data-meter-fill class="audio-tools-hero-meter-fill"></div>
+                  <div data-meter-peak class="audio-tools-hero-meter-peak" hidden></div>
+                </div>
+              </div>
+              <dl class="audio-tools-hero-readouts">
+                <div>
+                  <dt>Level</dt>
+                  <dd data-value="level">-∞ dBFS</dd>
+                </div>
+                <div>
+                  <dt>RMS</dt>
+                  <dd data-value="rms">-∞ dBFS</dd>
+                </div>
+                <div>
+                  <dt>Peak</dt>
+                  <dd data-value="peak">-∞ dBFS</dd>
+                </div>
+                <div>
+                  <dt>Peak Hold</dt>
+                  <dd data-value="peakHold">-∞ dBFS</dd>
+                </div>
+                <div>
+                  <dt>Clip</dt>
+                  <dd data-value="clip" data-active="false">—</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section id="audioToolsChannelAnalysis" class="audio-tools-channel-analysis" data-active="false" data-mode="none">
+              <div class="audio-tools-channel-status">
+                <span data-channel-status-dot class="audio-tools-channel-status-dot" data-state="none" aria-hidden="true"></span>
+                <span data-channel-status-text class="audio-tools-channel-status-text">No Signal</span>
+              </div>
+              <div data-channel-meters class="audio-tools-channel-meters" data-layout="stereo" hidden>
+                <div data-channel-meter class="audio-tools-channel-meter" data-channel="0" data-active="false" data-highlight="false">
+                  <div class="audio-tools-channel-meter-track" aria-hidden="true">
+                    <div data-channel-fill class="audio-tools-channel-meter-fill"></div>
+                  </div>
+                  <span data-channel-label class="audio-tools-channel-meter-label">Input 1</span>
+                </div>
+                <div data-channel-meter class="audio-tools-channel-meter" data-channel="1" data-active="false" data-highlight="false">
+                  <div class="audio-tools-channel-meter-track" aria-hidden="true">
+                    <div data-channel-fill class="audio-tools-channel-meter-fill"></div>
+                  </div>
+                  <span data-channel-label class="audio-tools-channel-meter-label">Input 2</span>
+                </div>
+              </div>
+            </section>
+
+            <div class="audio-tools-status-bar">
+              <span id="audioToolsStatusDot" class="audio-tools-status-dot" data-state="idle" aria-hidden="true"></span>
+              <div class="audio-tools-status-copy">
+                <span>Engine Status</span>
+                <strong id="audioToolsStatus">Ready — select input and connect.</strong>
+                <p id="audioToolsError" class="audio-tools-error" hidden></p>
+              </div>
+            </div>
+
+            <section id="audioToolsTuner" class="audio-tools-tuner" data-active="false" data-in-tune="false">
+              <header class="audio-tools-tuner-header">
+                <h3>Chromatic Tuner</h3>
+              </header>
+              <div class="audio-tools-tuner-note-wrap">
+                <strong data-tuner-note class="audio-tools-tuner-note">—</strong>
+              </div>
+              <div class="audio-tools-tuner-meta">
+                <span data-tuner-frequency class="audio-tools-tuner-frequency">— Hz</span>
+                <span data-tuner-cents class="audio-tools-tuner-cents">— cent</span>
+              </div>
+              <div class="audio-tools-tuner-scale">
+                <div class="audio-tools-tuner-scale-track">
+                  <div class="audio-tools-tuner-scale-center" aria-hidden="true"></div>
+                  <div class="audio-tools-tuner-scale-ticks" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span><span></span>
+                  </div>
+                  <div data-tuner-marker class="audio-tools-tuner-marker"></div>
+                </div>
+                <div class="audio-tools-tuner-scale-labels" aria-hidden="true">
+                  <span>−50</span>
+                  <span>0</span>
+                  <span>+50</span>
+                </div>
+              </div>
+              <p class="audio-tools-tuner-target">
+                Target <span data-tuner-target>— Hz</span>
+              </p>
+            </section>
+
+            <section id="audioToolsSignalAnalysis" class="audio-tools-signal-analysis" data-active="false" data-signal-state="none" data-signal-type="unknown">
+              <header class="audio-tools-signal-analysis-header">
+                <h3>Signal Analysis</h3>
+                <span class="audio-tools-signal-live">Live</span>
+              </header>
+              <div class="audio-tools-signal-badges">
+                <article data-badge="signalState" class="audio-tools-signal-badge" data-tone="neutral" data-icon="state">
+                  <span class="audio-tools-signal-badge-icon" aria-hidden="true"></span>
+                  <div class="audio-tools-signal-badge-copy">
+                    <span data-badge-label class="audio-tools-signal-badge-label">Signal State</span>
+                    <strong data-badge-value class="audio-tools-signal-badge-value">No Signal</strong>
+                  </div>
+                </article>
+                <article data-badge="signalType" class="audio-tools-signal-badge" data-tone="neutral" data-icon="type">
+                  <span class="audio-tools-signal-badge-icon" aria-hidden="true"></span>
+                  <div class="audio-tools-signal-badge-copy">
+                    <span data-badge-label class="audio-tools-signal-badge-label">Signal Type</span>
+                    <strong data-badge-value class="audio-tools-signal-badge-value">Unknown</strong>
+                  </div>
+                </article>
+                <article data-badge="channelMode" class="audio-tools-signal-badge" data-tone="neutral" data-icon="channel">
+                  <span class="audio-tools-signal-badge-icon" aria-hidden="true"></span>
+                  <div class="audio-tools-signal-badge-copy">
+                    <span data-badge-label class="audio-tools-signal-badge-label">Channel Mode</span>
+                    <strong data-badge-value class="audio-tools-signal-badge-value">—</strong>
+                  </div>
+                </article>
+              </div>
+              <dl class="audio-tools-signal-metrics">
+                <div data-metric="noiseFloor" class="audio-tools-signal-metric" data-tone="neutral">
+                  <dt data-metric-label>Noise Floor</dt>
+                  <dd data-metric-value>—</dd>
+                </div>
+                <div data-metric="dynamicRange" class="audio-tools-signal-metric" data-tone="neutral">
+                  <dt data-metric-label>Dynamic Range</dt>
+                  <dd data-metric-value>—</dd>
+                </div>
+                <div data-metric="crestFactor" class="audio-tools-signal-metric" data-tone="neutral">
+                  <dt data-metric-label>Crest Factor</dt>
+                  <dd data-metric-value>—</dd>
+                </div>
+                <div data-metric="dominantFrequency" class="audio-tools-signal-metric" data-tone="neutral">
+                  <dt data-metric-label>Dominant Frequency</dt>
+                  <dd data-metric-value>—</dd>
+                </div>
+                <div data-metric="pitchStability" class="audio-tools-signal-metric" data-tone="neutral">
+                  <dt data-metric-label>Pitch Stability</dt>
+                  <dd data-metric-value>—</dd>
+                </div>
+              </dl>
+            </section>
+
+            <div class="audio-tools-visual-grid">
+              <section id="audioToolsInputMeterPanel" class="audio-tools-visual-panel" data-active="false">
+                <header class="audio-tools-visual-panel-header">
+                  <h3>Input Meter</h3>
+                </header>
+                <div class="audio-tools-panel-meter-track">
+                  <div data-panel-fill class="audio-tools-panel-meter-fill"></div>
+                  <div data-panel-peak class="audio-tools-panel-meter-peak" hidden></div>
+                </div>
+                <dl class="audio-tools-panel-readouts">
+                  <div>
+                    <dt>RMS</dt>
+                    <dd data-panel-rms>-∞ dBFS</dd>
+                  </div>
+                  <div>
+                    <dt>Peak</dt>
+                    <dd data-panel-peak-value>-∞ dBFS</dd>
+                  </div>
+                  <div>
+                    <dt>Hold</dt>
+                    <dd data-panel-peak-hold>-∞ dBFS</dd>
+                  </div>
+                </dl>
+                <span data-panel-clip class="audio-tools-panel-clip" hidden>CLIP</span>
+              </section>
+
+              <section class="audio-tools-visual-panel">
+                <header class="audio-tools-visual-panel-header">
+                  <h3>Oscilloscope</h3>
+                  <span>Live</span>
+                </header>
+                <canvas id="audioToolsOscilloscope" class="audio-tools-canvas" aria-label="Live oscilloscope"></canvas>
+              </section>
+
+              <section class="audio-tools-visual-panel">
+                <header class="audio-tools-visual-panel-header">
+                  <h3>Spectrum Analyzer</h3>
+                  <span>FFT</span>
+                </header>
+                <canvas id="audioToolsSpectrum" class="audio-tools-canvas" aria-label="Live spectrum analyzer"></canvas>
+              </section>
+            </div>
+
+            <details class="audio-tools-details">
+              <summary>Technical Details</summary>
+              <div class="audio-tools-details-body">
+                <section id="audioToolsDeviceInfo" class="audio-tools-info-compact">
+                  <span class="audio-tools-section-title">Device Information</span>
+                  <dl class="audio-tools-info-grid">
+                    <div class="audio-tools-info-row">
+                      <dt>Device Name</dt>
+                      <dd data-field="name">Unknown</dd>
+                    </div>
+                    <div class="audio-tools-info-row">
+                      <dt>Sample Rate</dt>
+                      <dd data-field="sampleRate">Unknown</dd>
+                    </div>
+                    <div class="audio-tools-info-row">
+                      <dt>Channels</dt>
+                      <dd data-field="channelCount">Unknown</dd>
+                    </div>
+                    <div class="audio-tools-info-row">
+                      <dt>Layout</dt>
+                      <dd data-field="channelLayout">Unknown</dd>
+                    </div>
+                    <div class="audio-tools-info-row">
+                      <dt>Connection Active</dt>
+                      <dd data-field="connectionActive">Unknown</dd>
+                    </div>
+                  </dl>
+                </section>
+
+                <section id="audioToolsCapabilities" class="audio-tools-info-compact">
+                  <span class="audio-tools-section-title">Engine Capabilities</span>
+                  <dl class="audio-tools-info-grid">
+                    <div class="audio-tools-info-row">
+                      <dt>RMS</dt>
+                      <dd data-metric="rmsDbfs">Unknown</dd>
+                    </div>
+                    <div class="audio-tools-info-row">
+                      <dt>Peak</dt>
+                      <dd data-metric="peakDbfs">Unknown</dd>
+                    </div>
+                    <div class="audio-tools-info-row">
+                      <dt>Sample Rate</dt>
+                      <dd data-metric="sampleRate">Unknown</dd>
+                    </div>
+                    <div class="audio-tools-info-row">
+                      <dt>Channel Count</dt>
+                      <dd data-metric="channelCount">Unknown</dd>
+                    </div>
+                    <div class="audio-tools-info-row">
+                      <dt>Buffer Size</dt>
+                      <dd data-metric="bufferSize">Unknown</dd>
+                    </div>
+                    <div class="audio-tools-info-row">
+                      <dt>Base Latency</dt>
+                      <dd data-metric="baseLatency">Unknown</dd>
+                    </div>
+                    <div class="audio-tools-info-row">
+                      <dt>Output Latency</dt>
+                      <dd data-metric="outputLatency">Unknown</dd>
+                    </div>
+                    <div class="audio-tools-info-row">
+                      <dt>Input Latency</dt>
+                      <dd data-metric="inputLatency">Unknown</dd>
+                    </div>
+                  </dl>
+                </section>
+              </div>
+            </details>
+          </div>
+        </section>
+      </div>
+    </div>
+    </div>
+
+    <div
+      id="gearManufacturerDetailOverlay"
+      class="gear-manufacturer-detail-overlay"
+      data-open="false"
+      aria-hidden="true"
+    >
+      <div
+        id="gearManufacturerDetailBackdrop"
+        class="gear-manufacturer-detail-backdrop"
+        aria-hidden="true"
+      ></div>
+      <div
+        class="gear-manufacturer-detail-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="gearManufacturerDetailTitle"
+      >
+        <button
+          id="gearManufacturerDetailClose"
+          class="gear-manufacturer-detail-close"
+          type="button"
+          aria-label="Close manufacturer detail"
+        >
+          ×
+        </button>
+        <div class="gear-manufacturer-detail-scene">
+          <article class="gear-manufacturer-detail-article">
+            <header class="gear-manufacturer-detail-masthead">
+              <h3 id="gearManufacturerDetailTitle" class="gear-manufacturer-detail-title"></h3>
+              <p
+                id="gearManufacturerDetailMeta"
+                class="gear-manufacturer-detail-meta"
+                hidden
+              ></p>
+            </header>
+            <div class="gear-manufacturer-detail-body companion-scroll">
+              <div class="gear-manufacturer-detail-prose">
+                <p
+                  id="gearManufacturerDetailDescription"
+                  class="gear-manufacturer-detail-paragraph"
+                  hidden
+                ></p>
+                <p
+                  id="gearManufacturerDetailHistory"
+                  class="gear-manufacturer-detail-paragraph"
+                  hidden
+                ></p>
+              </div>
+              <footer class="gear-manufacturer-detail-footer">
+                <a
+                  id="gearManufacturerDetailWebsite"
+                  class="gear-manufacturer-detail-website"
+                  href="#"
+                  hidden
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Official Website <span class="gear-manufacturer-detail-website-arrow" aria-hidden="true">↗</span>
+                </a>
+              </footer>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="gearAmpDetailOverlay"
+      class="gear-amp-detail-overlay"
+      data-open="false"
+      aria-hidden="true"
+    >
+      <div
+        id="gearAmpDetailBackdrop"
+        class="gear-amp-detail-backdrop"
+        aria-hidden="true"
+      ></div>
+      <div
+        class="gear-amp-detail-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="gearAmpDetailModel"
+      >
+        <button
+          id="gearAmpDetailClose"
+          class="gear-amp-detail-close"
+          type="button"
+          aria-label="Close amp detail"
+        >
+          ×
+        </button>
+        <div class="gear-amp-detail-scene">
+          <div class="gear-amp-detail-layout">
+            <div class="gear-amp-detail-content">
+              <div class="gear-amp-detail-header">
+                <button
+                  type="button"
+                  id="gearAmpDetailManufacturer"
+                  class="gear-manufacturer-link gear-amp-detail-manufacturer"
+                ></button>
+                <h3 id="gearAmpDetailModel" class="gear-amp-detail-model"></h3>
+              </div>
+              <div id="gearAmpDetailSpecs" class="gear-amp-detail-specs" hidden></div>
+              <div class="gear-amp-detail-narrative">
+                <section class="gear-amp-detail-section">
+                  <h4 class="gear-amp-detail-section-title">Beschreibung</h4>
+                  <p id="gearAmpDetailDescription" class="gear-amp-detail-section-text"></p>
+                </section>
+                <section class="gear-amp-detail-section">
+                  <h4 class="gear-amp-detail-section-title">Geschichte</h4>
+                  <p id="gearAmpDetailHistory" class="gear-amp-detail-section-text"></p>
+                </section>
+                <section id="gearAmpDetailValveSection" class="gear-amp-detail-section" hidden>
+                  <h4 class="gear-amp-detail-section-title">Valve Configuration</h4>
+                  <div id="gearAmpDetailValveList" class="gear-amp-detail-valve-list"></div>
+                </section>
+                <section id="gearAmpDetailPlayedBySection" class="gear-amp-detail-section" hidden>
+                  <h4 class="gear-amp-detail-section-title">Played By</h4>
+                  <ul id="gearAmpDetailPlayedByList" class="gear-amp-detail-played-by-list"></ul>
+                </section>
+              </div>
+            </div>
+            <div class="gear-amp-detail-hero">
+              <div class="gear-amp-detail-hero-scene" aria-hidden="true">
+                <div class="gear-amp-detail-hero-scene-base"></div>
+                <div class="gear-amp-detail-hero-scene-glow gear-amp-detail-hero-scene-glow--accent"></div>
+                <div class="gear-amp-detail-hero-scene-glow gear-amp-detail-hero-scene-glow--depth"></div>
+              </div>
+              <button
+                id="gearAmpDetailExpandImage"
+                class="gear-amp-detail-image-expand"
+                type="button"
+                aria-label="Enlarge amp image"
+                aria-controls="gearAmpImageLargeOverlay"
+              >
+                <svg
+                  class="gear-amp-detail-image-expand-icon"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4M10 14v4h4v-4h-4z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+              <div class="gear-amp-detail-hero-frame">
+                <img id="gearAmpDetailImage" class="gear-amp-detail-image" alt="" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        id="gearAmpImageLargeOverlay"
+        class="gear-amp-image-large-overlay"
+        data-open="false"
+        aria-hidden="true"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Amp image enlarged"
+      >
+        <div
+          id="gearAmpImageLargeBackdrop"
+          class="gear-amp-image-large-backdrop"
+          aria-hidden="true"
+        ></div>
+        <button
+          id="gearAmpImageLargeClose"
+          class="gear-amp-image-large-close"
+          type="button"
+          aria-label="Close enlarged image"
+        >
+          ×
+        </button>
+        <button
+          id="gearAmpImageLargeFocus"
+          class="gear-amp-image-large-focus"
+          type="button"
+          aria-label="Open focus view"
+          aria-controls="gearAmpImageFocusOverlay"
+        >
+          <svg
+            class="gear-amp-image-large-focus-icon"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4M10 14v4h4v-4h-4z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          Focus View
+        </button>
+        <figure class="gear-amp-image-large-stage">
+          <img id="gearAmpImageLargeImage" class="gear-amp-image-large-image" alt="" draggable="false" />
+        </figure>
+      </div>
+      <div
+        id="gearAmpImageFocusOverlay"
+        class="gear-amp-image-focus-overlay"
+        data-open="false"
+        aria-hidden="true"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Amp image focus view"
+      >
+        <div
+          id="gearAmpImageFocusBackdrop"
+          class="gear-amp-image-focus-backdrop"
+          aria-hidden="true"
+        ></div>
+        <button
+          id="gearAmpImageFocusClose"
+          class="gear-amp-image-focus-close"
+          type="button"
+          aria-label="Close focus view"
+        >
+          ×
+        </button>
+        <div id="gearAmpImageFocusViewport" class="gear-amp-image-focus-viewport">
+          <img id="gearAmpImageFocusImage" class="gear-amp-image-focus-image" alt="" draggable="false" />
+        </div>
+      </div>
+    </div>
 
     <div id="ampZoomOverlay" class="amp-zoom-overlay" data-open="false" aria-hidden="true">
       <img id="ampZoomImage" class="amp-zoom-image" alt="" />
