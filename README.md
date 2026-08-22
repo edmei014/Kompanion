@@ -26,7 +26,7 @@ Kompanion combines live rig visualization with practical performance controls, a
 
 The application communicates directly with the Kemper via MIDI SysEx and MIDI control messages and automatically updates all displayed information in real time.
 
-Additional modules include **Gear Library**, **Audio Tools**, and **MIDI Analyzer**.
+Additional modules include **Gear Atlas** and **Audio Tools**.
 
 ---
 

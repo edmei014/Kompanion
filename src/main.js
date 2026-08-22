@@ -17,11 +17,6 @@ import {
 } from "./gearLibrary.js";
 import { initializeAudioTools } from "./modules/audioTools/AudioToolsView.js";
 import { initializeBidirectionalDiscovery } from "./modules/bidirectional/BidirectionalDiscovery.js";
-import { initializeProtocolResearchLab } from "./modules/bidirectional/ProtocolResearchLab.js";
-import { initializeEffectTypesPanel } from "./modules/bidirectional/EffectTypesPanel.js";
-import { initializePerformanceTrafficCapture } from "./modules/bidirectional/PerformanceTrafficCapture.js";
-import { initializeExtendedParameterCapture } from "./modules/bidirectional/ExtendedParameterCapture.js";
-import { initializeRawMidiTrace } from "./modules/bidirectional/RawMidiTrace.js";
 import { isBooleanOn } from "./modules/bidirectional/decoder/parameterScales.js";
 import { parameterService } from "./modules/bidirectional/ParameterService.js";
 import { CONTROL_PARAMETERS } from "./modules/bidirectional/controlBindings.js";
@@ -85,6 +80,12 @@ const EFFECT_TYPE_BY_PARAM_ID = new Map(
   EFFECT_MODULES.map((module) => [kemperParamId(module.page, module.type), module])
 );
 
+/**
+ * Kemper bypass echo observed after Delay/Reverb writes (RX only — write stays 0x3C03/0x3D03).
+ * Used for write confirmation only while a Delay/Reverb toggle is pending.
+ */
+const DELAY_REVERB_SYNC_STATUS_PARAM_ID = kemperParamId(0x7c, 0x00);
+
 /** Push sync is preferred once bidirectional lease + traffic are healthy. */
 const PUSH_TRAFFIC_MAX_AGE_MS = 5000;
 const PUSH_CONFIRM_WINDOW_MS = 800;
@@ -103,6 +104,7 @@ const SLOT_SETTLE_MS = 500;
 const PERFORMANCE_ADVANCE_MS = 500;
 const PERFORMANCE_SELECT_SETTLE_MS = 700;
 const EFFECT_PUSH_CONFIRM_MS = 1200;
+const DELAY_REVERB_STATUS_REFRESH_DEBOUNCE_MS = 75;
 /** @type {Map<string, number>} Last Kemper on/off push timestamp per effect slot. */
 const lastEffectOnOffPushAt = new Map();
 /**
@@ -117,6 +119,10 @@ const lastEffectOnOffPushAt = new Map();
  * }>}
  */
 const pendingEffectWriteConfirmations = new Map();
+/** @type {ReturnType<typeof setTimeout> | null} */
+let delayReverbStatusRefreshTimer = null;
+let delayReverbStatusRefreshInFlight = false;
+let delayReverbStatusRefreshQueued = false;
 const PERFORMANCE_LIBRARY_STORAGE_KEY = "kemper-performance-library";
 const PERFORMANCE_LIBRARY_META_KEY = "_meta";
 const CONTROL_CHANGES = {
@@ -355,7 +361,6 @@ const cancelLibraryScanButton = document.querySelector("#cancelLibraryScanButton
 const startLibraryScanButton = document.querySelector("#startLibraryScanButton");
 const errorStatus = document.querySelector("#errorStatus");
 const liveStatus = document.querySelector("#liveStatus");
-const midiMonitorButton = document.querySelector("#midiMonitorButton");
 const ampImageContainer = document.querySelector("#ampImageContainer");
 const cabinetImageContainer = document.querySelector("#cabinetImageContainer");
 const bootLoadingOverlay = document.querySelector("#bootLoadingOverlay");
@@ -369,10 +374,6 @@ let currentRigName = "";
 /** @type {string | null} Gear Library amp id for the currently loaded live amp */
 let currentLiveAmpId = null;
 let monitorTimer;
-let passiveMidiDebugInput = null;
-const passiveMidiDebugLastMessages = new Map();
-let passiveMidiDebugMessageCount = 0;
-let midiMonitorEnabled = false;
 
 const CONNECTION_STATE = {
   BOOT_LOADING: "boot_loading",
@@ -413,7 +414,6 @@ let bootPresentationComplete = false;
 let lastTempoPushAt = 0;
 /** @type {number} */
 let lastGainPushAt = 0;
-let effectTypeDiscoveryRunning = false;
 let gainInteractionActive = false;
 let gainDragPointerId = null;
 /** @type {number | null} */
@@ -518,15 +518,6 @@ function setStatus(message, tone = "neutral") {
 
 function setConnectionState(state) {
   if (connectionState === state) return;
-
-  if (state === CONNECTION_STATE.NO_MIDI) {
-    console.log("[MIDI DEBUG] setting NO_MIDI", {
-      from: connectionState,
-      initialBootComplete,
-      reconnectInProgress,
-      isRefreshingLiveData
-    });
-  }
 
   connectionState = state;
 
@@ -1824,202 +1815,6 @@ function preferProfilerPort(select) {
   }
 }
 
-function formatMidiDebugTimestamp() {
-  const now = new Date();
-  const milliseconds = String(now.getMilliseconds()).padStart(3, "0");
-
-  return `${now.toLocaleTimeString("de-DE", { hour12: false })}.${milliseconds}`;
-}
-
-function formatMidiHex(byte) {
-  return byte.toString(16).toUpperCase().padStart(2, "0");
-}
-
-function formatMidiHexDump(bytes) {
-  return bytes.map(formatMidiHex).join(" ");
-}
-
-function getMidiDebugType(bytes) {
-  if (bytes.length === 0) return "Empty";
-  if (bytes[0] === 0xf0) return "SysEx";
-
-  const status = bytes[0];
-  const messageType = status & 0xf0;
-  const channel = (status & 0x0f) + 1;
-
-  if (status === 0xf8) return "MIDI Clock";
-  if (status === 0xfa) return "Start";
-  if (status === 0xfb) return "Continue";
-  if (status === 0xfc) return "Stop";
-  if (status === 0xfe) return "Active Sensing";
-  if (status === 0xff) return "System Reset";
-
-  if (messageType === 0x80) return `Note Off ch ${channel}`;
-  if (messageType === 0x90) return `Note On ch ${channel}`;
-  if (messageType === 0xa0) return `Poly Pressure ch ${channel}`;
-  if (messageType === 0xb0) return `Control Change ch ${channel}`;
-  if (messageType === 0xc0) return `Program Change ch ${channel}`;
-  if (messageType === 0xd0) return `Channel Pressure ch ${channel}`;
-  if (messageType === 0xe0) return `Pitch Bend ch ${channel}`;
-
-  return `MIDI 0x${formatMidiHex(status)}`;
-}
-
-function getMidiDebugSignature(bytes) {
-  if (bytes[0] === 0xf0 && bytes.length >= 10) {
-    return bytes.slice(0, 10).map(formatMidiHex).join(" ");
-  }
-
-  return bytes.slice(0, Math.min(2, bytes.length)).map(formatMidiHex).join(" ");
-}
-
-function getMidiDebugChangedBytes(bytes, previousBytes) {
-  if (!previousBytes) return [];
-
-  const changed = [];
-  const maxLength = Math.max(bytes.length, previousBytes.length);
-
-  for (let index = 0; index < maxLength; index += 1) {
-    if (bytes[index] !== previousBytes[index]) {
-      changed.push(index);
-    }
-  }
-
-  return changed;
-}
-
-function formatMidiDebugChangedBytes(bytes, changedIndexes) {
-  if (changedIndexes.length === 0) return "keine";
-
-  return changedIndexes
-    .map((index) => `${index}: ${bytes[index] === undefined ? "--" : formatMidiHex(bytes[index])}`)
-    .join(", ");
-}
-
-function getKemperPositionControlChange(bytes) {
-  if (!bytes || bytes.length < 3) return null;
-
-  const status = bytes[0];
-  const messageType = status & 0xf0;
-  if (messageType !== 0xb0) return null;
-
-  const controller = bytes[1];
-  const value = bytes[2];
-  const channel = (status & 0x0f) + 1;
-
-  if (controller < 47 || controller > 54) return null;
-
-  const labels = {
-    47: `Performance ${value + 1}`,
-    48: value === 0 ? "Performance Up step/stop" : "Performance Up scroll",
-    49: value === 0 ? "Performance Down step/stop" : "Performance Down scroll",
-    50: "Slot 1",
-    51: "Slot 2",
-    52: "Slot 3",
-    53: "Slot 4",
-    54: "Slot 5"
-  };
-
-  return {
-    channel,
-    controller,
-    value,
-    label: labels[controller]
-  };
-}
-
-function logKemperPositionFeedback(details, bytes, source, timestamp) {
-  console.group(
-    `[Kemper MIDI Monitor] POSITION FEEDBACK ${timestamp} | CC${details.controller} value ${details.value} | ${details.label}`
-  );
-  console.log("Controller:", `CC${details.controller}`);
-  console.log("Value:", details.value);
-  console.log("Channel:", details.channel);
-  console.log("Meaning:", details.label);
-  console.log("Hex:", formatMidiHexDump(bytes));
-  console.log("Source:", source);
-  console.groupEnd();
-}
-
-function logPassiveMidiDebugMessage(event) {
-  const bytes = Array.from(event.data || []);
-  const type = getMidiDebugType(bytes);
-  const signature = getMidiDebugSignature(bytes);
-  const previousBytes = passiveMidiDebugLastMessages.get(signature) || null;
-  const changedIndexes = getMidiDebugChangedBytes(bytes, previousBytes);
-  const changedText = formatMidiDebugChangedBytes(bytes, changedIndexes);
-  const timestamp = formatMidiDebugTimestamp();
-  const source = event.currentTarget?.name || event.currentTarget?.id || "unbekannt";
-  const positionFeedback = getKemperPositionControlChange(bytes);
-
-  passiveMidiDebugMessageCount += 1;
-  passiveMidiDebugLastMessages.set(signature, bytes);
-
-  console.groupCollapsed(
-    `[Kemper MIDI Monitor #${passiveMidiDebugMessageCount}] ${timestamp} | ${type} | ${bytes.length} Bytes`
-  );
-  console.log("Timestamp:", timestamp);
-  console.log("Typ:", type);
-  console.log("Laenge:", bytes.length);
-  console.log("Hex:", formatMidiHexDump(bytes));
-  console.log("Signatur:", signature || "-");
-  console.log("Geaenderte Bytes gegen letzte gleiche Signatur:", changedText);
-  console.log("Quelle:", source);
-  if (positionFeedback) {
-    console.log("Kemper Position Feedback:", `CC${positionFeedback.controller}`, positionFeedback);
-  }
-  console.groupEnd();
-
-  if (positionFeedback) {
-    logKemperPositionFeedback(positionFeedback, bytes, source, timestamp);
-  }
-}
-
-function startPassiveMidiDebug(input) {
-  if (!input || passiveMidiDebugInput === input) return;
-
-  if (passiveMidiDebugInput) {
-    passiveMidiDebugInput.removeEventListener("midimessage", logPassiveMidiDebugMessage);
-  }
-
-  passiveMidiDebugInput = input;
-  passiveMidiDebugLastMessages.clear();
-  passiveMidiDebugMessageCount = 0;
-  if (midiMonitorEnabled) {
-    input.addEventListener("midimessage", logPassiveMidiDebugMessage);
-    console.info(
-      `[Kemper MIDI Monitor] Aktiv auf: ${input.name || input.id || "unbekannter Eingang"}`
-    );
-  }
-}
-
-function setMidiMonitorEnabled(enabled) {
-  midiMonitorEnabled = Boolean(enabled);
-
-  if (midiMonitorButton) {
-    midiMonitorButton.dataset.active = midiMonitorEnabled ? "true" : "false";
-    midiMonitorButton.textContent = midiMonitorEnabled ? "Monitor On" : "MIDI Monitor";
-  }
-
-  if (!passiveMidiDebugInput) {
-    console.info("[Kemper MIDI Monitor] Noch kein MIDI-Eingang geoeffnet. Monitor wird beim naechsten Verbindungsaufbau aktiviert.");
-    return;
-  }
-
-  passiveMidiDebugInput.removeEventListener("midimessage", logPassiveMidiDebugMessage);
-
-  if (midiMonitorEnabled) {
-    passiveMidiDebugLastMessages.clear();
-    passiveMidiDebugMessageCount = 0;
-    passiveMidiDebugInput.addEventListener("midimessage", logPassiveMidiDebugMessage);
-    console.info(
-      `[Kemper MIDI Monitor] Aktiv auf: ${passiveMidiDebugInput.name || passiveMidiDebugInput.id || "unbekannter Eingang"}`
-    );
-  } else {
-    console.info("[Kemper MIDI Monitor] Deaktiviert.");
-  }
-}
-
 function refreshPortSelects() {
   fillSelect(inputPort, [...midiAccess.inputs.values()], "No MIDI input found");
   fillSelect(outputPort, [...midiAccess.outputs.values()], "No MIDI output found");
@@ -2080,12 +1875,6 @@ function ensureConnectionWatcher() {
       !reconnectInProgress &&
       !isRefreshingLiveData
     ) {
-      console.log("[MIDI DEBUG] connection watcher firing", {
-        connectionState,
-        hasSelectablePorts: hasSelectablePorts(),
-        reconnectInProgress,
-        isRefreshingLiveData
-      });
       attemptConnection();
     }
   }, RECONNECT_INTERVAL_MS);
@@ -2106,20 +1895,6 @@ async function loadPorts() {
     }
 
     midiAccess = await navigator.requestMIDIAccess({ sysex: true });
-    console.log("[MIDI DEBUG] ports found", {
-      inputs: [...midiAccess.inputs.values()].map((port) => ({
-        id: port.id,
-        name: port.name,
-        state: port.state,
-        connection: port.connection
-      })),
-      outputs: [...midiAccess.outputs.values()].map((port) => ({
-        id: port.id,
-        name: port.name,
-        state: port.state,
-        connection: port.connection
-      }))
-    });
     refreshPortSelects();
     midiAccess.onstatechange = () => {
       refreshPortSelects();
@@ -2128,10 +1903,6 @@ async function loadPorts() {
     ensureConnectionWatcher();
     await attemptConnection();
   } catch (error) {
-    console.log("[MIDI DEBUG] refreshLiveData failed", {
-      source: "loadPorts",
-      error: String(error?.message || error)
-    });
     setStatus(String(error), "error");
     setConnectionState(CONNECTION_STATE.NO_MIDI);
   }
@@ -2192,12 +1963,7 @@ function parseCurrentRigName(data) {
 
   if (!isKnownKemperShape) return "";
 
-  const name = parseAsciiString(frame, 10);
-  console.log("[MIDI DEBUG] rig name response received", {
-    name: name || "(empty)",
-    hex: midiDebugHex(frame)
-  });
-  return name;
+  return parseAsciiString(frame, 10);
 }
 
 function parseNumericResponse(data, address) {
@@ -2238,31 +2004,6 @@ function parseRenderedStringResponse(data, address, value) {
   return parseAsciiString(frame, 12);
 }
 
-/**
- * Like parseRenderedStringResponse, but returns null for non-matching frames
- * so empty names ("") can be distinguished from "not this message".
- * @returns {{ name: string } | null}
- */
-function parseRenderedStringResponseMatch(data, address, value) {
-  const frame = getKemperFrame(data);
-  if (!frame) return null;
-
-  const valueMsb = (value >> 7) & 0x7f;
-  const valueLsb = value & 0x7f;
-  const isKnownKemperShape =
-    frame[4] === 0x00 &&
-    frame[5] === 0x00 &&
-    frame[6] === 0x3c &&
-    frame[7] === 0x00 &&
-    frame[8] === address[0] &&
-    frame[9] === address[1] &&
-    frame[10] === valueMsb &&
-    frame[11] === valueLsb;
-
-  if (!isKnownKemperShape) return null;
-  return { name: parseAsciiString(frame, 12) };
-}
-
 function makeStringRequest(address) {
   return [...KEMPER_REQUEST_PREFIX, 0x43, 0x00, address[0], address[1], 0xf7];
 }
@@ -2284,123 +2025,20 @@ function makeRenderedStringRequest(address, value) {
   ];
 }
 
-function midiDebugHex(data) {
-  return Array.from(data || [])
-    .map((byte) => (byte & 0xff).toString(16).toUpperCase().padStart(2, "0"))
-    .join(" ");
-}
-
-let midiDebugRxInput = null;
-let midiDebugRxCount = 0;
-const MIDI_DEBUG_RX_LIMIT = 80;
-/** @type {MIDIInput | null} */
-let midiRawDirectInput = null;
-
-function logMidiDebugRx(event) {
-  if (midiDebugRxCount >= MIDI_DEBUG_RX_LIMIT) {
-    if (midiDebugRxCount === MIDI_DEBUG_RX_LIMIT) {
-      midiDebugRxCount += 1;
-      console.log("[MIDI DEBUG] RX raw SysEx further logs suppressed");
-    }
-    return;
-  }
-  midiDebugRxCount += 1;
-  const bytes = Array.from(event.data || []);
-  const functionByte =
-    bytes[0] === 0xf0 && bytes.length > 6
-      ? `0x${(bytes[6] & 0xff).toString(16).toUpperCase().padStart(2, "0")}`
-      : null;
-  console.log("[MIDI DEBUG] RX raw SysEx", {
-    n: midiDebugRxCount,
-    length: bytes.length,
-    function: functionByte,
-    hex: midiDebugHex(bytes)
-  });
-}
-
-function attachMidiDebugRx(input) {
-  if (!input || midiDebugRxInput === input) return;
-  if (midiDebugRxInput) {
-    midiDebugRxInput.removeEventListener("midimessage", logMidiDebugRx);
-  }
-  midiDebugRxInput = input;
-  midiDebugRxCount = 0;
-  input.addEventListener("midimessage", logMidiDebugRx);
-}
-
 async function getMidiPorts() {
   if (!midiAccess) {
     midiAccess = await navigator.requestMIDIAccess({ sysex: true });
-    console.log("[MIDI DEBUG] ports found", {
-      inputs: [...midiAccess.inputs.values()].map((port) => ({
-        id: port.id,
-        name: port.name,
-        state: port.state,
-        connection: port.connection
-      })),
-      outputs: [...midiAccess.outputs.values()].map((port) => ({
-        id: port.id,
-        name: port.name,
-        state: port.state,
-        connection: port.connection
-      }))
-    });
   }
 
   const input = midiAccess.inputs.get(inputPort.value);
   const output = midiAccess.outputs.get(outputPort.value);
 
-  console.log("[MIDI DEBUG] input selected", {
-    selectValue: inputPort.value,
-    id: input?.id ?? null,
-    name: input?.name ?? null,
-    state: input?.state ?? null,
-    connection: input?.connection ?? null
-  });
-  console.log("[MIDI DEBUG] output selected", {
-    selectValue: outputPort.value,
-    id: output?.id ?? null,
-    name: output?.name ?? null,
-    state: output?.state ?? null,
-    connection: output?.connection ?? null
-  });
-
   if (!input) throw new Error("Please select a MIDI input.");
   if (!output) throw new Error("Please select a MIDI output.");
 
   await input.open();
-  if (midiRawDirectInput !== input) {
-    midiRawDirectInput = input;
-    input.addEventListener("midimessage", (event) => {
-      console.log("[MIDI RAW DIRECT]", Array.from(event.data));
-    });
-  }
-  console.log("[MIDI DEBUG] input opened", {
-    id: input.id,
-    name: input.name,
-    state: input.state,
-    connection: input.connection
-  });
   await output.open();
-  console.log("[MIDI DEBUG] output ready", {
-    id: output.id,
-    name: output.name,
-    state: output.state,
-    connection: output.connection
-  });
-  attachMidiDebugRx(input);
-  startPassiveMidiDebug(input);
-  const alreadyStarted =
-    bidirectionalDiscovery.active &&
-    bidirectionalDiscovery.input === input &&
-    bidirectionalDiscovery.output === output;
   bidirectionalDiscovery.start(input, output);
-  console.log("[MIDI DEBUG] discovery start", {
-    skippedAlreadyActive: alreadyStarted,
-    active: bidirectionalDiscovery.active,
-    input: bidirectionalDiscovery.input?.name ?? null,
-    output: bidirectionalDiscovery.output?.name ?? null
-  });
 
   return { input, output };
 }
@@ -2426,9 +2064,6 @@ async function requestSysex({ request, parse, timeoutMs = 1200 }) {
     input.addEventListener("midimessage", onMessage);
     try {
       output.send(request);
-      if (request === CURRENT_RIG_NAME_REQUEST) {
-        console.log("[MIDI DEBUG] requestCurrentRigName sent", midiDebugHex(request));
-      }
     } catch (error) {
       window.clearTimeout(timeout);
       input.removeEventListener("midimessage", onMessage);
@@ -2444,10 +2079,7 @@ async function requestCurrentRigName() {
     timeoutMs: 5000
   });
 
-  if (!value) {
-    console.log("[MIDI DEBUG] requestCurrentRigName got no value");
-    throw new Error("Keine Kemper SysEx-Antwort empfangen.");
-  }
+  if (!value) throw new Error("Keine Kemper SysEx-Antwort empfangen.");
   return value;
 }
 
@@ -2477,23 +2109,6 @@ async function requestRenderedString(address, value) {
       timeoutMs: 600
     })) || ""
   );
-}
-
-/**
- * Discovery helper: wait for rendered-string response.
- * @returns {Promise<string | null>} name, "" if empty, null if timed out
- */
-async function requestRenderedStringForDiscovery(address, value, timeoutMs = 1000) {
-  if (value === null || value === undefined) return null;
-
-  const matched = await requestSysex({
-    request: makeRenderedStringRequest(address, value),
-    parse: (data) => parseRenderedStringResponseMatch(data, address, value),
-    timeoutMs
-  });
-
-  if (!matched || typeof matched !== "object") return null;
-  return typeof matched.name === "string" ? matched.name : "";
 }
 
 function formatGain(value) {
@@ -2566,52 +2181,6 @@ function setEffectItemBusy(effectKey, busy) {
   item.setAttribute("aria-busy", busy ? "true" : "false");
 }
 
-function isEffectSyncDebugEnabled() {
-  try {
-    return localStorage.getItem("kompanion.effect-sync-debug") === "1";
-  } catch {
-    return false;
-  }
-}
-
-function logEffectSyncVerbose(stage, effectKey, details = {}) {
-  if (!isEffectSyncDebugEnabled()) return;
-  const module = getEffectModuleByKey(effectKey);
-  console.log(`[Effect Sync] ${stage}`, {
-    effectKey,
-    slot: module?.label ?? effectKey,
-    ...details
-  });
-}
-
-function logEffectSyncFailure(effectKey, reason, chain = {}) {
-  const module = getEffectModuleByKey(effectKey);
-  console.warn("[Effect Sync] Failure — full chain", {
-    stage: reason,
-    effectKey,
-    slot: module?.label ?? effectKey,
-    parameterId: module ? formatEffectParamIdHex(kemperParamId(module.page, module.onOff)) : null,
-    pushSyncHealthy: canUseBidirectionalPushSync(),
-    echoEnabled: bidirectionalDiscovery?.echoEnabled ?? null,
-    ...chain
-  });
-}
-
-function formatEffectParamIdHex(id) {
-  return `0x${(id & 0xffff).toString(16).padStart(4, "0")}`;
-}
-
-function logEffectOnOffRaw(source, module, raw) {
-  const parameterId = module
-    ? formatEffectParamIdHex(kemperParamId(module.page, module.onOff))
-    : null;
-  console.log(`[Effect Sync] ${module?.label ?? "?"} ${source} on/off`, {
-    parameterId,
-    raw,
-    on: isBooleanOn(raw)
-  });
-}
-
 function clearEffectWriteConfirmation(effectKey, resolveStatus = null) {
   const pending = pendingEffectWriteConfirmations.get(effectKey);
   if (!pending) return;
@@ -2636,24 +2205,6 @@ function registerEffectWriteConfirmation(effectKey, expectedActive, expectedRaw,
     const timer = window.setTimeout(() => {
       if (!pendingEffectWriteConfirmations.has(effectKey)) return;
       pendingEffectWriteConfirmations.delete(effectKey);
-      logEffectSyncFailure(effectKey, "timeout — no Kemper push after write", {
-        expectedActive,
-        expectedRaw,
-        parameterIdHex,
-        raw: null,
-        sentAt,
-        waitedMs: EFFECT_PUSH_CONFIRM_MS,
-        chain: "Write sent → (no RX) → Decode → Mapping → Slot → UI"
-      });
-      if (effectKey === "delay" || effectKey === "reverb") {
-        console.warn("[Effect Sync] Delay/Reverb did not update after write", {
-          effectKey,
-          parameterId: parameterIdHex,
-          raw: null,
-          expectedActive,
-          expectedRaw
-        });
-      }
       resolve({ status: "timeout" });
     }, EFFECT_PUSH_CONFIRM_MS);
 
@@ -2666,11 +2217,6 @@ function registerEffectWriteConfirmation(effectKey, expectedActive, expectedRaw,
       timer
     });
 
-    logEffectSyncVerbose("Write registered — awaiting Kemper push", effectKey, {
-      expectedActive,
-      expectedRaw,
-      parameterIdHex
-    });
   });
 }
 
@@ -2691,35 +2237,100 @@ function settleEffectWriteConfirmation(module, activeValue, kemperRaw) {
   const confirmed = kemperActive === pending.expectedActive;
 
   if (confirmed) {
-    logEffectSyncVerbose("Kemper confirmed write", module.key, {
-      kemperRaw: raw,
-      kemperActive,
-      latencyMs: Date.now() - pending.sentAt
-    });
     pending.resolve({ status: "confirmed", kemperActive, kemperRaw: raw });
     return true;
   }
 
-  logEffectSyncFailure(module.key, "mismatch — Kemper value differs from write", {
-    expectedActive: pending.expectedActive,
-    expectedRaw: pending.expectedRaw,
-    kemperActive,
-    kemperRaw: raw,
-    parameterIdHex: pending.parameterIdHex,
-    latencyMs: Date.now() - pending.sentAt,
-    chain: "Write sent → RX → Decode → Mapping (mismatch) → Kemper wins → UI"
-  });
-  if (module.key === "delay" || module.key === "reverb") {
-    console.warn("[Effect Sync] Delay/Reverb write mismatch", {
-      slot: module.label,
-      parameterId: pending.parameterIdHex,
-      raw,
-      on: kemperActive,
-      expectedActive: pending.expectedActive
-    });
-  }
   pending.resolve({ status: "mismatch", kemperActive, kemperRaw: raw });
   return true;
+}
+
+/**
+ * Delay/Reverb writes echo on 0x7C00 (raw 0 = OFF, raw 1 = ON), not on 0x3C03/0x3D03.
+ * Only settles pending toggles — never maps 0x7C00 to effect UI globally.
+ *
+ * @param {{ rawValue: number | null }} state
+ * @param {{ changed?: boolean, initial?: boolean }} result
+ * @returns {boolean}
+ */
+function tryConfirmDelayReverbFromSyncStatus(state, result) {
+  if (state.rawValue == null) return false;
+
+  const kemperActive = isBooleanOn(state.rawValue);
+  const activeValue = kemperActive ? 1 : 0;
+  let confirmed = false;
+
+  for (const slotKey of ["delay", "reverb"]) {
+    const pending = pendingEffectWriteConfirmations.get(slotKey);
+    if (!pending) continue;
+
+    const module = getEffectModuleByKey(slotKey);
+    if (!module) continue;
+
+    if (kemperActive !== pending.expectedActive) continue;
+
+    lastEffectOnOffPushAt.set(slotKey, Date.now());
+
+    settleEffectWriteConfirmation(module, activeValue, state.rawValue);
+    upsertEffectFromPush(module, {
+      active: kemperActive,
+      activeValue
+    });
+    confirmed = true;
+  }
+
+  return confirmed;
+}
+
+/**
+ * Read Delay/Reverb through their existing module-specific read paths after
+ * 0x7C00 reports a relevant status change.
+ */
+async function refreshDelayReverbStatusFromDevice() {
+  delayReverbStatusRefreshTimer = null;
+
+  if (delayReverbStatusRefreshInFlight) {
+    delayReverbStatusRefreshQueued = true;
+    return;
+  }
+
+  delayReverbStatusRefreshInFlight = true;
+
+  try {
+    const modules = ["delay", "reverb"]
+      .map((key) => getEffectModuleByKey(key))
+      .filter(Boolean);
+    const effects = await Promise.all(
+      modules.map((module) => requestEffectModule(module))
+    );
+
+    effects.forEach((effect, index) => {
+      const module = modules[index];
+      lastEffectOnOffPushAt.set(module.key, Date.now());
+      upsertEffectFromPush(module, effect, "refresh");
+    });
+  } catch (error) {
+    console.warn(
+      "[Live Companion] Delay/Reverb status refresh failed:",
+      error?.message || error
+    );
+  } finally {
+    delayReverbStatusRefreshInFlight = false;
+    if (delayReverbStatusRefreshQueued) {
+      delayReverbStatusRefreshQueued = false;
+      scheduleDelayReverbStatusRefresh();
+    }
+  }
+}
+
+function scheduleDelayReverbStatusRefresh() {
+  if (delayReverbStatusRefreshTimer) {
+    window.clearTimeout(delayReverbStatusRefreshTimer);
+  }
+
+  delayReverbStatusRefreshTimer = window.setTimeout(() => {
+    void refreshDelayReverbStatusFromDevice();
+  }, DELAY_REVERB_STATUS_REFRESH_DEBOUNCE_MS);
 }
 
 function canToggleEffects() {
@@ -2728,8 +2339,7 @@ function canToggleEffects() {
     !performanceLibraryScanInProgress &&
     !isLoadingPerformanceSlot &&
     !isRefreshingLiveData &&
-    !isTogglingEffect &&
-    !effectTypeDiscoveryRunning
+    !isTogglingEffect
   );
 }
 
@@ -2760,12 +2370,6 @@ async function toggleEffectModule(effectKey) {
   try {
     await getMidiPorts();
 
-    logEffectSyncVerbose("Write sending", effectKey, {
-      expectedActive,
-      expectedRaw,
-      parameterIdHex
-    });
-
     const result = await control.writeScaled(expectedActive);
 
     if (!result.ok) {
@@ -2777,12 +2381,6 @@ async function toggleEffectModule(effectKey) {
     if (pending) {
       pending.expectedRaw = result.rawValue;
     }
-
-    logEffectSyncVerbose("Write sent — waiting for Kemper push", effectKey, {
-      expectedActive,
-      expectedRaw: result.rawValue,
-      parameterIdHex
-    });
 
     const confirmation = await confirmationPromise;
 
@@ -2798,10 +2396,6 @@ async function toggleEffectModule(effectKey) {
     }
   } catch (error) {
     clearEffectWriteConfirmation(effectKey, "write-failed");
-    logEffectSyncFailure(effectKey, "write failed", {
-      message: error?.message || String(error),
-      chain: "Write → (failed) → UI unchanged"
-    });
     console.warn("[Live Companion] Effect toggle failed:", error.message || error);
   } finally {
     isTogglingEffect = false;
@@ -3176,7 +2770,6 @@ async function requestEffectModule(module) {
 
   const typeName = getEffectName(renderedTypeName, typeValue, module);
   const kemperActive = isBooleanOn(activeValue);
-  logEffectOnOffRaw("refresh", module, activeValue);
 
   return {
     ...module,
@@ -3379,7 +2972,6 @@ function updateEffectItem(item, effect) {
 function renderEffects(effects) {
   effects.forEach((effect) => {
     lastKnownEffectsByKey[effect.key] = effect;
-    logEffectSyncVerbose("UI update", effect.key, { source: "refresh", active: effect.active });
 
     if (effect.key === "stompA") {
       ensureEffectChainHeading("pre", "PRE AMP");
@@ -3431,7 +3023,6 @@ function ensureGainScaleTicks() {
 
 function applyGainDisplay(rawValue, formattedValue = "") {
   if (!gainScale || !gainScaleFill || !gainScaleMarker || !gainScaleValue) {
-    console.log("[Gain Debug] Slider Updated skipped — DOM nodes missing");
     return;
   }
 
@@ -3450,13 +3041,6 @@ function applyGainDisplay(rawValue, formattedValue = "") {
     gainScaleMarker.style.left = "0%";
     gainScale.setAttribute("aria-valuenow", "0");
     gainScale.setAttribute("aria-valuetext", "unavailable");
-    console.log("[Gain Debug] Slider Updated", {
-      raw: rawValue,
-      decoded: null,
-      display: "—",
-      percent: 0,
-      source: gainScale.dataset.source || "unknown"
-    });
     return;
   }
 
@@ -3478,23 +3062,13 @@ function applyGainDisplay(rawValue, formattedValue = "") {
   gainScaleMarker.style.left = `${percent}%`;
   gainScale.setAttribute("aria-valuenow", display);
   gainScale.setAttribute("aria-valuetext", `${display} of ${GAIN_SCALE_MAX}`);
-
-  // TEMP debug — slider DOM write
-  console.log("[Gain Debug] Slider Updated", {
-    raw,
-    decoded: display,
-    percent: Number(percent.toFixed(2)),
-    source: gainScale.dataset.source || "unknown",
-    dragging: gainScale.dataset.dragging || "false"
-  });
 }
 
 function canControlGain() {
   return (
     isConnectionOperational() &&
     !performanceLibraryScanInProgress &&
-    !isLoadingPerformanceSlot &&
-    !effectTypeDiscoveryRunning
+    !isLoadingPerformanceSlot
   );
 }
 
@@ -3681,7 +3255,6 @@ function upsertEffectFromPush(module, patch, source = "push") {
       : getEffectName("", typeValue, module) || previous.typeName;
 
   if (
-    !effectTypeDiscoveryRunning &&
     patch.typeValue !== undefined &&
     typeValue &&
     typeName
@@ -3700,22 +3273,8 @@ function upsertEffectFromPush(module, patch, source = "push") {
     image: getModuleEffectImage(typeName, module)
   };
 
-  const stateChanged =
-    previous.active !== next.active ||
-    previous.activeValue !== next.activeValue ||
-    previous.typeValue !== next.typeValue ||
-    previous.typeName !== next.typeName;
-
   lastKnownEffectsByKey[module.key] = next;
-
-  logEffectSyncVerbose("UI update", module.key, {
-    source,
-    active: next.active,
-    activeValue: next.activeValue,
-    typeValue: next.typeValue,
-    typeName: next.typeName,
-    stateChanged
-  });
+  void source;
 
   if (!effectsList) return;
 
@@ -3790,7 +3349,6 @@ function scheduleRigChangeRefreshFromPush(ascii) {
     ) {
       return;
     }
-    console.log("RIG CHANGE DETECTED (push)", performance.now());
     void refreshLiveData();
   }, RIG_CHANGE_REFRESH_DEBOUNCE_MS);
 }
@@ -3804,15 +3362,6 @@ function handleBidirectionalLivePush(event) {
   const result = event?.result;
   const state = result?.state;
   if (!state || performanceLibraryScanInProgress || isLoadingPerformanceSlot) {
-    // TEMP debug — Gain UI dispatch blocked before id check
-    if (event?.decoded?.parameterId === LIVE_PUSH_PARAM.gain || state?.id === LIVE_PUSH_PARAM.gain) {
-      console.log("[Gain Debug] UI Gain Update (blocked early)", {
-        hasState: Boolean(state),
-        performanceLibraryScanInProgress,
-        isLoadingPerformanceSlot,
-        raw: state?.rawValue ?? event?.decoded?.value ?? null
-      });
-    }
     return;
   }
 
@@ -3828,24 +3377,10 @@ function handleBidirectionalLivePush(event) {
 
   if (id === LIVE_PUSH_PARAM.gain) {
     lastGainPushAt = Date.now();
-    // TEMP debug — UI received a Gain update from bidirectional dispatch
-    console.log("[Gain Debug] UI Gain Update", {
-      raw: state.rawValue,
-      decoded: state.scaledDisplay ?? state.scaledValue ?? null,
-      changed: result?.changed,
-      initial: result?.initial,
-      gainInteractionActive,
-      willSync: !gainInteractionActive && state.rawValue != null
-    });
     // Local drag temporarily owns the knob; otherwise Kemper is source of truth.
-    if (gainInteractionActive) {
-      console.log("[Gain Debug] UI Gain Update skipped — local interaction active");
-      return;
-    }
+    if (gainInteractionActive) return;
     if (state.rawValue != null) {
       syncGainFromDevice(state.rawValue);
-    } else {
-      console.log("[Gain Debug] UI Gain Update skipped — rawValue is null");
     }
     return;
   }
@@ -3863,34 +3398,17 @@ function handleBidirectionalLivePush(event) {
     return;
   }
 
+  if (id === DELAY_REVERB_SYNC_STATUS_PARAM_ID) {
+    tryConfirmDelayReverbFromSyncStatus(state, result);
+    scheduleDelayReverbStatusRefresh();
+    return;
+  }
+
   const onOffModule = EFFECT_ON_OFF_BY_PARAM_ID.get(id);
   if (onOffModule) {
     lastEffectOnOffPushAt.set(onOffModule.key, Date.now());
     const kemperActive = isBooleanOn(state.rawValue);
     const activeValue = kemperActive ? 1 : 0;
-
-    logEffectOnOffRaw("push", onOffModule, state.rawValue);
-    logEffectSyncVerbose("Push → Slot mapping (on/off)", onOffModule.key, {
-      parameterId: formatEffectParamIdHex(id),
-      raw: state.rawValue,
-      scaled: state.scaledValue,
-      activeValue,
-      on: kemperActive,
-      changed: result?.changed,
-      initial: result?.initial
-    });
-
-    if (
-      (onOffModule.key === "delay" || onOffModule.key === "reverb") &&
-      state.rawValue == null
-    ) {
-      console.warn("[Effect Sync] Delay/Reverb push without raw value", {
-        slot: onOffModule.label,
-        parameterId: formatEffectParamIdHex(id),
-        raw: state.rawValue,
-        scaled: state.scaledValue
-      });
-    }
 
     settleEffectWriteConfirmation(onOffModule, activeValue, state.rawValue);
     upsertEffectFromPush(onOffModule, {
@@ -3904,14 +3422,6 @@ function handleBidirectionalLivePush(event) {
   if (typeModule && state.rawValue != null) {
     const typeValue = state.rawValue;
     const typeName = getEffectName("", typeValue, typeModule);
-
-    logEffectSyncVerbose("Push → Slot mapping (type)", typeModule.key, {
-      parameterId: formatEffectParamIdHex(id),
-      typeValue,
-      typeName: typeName || null,
-      changed: result?.changed,
-      initial: result?.initial
-    });
 
     upsertEffectFromPush(typeModule, { typeValue, typeName });
     if (!typeName && typeValue) {
@@ -3942,10 +3452,6 @@ function renderGain(value, rawValue) {
  */
 function syncGainFromDevice(rawValue) {
   if (!gainScale || rawValue == null || !Number.isFinite(Number(rawValue))) {
-    console.log("[Gain Debug] Slider Updated skipped — invalid sync input", {
-      hasGainScale: Boolean(gainScale),
-      rawValue
-    });
     return;
   }
 
@@ -3955,13 +3461,7 @@ function syncGainFromDevice(rawValue) {
 
   const raw = Math.max(0, Math.min(16383, Math.round(Number(rawValue))));
   // Skip redundant paints only when already showing the same raw value.
-  if (gainLocalRawValue === raw && gainScale.dataset.hasValue === "true") {
-    console.log("[Gain Debug] Slider Updated skipped — same raw already shown", {
-      raw,
-      decoded: formatGain(raw)
-    });
-    return;
-  }
+  if (gainLocalRawValue === raw && gainScale.dataset.hasValue === "true") return;
 
   renderGain(formatGain(raw), raw);
 }
@@ -3995,15 +3495,12 @@ function startRigMonitor() {
 
     try {
       // Legacy / fallback poll when bidirectional push is not healthy.
-      console.time("requestCurrentRigName");
       const nextRigName = await requestCurrentRigName();
-      console.timeEnd("requestCurrentRigName");
 
       consecutiveMonitorFailures = 0;
       setConnectionState(CONNECTION_STATE.CONNECTED);
 
       if (nextRigName && currentRigName && nextRigName !== currentRigName) {
-        console.log("RIG CHANGE DETECTED", performance.now());
         await refreshLiveData();
       } else {
         const effects = await requestEffectsData();
@@ -4023,8 +3520,6 @@ function startRigMonitor() {
 }
 
 async function refreshLiveData() {
-	console.log("REFRESH START", performance.now());
-	console.time("refreshLiveData");
   if (isRefreshingLiveData) return;
 
   isRefreshingLiveData = true;
@@ -4035,7 +3530,6 @@ async function refreshLiveData() {
 
   try {
     const liveData = await requestLiveKemperData();
-	console.log(liveData);
     currentRigName = liveData.rigName || currentRigName;
     rigName.textContent = liveData.rigName || "-";
     ampManufacturer.textContent = liveData.manufacturer || "-";
@@ -4113,14 +3607,10 @@ async function refreshLiveData() {
     renderGain(liveData.gain, liveData.gainRaw);
     renderCurrentTempo(liveData.tempoBpmRaw);
     renderEffects(liveData.effects);
-	console.timeEnd("refreshLiveData");
     consecutiveMonitorFailures = 0;
     setConnectionState(CONNECTION_STATE.CONNECTED);
     startRigMonitor();
   } catch (error) {
-    console.log("[MIDI DEBUG] refreshLiveData failed", {
-      error: String(error?.message || error)
-    });
     setConnectionState(CONNECTION_STATE.NO_MIDI);
   } finally {
     isRefreshingLiveData = false;
@@ -4237,12 +3727,6 @@ if (effectsList) {
   });
 }
 
-if (midiMonitorButton) {
-  midiMonitorButton.addEventListener("click", () => {
-    setMidiMonitorEnabled(!midiMonitorEnabled);
-  });
-}
-
 if (tunerToggleButton) {
   tunerToggleButton.addEventListener("click", toggleTuner);
 }
@@ -4293,60 +3777,6 @@ if (noMidiReconnectButton) {
 
 const bidirectionalDiscovery = initializeBidirectionalDiscovery();
 bidirectionalDiscovery.subscribe(handleBidirectionalLivePush);
-// Research-only write harness inside MIDI Analyzer — isolated from production controls.
-initializeProtocolResearchLab({
-  discovery: bidirectionalDiscovery,
-  resolveLabel: async (parameterId, rawValue) => {
-    const module = EFFECT_TYPE_BY_PARAM_ID.get(parameterId & 0xffff);
-    if (!module) return "";
-    const known = getEffectTypeName(rawValue);
-    if (known) return known;
-    const name = await requestRenderedStringForDiscovery(
-      [module.page, module.type],
-      rawValue,
-      1000
-    );
-    return name || "";
-  }
-});
-initializeEffectTypesPanel({
-  ensureMidi: () => getMidiPorts(),
-  subscribeParameters: (listener) => bidirectionalDiscovery.subscribe(listener),
-  setParameterEchoEnabled: (enabled) => {
-    bidirectionalDiscovery.setParameterEchoEnabled(enabled);
-  },
-  readEffectTypeName: async (slotKey, typeId, timeoutMs = 1000) => {
-    const module = getEffectModuleByKey(slotKey);
-    if (!module) return null;
-    return requestRenderedStringForDiscovery(
-      [module.page, module.type],
-      typeId,
-      timeoutMs
-    );
-  },
-  readCurrentEffectType: async (slotKey) => {
-    const module = getEffectModuleByKey(slotKey);
-    if (!module) return null;
-    const value = await requestNumericParam([module.page, module.type]);
-    return value == null ? null : Number(value);
-  },
-  onDiscoveryRunningChange: (running) => {
-    effectTypeDiscoveryRunning = running;
-  }
-});
-
-initializePerformanceTrafficCapture({
-  discovery: bidirectionalDiscovery,
-  ensureMidi: () => getMidiPorts()
-});
-initializeExtendedParameterCapture({
-  discovery: bidirectionalDiscovery,
-  ensureMidi: () => getMidiPorts()
-});
-initializeRawMidiTrace({
-  discovery: bidirectionalDiscovery,
-  ensureMidi: () => getMidiPorts()
-});
 
 parameterService.setOutputProvider(async () => {
   const { output } = await getMidiPorts();

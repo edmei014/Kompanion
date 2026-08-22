@@ -32,7 +32,6 @@ const LEASE_REFRESH_MS = 500;
 const RENDER_THROTTLE_MS = 100;
 const LEARN_DURATION_MS = 5_000;
 const WATCH_STORAGE_KEY = "kemper-live-inspector-watch";
-let midiDebugBeaconLogged = 0;
 
 /**
  * @param {number[]} bytes
@@ -188,40 +187,6 @@ function formatClock(timestamp) {
   } catch {
     return "—";
   }
-}
-
-/**
- * @param {number} parameterId
- * @returns {boolean}
- */
-function isEffectSlotParameterId(parameterId) {
-  const page = (parameterId >> 8) & 0x7f;
-  const offset = parameterId & 0x7f;
-  return page >= 0x32 && page <= 0x3d && (offset === 0x00 || offset === 0x03);
-}
-
-/**
- * @param {import("./decoder/decodeSysEx.js").DecodedSysEx} decoded
- * @param {ReturnType<ParameterStateStore["applyDecoded"]>} result
- * @param {number} page
- * @param {number} offset
- */
-function logEffectRxDecode(decoded, result, page, offset) {
-  if (typeof localStorage === "undefined") return;
-  if (localStorage.getItem("kompanion.effect-sync-debug") !== "1") return;
-
-  console.log("[Effect Sync] RX → Decode", {
-    parameterId: decoded.parameterIdHex,
-    page: `0x${page.toString(16)}`,
-    offset: `0x${offset.toString(16)}`,
-    kind: offset === 0x03 ? "onOff" : "type",
-    raw: decoded.value,
-    functionCode: decoded.functionCode,
-    stateId: result?.state?.id ?? null,
-    scaled: result?.state?.scaledDisplay ?? result?.state?.scaledValue ?? null,
-    changed: result?.changed,
-    initial: result?.initial
-  });
 }
 
 export class BidirectionalDiscovery {
@@ -484,11 +449,6 @@ export class BidirectionalDiscovery {
     this.researchLab?.clearSelection?.();
 
     this.input.addEventListener("midimessage", this.boundOnMidiMessage);
-    console.log("[MIDI DEBUG] discovery start", {
-      listener: "midimessage registered",
-      input: input?.name ?? input?.id ?? null,
-      output: output?.name ?? output?.id ?? null
-    });
     this.sendBeacon({ reason: "start" });
     this.leaseTimer = window.setInterval(() => {
       this.sendBeacon({ reason: "lease-refresh" });
@@ -541,18 +501,6 @@ export class BidirectionalDiscovery {
       this.beaconSent = false;
     }
 
-    if (options.reason !== "lease-refresh" || midiDebugBeaconLogged < 3) {
-      if (options.reason === "lease-refresh") midiDebugBeaconLogged += 1;
-      console.log("[MIDI DEBUG] beacon sent", {
-        reason: options.reason || "unspecified",
-        ok: this.beaconSent,
-        init,
-        hex: bytes
-          .map((byte) => byte.toString(16).toUpperCase().padStart(2, "0"))
-          .join(" ")
-      });
-    }
-
     void options;
     this.queueRender();
   }
@@ -596,30 +544,6 @@ export class BidirectionalDiscovery {
 
     const decoded = decodeKemperSysEx(frame);
     const result = this.parameterState.applyDecoded(decoded);
-
-    // TEMP debug — Gain receive / decode path (0x0A04)
-    if (decoded?.parameterId === 0x0a04) {
-      const scaled =
-        result?.state?.scaledDisplay ??
-        result?.state?.scaledValue ??
-        null;
-      console.log("[Gain Debug] RX Gain", {
-        raw: decoded.value,
-        decoded: scaled,
-        functionCode: decoded.functionCode,
-        parameterIdHex: decoded.parameterIdHex,
-        applyChanged: result?.changed,
-        applyInitial: result?.initial,
-        hasState: Boolean(result?.state),
-        willNotifyListeners: Boolean(result?.state)
-      });
-    }
-
-    if (decoded?.parameterId != null && isEffectSlotParameterId(decoded.parameterId)) {
-      const page = (decoded.parameterId >> 8) & 0x7f;
-      const offset = decoded.parameterId & 0x7f;
-      logEffectRxDecode(decoded, result, page, offset);
-    }
 
     // Notify on any addressed parameter response (even without a full state
     // entry) so research tools like Parameter Census can observe responders.
