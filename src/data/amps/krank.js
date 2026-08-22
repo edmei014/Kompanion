@@ -50,7 +50,7 @@ export const krankAmps = [
     "revolution 1",
     "rev1"
   ],
-  image: null,
+  image: "rev-on.png",
   description:
     "The Revolution 1 combines tight low-end response with articulate high-gain tones, becoming one of Krank's defining production amplifiers.",
   history:
@@ -85,7 +85,7 @@ export const krankAmps = [
     "rev plus",
     "rev+"
   ],
-  image: null,
+  image: "rev-plus.png",
   description:
     "The Revolution Plus expands the original Revolution platform with additional tonal flexibility while retaining Krank's signature tight, aggressive sound.",
   history:
@@ -120,7 +120,7 @@ export const krankAmps = [
     "rev jr pro",
     "revolution jr"
   ],
-  image: null,
+  image: "rev-junior-pro.png",
   description:
     "The Rev Jr Pro delivers Krank's signature high-gain tone in a compact, lower-powered format suitable for recording and smaller stages.",
   history:
@@ -154,7 +154,7 @@ export const krankAmps = [
   aliases: [
     "chadwick"
   ],
-  image: null,
+  image: "chadwick.png",
   description:
     "The Chadwick focuses on classic British-inspired crunch and dynamic response, offering a noticeably different voice from Krank's metal-oriented amplifiers.",
   history:
@@ -189,7 +189,7 @@ export const krankAmps = [
     "krankenstein jr",
     "krank jr"
   ],
-  image: null,
+  image: "rev-jr.png",
   description:
     "The Krankenstein Jr condenses the flagship Krankenstein sound into a compact amplifier while preserving its aggressive gain structure and tight response.",
   history:
@@ -225,7 +225,7 @@ export const krankAmps = [
     "nineteen80",
     "nineteen80 jr"
   ],
-  image: null,
+  image: "nineteen80.png",
   description:
     "The Nineteen80 Jr captures classic 1980s British-inspired rock tones with moderate gain, dynamic response and vintage character.",
   history:
@@ -248,186 +248,6 @@ export const krankAmps = [
   tags: [
     "British Voicing",
     "Compact",
-    "American"
-  ]
-},
-{
-  id: "krank-gemini",
-  manufacturerId: "krank",
-  manufacturer: "Krank",
-  model: "Gemini",
-  aliases: [
-    "gemini"
-  ],
-  image: null,
-  description:
-    "The Gemini combines modern high-gain performance with enhanced versatility, offering a broader tonal range than earlier Krank amplifiers.",
-  history:
-    "One of Krank's final amplifier designs, the Gemini reflected the company's effort to expand beyond its original metal-focused identity before operations ceased.",
-  introduced: 2009,
-  discontinued: 2010,
-  country: "United States",
-  ampType: "Tube Head",
-  power: "50 W",
-  channels: 2,
-  tubes: {
-    preamp: ["4 × ECC83"],
-    power: ["2 × EL34"]
-  },
-  genres: [
-    "Hard Rock",
-    "Metal",
-    "Rock"
-  ],
-  notableUsers: [],
-  tags: [
-    "Modern",
-    "American",
-    "High Gain"
-  ]
-},
-{
-  id: "krank-steve-stevens",
-  manufacturerId: "krank",
-  manufacturer: "Krank",
-  model: "Steve Stevens Signature",
-  aliases: [
-    "steve stevens",
-    "stevens signature",
-    "ss signature"
-  ],
-  image: null,
-  description:
-    "Developed with Steve Stevens, this signature amplifier delivers articulate rock tones, dynamic response and a more vintage-inspired voice than Krank's traditional high-gain amplifiers.",
-  history:
-    "Created for Steve Stevens, the amplifier demonstrated Krank's ability to move beyond modern metal and into classic British-inspired rock sounds.",
-  introduced: 2008,
-  discontinued: 2010,
-  country: "United States",
-  ampType: "Tube Head",
-  power: "100 W",
-  channels: 2,
-  tubes: {
-    preamp: ["4 × ECC83"],
-    power: ["4 × EL34"]
-  },
-  genres: [
-    "Rock",
-    "Hard Rock",
-    "Classic Rock"
-  ],
-  notableUsers: [
-    "Steve Stevens"
-  ],
-  tags: [
-    "Signature",
-    "British Voicing",
-    "American"
-  ]
-},
-{
-  id: "krank-krankshaft",
-  manufacturerId: "krank",
-  manufacturer: "Krank",
-  model: "Krankshaft",
-  aliases: [
-    "krankshaft",
-    "krank shaft"
-  ],
-  image: null,
-  description:
-    "The Krankshaft was voiced for aggressive modern rhythm playing, delivering tight low end, saturated gain and excellent note definition.",
-  history:
-    "Released during Krank's later years, the Krankshaft continued the company's focus on high-gain amplifiers for modern metal players.",
-  introduced: 2009,
-  discontinued: 2010,
-  country: "United States",
-  ampType: "Tube Head",
-  power: "100 W",
-  channels: 2,
-  tubes: {
-    preamp: ["4 × ECC83"],
-    power: ["4 × 5881"]
-  },
-  genres: [
-    "Metal",
-    "Groove Metal",
-    "Hard Rock"
-  ],
-  notableUsers: [],
-  tags: [
-    "High Gain",
-    "American"
-  ]
-},
-{
-  id: "krank-krankshaft-plus",
-  manufacturerId: "krank",
-  manufacturer: "Krank",
-  model: "Krankshaft Plus",
-  aliases: [
-    "krankshaft plus",
-    "krankshaft+",
-    "shaft plus"
-  ],
-  image: null,
-  description:
-    "The Krankshaft Plus refined the original Krankshaft platform with expanded tonal shaping while retaining its tight and aggressive character.",
-  history:
-    "As one of Krank's final flagship models, the Krankshaft Plus represented the company's continued evolution of its modern high-gain designs.",
-  introduced: 2010,
-  discontinued: 2010,
-  country: "United States",
-  ampType: "Tube Head",
-  power: "100 W",
-  channels: 2,
-  tubes: {
-    preamp: ["4 × ECC83"],
-    power: ["4 × 5881"]
-  },
-  genres: [
-    "Metal",
-    "Hard Rock"
-  ],
-  notableUsers: [],
-  tags: [
-    "High Gain",
-    "Modern",
-    "American"
-  ]
-},
-{
-  id: "krank-rev-one-pro",
-  manufacturerId: "krank",
-  manufacturer: "Krank",
-  model: "Rev One Pro",
-  aliases: [
-    "rev one pro",
-    "rev1 pro",
-    "revolution one pro"
-  ],
-  image: null,
-  description:
-    "The Rev One Pro expanded the original Revolution concept with improved switching and additional tonal flexibility while preserving Krank's signature punch.",
-  history:
-    "Released as an updated version of the Revolution platform, the Rev One Pro became one of Krank's final production amplifiers.",
-  introduced: 2009,
-  discontinued: 2010,
-  country: "United States",
-  ampType: "Tube Head",
-  power: "100 W",
-  channels: 2,
-  tubes: {
-    preamp: ["4 × ECC83"],
-    power: ["4 × 5881"]
-  },
-  genres: [
-    "Metal",
-    "Hard Rock"
-  ],
-  notableUsers: [],
-  tags: [
-    "High Gain",
     "American"
   ]
 }

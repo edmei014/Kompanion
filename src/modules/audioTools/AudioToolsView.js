@@ -23,6 +23,8 @@ export class AudioToolsView {
   constructor(rootElement) {
     this.rootElement = rootElement;
     this.engine = new AudioEngine();
+    /** When true, analysis frames are ignored (module hidden; engine may stay live). */
+    this.visualsPaused = true;
     this.statusElement = rootElement?.querySelector("#audioToolsStatus");
     this.statusDot = rootElement?.querySelector("#audioToolsStatusDot");
     this.errorElement = rootElement?.querySelector("#audioToolsError");
@@ -73,15 +75,17 @@ export class AudioToolsView {
   }
 
   async show() {
+    this.visualsPaused = false;
     await this.engine.refreshDevices();
   }
 
   hide() {
-    this.engine.disconnect();
-    this.updateVisuals({ active: false });
+    // Keep connection/state; only stop painting while another module is active.
+    this.visualsPaused = true;
   }
 
   updateVisuals(analysis) {
+    if (this.visualsPaused) return;
     this.heroMeter.update(analysis);
     this.channelAnalysis.update(analysis);
     this.inputMeterPanel.update(analysis);

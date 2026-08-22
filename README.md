@@ -1,14 +1,14 @@
 
 
-# Live Companion v2.0
+# Kompanion v2.0
 
-![Live Companion Main Interface](public/images/image.png)
+![Kempanion main interface](public/images/image.png)
 
 A real-time monitoring and control companion for Kemper Profiler.
 
 ## Video Demonstrations
 
-### Live Companion v2.0 Overview
+### Kempanion v2.0 Overview
 
 [[Video Link]](https://youtu.be/eZKvXai_k7g)
 
@@ -18,19 +18,21 @@ A real-time monitoring and control companion for Kemper Profiler.
 
 ---
 
-## What is Live Companion?
+## What is Kompanion?
 
-Live Companion is a real-time monitoring and control application for the Kemper Profiler.
+**Kompanion** is a desktop application for the Kemper Profiler. Its main module, **Kempanion**, provides real-time rig monitoring and performance controls.
 
-It combines live rig visualization with practical performance controls, allowing guitarists to monitor and interact with their Profiler from a dedicated desktop application.
+Kompanion combines live rig visualization with practical performance controls, allowing guitarists to monitor and interact with their Profiler from a dedicated desktop application.
 
 The application communicates directly with the Kemper via MIDI SysEx and MIDI control messages and automatically updates all displayed information in real time.
+
+Additional modules include **Gear Library**, **Audio Tools**, and **MIDI Analyzer**.
 
 ---
 
 ## Features
 
-### Real-Time Monitoring
+### Real-Time Monitoring (Kempanion)
 
 * Live rig information
 * Live amp information
@@ -89,7 +91,7 @@ Rig Manager is optional and not required.
 
 Download the latest installer from the GitHub Releases page and install the application normally.
 
-After installation, launch **Kemper Live Companion** from the Windows Start Menu.
+After installation, launch **Kompanion** from the Windows Start Menu.
 
 ### Option 2: Build from Source
 
@@ -118,17 +120,19 @@ After a successful build, the executable can be found at:
 src-tauri\target\release\live_companion.exe
 ```
 
-The generated installer can be found at:
+The generated Windows installer (NSIS) can be found at:
 
 ```text
-src-tauri\target\release\bundle\msi
+src-tauri\target\release\bundle\nsis
 ```
+
+The installer shows a Kempanion information page first (unsigned open-source notice), then the normal Tauri/NSIS setup. That page does not change or bypass Windows SmartScreen. The custom page is defined in `src-tauri/windows/nsis/installer.nsi` and selected via `bundle.windows.nsis.template` in `src-tauri/tauri.conf.json`.
 
 ---
 
 ## How It Works
 
-Live Companion communicates directly with the Kemper Profiler through MIDI SysEx and MIDI control messages.
+Kompanion communicates directly with the Kemper Profiler through MIDI SysEx and MIDI control messages.
 
 The application automatically requests and updates information from the Profiler while also providing selected control functions.
 
@@ -228,13 +232,13 @@ Photopea is a useful free tool for background removal and image preparation.
 
 ## Disclaimer
 
-Live Companion is an independent third-party project.
+Kompanion is an independent third-party project.
 
 This application is not affiliated with, endorsed by, sponsored by, or approved by Kemper GmbH or the Kemper Profiler product team.
 
 "Kemper" and "Kemper Profiler" are trademarks of their respective owners and are referenced solely for compatibility and descriptive purposes.
 
-Live Companion is developed independently and is intended to provide additional monitoring and control functionality for users of the Kemper Profiler platform.
+Kompanion is developed independently and is intended to provide additional monitoring and control functionality for users of the Kemper Profiler platform.
 
 ---
 

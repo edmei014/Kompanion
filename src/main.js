@@ -1,16 +1,36 @@
 import "./styles.css";
+import "./styles/gearLibraryTheme.css";
 import "./styles/gearLibraryDesignPreviews.css";
+import "./styles/presentationMode.css";
 import { invoke } from "@tauri-apps/api/core";
 import { effectImageMap } from "./effectImageMap.js";
 import {
+  getAmpDetailView,
   getAmpImage,
-  resolveAmpRecordFromTextSources
+  getCabinetDetailView,
+  resolveAmpRecordFromTextSources,
+  resolveCabinetRecordFromTextSources
 } from "./library/index.js";
 import {
   initializeGearLibrary,
   registerViewChangeHandler
 } from "./gearLibrary.js";
 import { initializeAudioTools } from "./modules/audioTools/AudioToolsView.js";
+import { initializeBidirectionalDiscovery } from "./modules/bidirectional/BidirectionalDiscovery.js";
+import { initializeProtocolResearchLab } from "./modules/bidirectional/ProtocolResearchLab.js";
+import { initializeEffectTypesPanel } from "./modules/bidirectional/EffectTypesPanel.js";
+import { initializePerformanceTrafficCapture } from "./modules/bidirectional/PerformanceTrafficCapture.js";
+import { initializeExtendedParameterCapture } from "./modules/bidirectional/ExtendedParameterCapture.js";
+import { initializeRawMidiTrace } from "./modules/bidirectional/RawMidiTrace.js";
+import { isBooleanOn } from "./modules/bidirectional/decoder/parameterScales.js";
+import { parameterService } from "./modules/bidirectional/ParameterService.js";
+import { CONTROL_PARAMETERS } from "./modules/bidirectional/controlBindings.js";
+import {
+  getEffectTypeName,
+  observeEffectType,
+  seedEffectTypeNames
+} from "./modules/bidirectional/effectTypeRegistry.js";
+import { openAmpDetailsOverlay } from "./modules/ampDetails/AmpDetailsOverlay.js";
 import {
   cabinetImageMap,
   CAB_BRAND_ALIASES
@@ -46,6 +66,29 @@ const EFFECT_MODULES = [
   { key: "delay", label: "Delay", cc: 26, page: 0x3c, onOff: 0x03, type: 0x00, group: "delay" },
   { key: "reverb", label: "Reverb", cc: 28, page: 0x3d, onOff: 0x03, type: 0x00, group: "reverb" }
 ];
+
+/** @param {number} page @param {number} offset */
+function kemperParamId(page, offset) {
+  return ((page & 0x7f) << 8) | (offset & 0x7f);
+}
+
+const LIVE_PUSH_PARAM = Object.freeze({
+  rigName: kemperParamId(0x00, 0x01),
+  tempoBpm: kemperParamId(0x04, 0x00),
+  gain: kemperParamId(0x0a, 0x04)
+});
+
+const EFFECT_ON_OFF_BY_PARAM_ID = new Map(
+  EFFECT_MODULES.map((module) => [kemperParamId(module.page, module.onOff), module])
+);
+const EFFECT_TYPE_BY_PARAM_ID = new Map(
+  EFFECT_MODULES.map((module) => [kemperParamId(module.page, module.type), module])
+);
+
+/** Push sync is preferred once bidirectional lease + traffic are healthy. */
+const PUSH_TRAFFIC_MAX_AGE_MS = 5000;
+const PUSH_CONFIRM_WINDOW_MS = 800;
+const RIG_CHANGE_REFRESH_DEBOUNCE_MS = 180;
 const SLOT_SELECTORS = [
   { key: "slot1", label: "Slot 1", cc: 50, value: 1 },
   { key: "slot2", label: "Slot 2", cc: 51, value: 1 },
@@ -59,7 +102,21 @@ const LIBRARY_SCAN_PERFORMANCE_COUNT = 125;
 const SLOT_SETTLE_MS = 500;
 const PERFORMANCE_ADVANCE_MS = 500;
 const PERFORMANCE_SELECT_SETTLE_MS = 700;
-const EFFECT_TOGGLE_SETTLE_MS = 350;
+const EFFECT_PUSH_CONFIRM_MS = 1200;
+/** @type {Map<string, number>} Last Kemper on/off push timestamp per effect slot. */
+const lastEffectOnOffPushAt = new Map();
+/**
+ * Pending effect writes awaiting Kemper push confirmation.
+ * @type {Map<string, {
+ *   expectedActive: boolean,
+ *   expectedRaw: number,
+ *   sentAt: number,
+ *   parameterIdHex: string,
+ *   resolve: (result: { status: string, kemperActive?: boolean, kemperRaw?: number | null }) => void,
+ *   timer: ReturnType<typeof setTimeout>
+ * }>}
+ */
+const pendingEffectWriteConfirmations = new Map();
 const PERFORMANCE_LIBRARY_STORAGE_KEY = "kemper-performance-library";
 const PERFORMANCE_LIBRARY_META_KEY = "_meta";
 const CONTROL_CHANGES = {
@@ -69,7 +126,6 @@ const CONTROL_CHANGES = {
 };
 const TAP_TEMPO_BPM_MIN = 40;
 const TAP_TEMPO_BPM_MAX = 300;
-const TAP_TEMPO_TAP_COUNT = 4;
 const EFFECT_TYPE_NAMES = {
   1: "Wah Wah",
   2: "Wah Low Pass",
@@ -153,6 +209,10 @@ const EFFECT_TYPE_NAMES = {
   183: "Ionosphere Reverb",
   193: "Spring Reverb"
 };
+
+// Bootstrap the learning registry with known names; live traffic grows it further.
+seedEffectTypeNames(EFFECT_TYPE_NAMES);
+
 const EFFECT_IMAGE_ALIASES = {
   "Kemper Drive": "kemper_drive.png",
   "Kemper Fuzz": "fuzz_face.png",
@@ -238,14 +298,27 @@ const ampDetailsManufacturer = document.querySelector("#ampDetailsManufacturer")
 const ampDetailsModel = document.querySelector("#ampDetailsModel");
 const ampDetailsYear = document.querySelector("#ampDetailsYear");
 const ampDetailsYearRow = document.querySelector("#ampDetailsYearRow");
+const ampDetailsPower = document.querySelector("#ampDetailsPower");
+const ampDetailsPowerRow = document.querySelector("#ampDetailsPowerRow");
+const ampDetailsTubeConfiguration = document.querySelector(
+  "#ampDetailsTubeConfiguration"
+);
+const ampDetailsTubeRow = document.querySelector("#ampDetailsTubeRow");
 const rigAuthor = document.querySelector("#rigAuthor");
 const ampDetailsOriginalRigName = document.querySelector("#ampDetailsOriginalRigName");
 const ampDetailsOriginalAmpName = document.querySelector("#ampDetailsOriginalAmpName");
 const productionYear = document.querySelector("#productionYear");
-const cabinetManufacturer = document.querySelector("#cabinetManufacturer");
-const cabinetModel = document.querySelector("#cabinetModel");
-const cabinetConfiguration = document.querySelector("#cabinetConfiguration");
-const gainMeterFill = document.querySelector("#gainMeterFill");
+const cabinetSection = document.querySelector(".cabinet-section");
+const cabinetComboLabel = document.querySelector("#cabinetComboLabel");
+const cabinetRecognizedGroup = document.querySelector("[data-cabinet-recognized]");
+const cabinetRecognizedList = document.querySelector("[data-cabinet-recognized-list]");
+const cabinetReportedGroup = document.querySelector("[data-cabinet-reported]");
+const cabinetReportedList = document.querySelector("[data-cabinet-reported-list]");
+const gainScale = document.querySelector("#gainScale");
+const gainScaleValue = document.querySelector("#gainScaleValue");
+const gainScaleFill = document.querySelector("#gainScaleFill");
+const gainScaleMarker = document.querySelector("#gainScaleMarker");
+const gainScaleTicks = document.querySelector("#gainScaleTicks");
 const tunerToggleButton = document.querySelector("#tunerToggleButton");
 const morphActionButton = document.querySelector("#morphActionButton");
 const tempoBpmInput = document.querySelector("#tempoBpmInput");
@@ -271,7 +344,6 @@ const performanceProgress = document.querySelector("#performanceProgress");
 const performanceProgressFill = document.querySelector("#performanceProgressFill");
 const performanceSlotGrid = document.querySelector("#performanceSlotGrid");
 const performanceExplorerSection = document.querySelector("#performanceExplorerSection");
-const performanceExplorerToggle = document.querySelector("#performanceExplorerToggle");
 const performanceBrowserPanel = document.querySelector("#performanceBrowserPanel");
 const performanceExplorerContent = document.querySelector("#performanceExplorerContent");
 const performanceExplorerSearch = document.querySelector("#performanceExplorerSearch");
@@ -286,8 +358,6 @@ const liveStatus = document.querySelector("#liveStatus");
 const midiMonitorButton = document.querySelector("#midiMonitorButton");
 const ampImageContainer = document.querySelector("#ampImageContainer");
 const cabinetImageContainer = document.querySelector("#cabinetImageContainer");
-const ampZoomOverlay = document.querySelector("#ampZoomOverlay");
-const ampZoomImage = document.querySelector("#ampZoomImage");
 const bootLoadingOverlay = document.querySelector("#bootLoadingOverlay");
 const noMidiOverlay = document.querySelector("#noMidiOverlay");
 const noMidiReconnectButton = document.querySelector("#noMidiReconnectButton");
@@ -296,6 +366,8 @@ let midiAccess;
 let isRefreshingLiveData = false;
 let isCheckingRigName = false;
 let currentRigName = "";
+/** @type {string | null} Gear Library amp id for the currently loaded live amp */
+let currentLiveAmpId = null;
 let monitorTimer;
 let passiveMidiDebugInput = null;
 const passiveMidiDebugLastMessages = new Map();
@@ -336,6 +408,25 @@ const MONITOR_FAILURE_LIMIT = 2;
 const RECONNECT_INTERVAL_MS = 2000;
 let initialBootComplete = false;
 let bootPresentationComplete = false;
+
+/** @type {number} */
+let lastTempoPushAt = 0;
+/** @type {number} */
+let lastGainPushAt = 0;
+let effectTypeDiscoveryRunning = false;
+let gainInteractionActive = false;
+let gainDragPointerId = null;
+/** @type {number | null} */
+let gainLocalRawValue = null;
+/** @type {number | null} */
+let pendingGainWriteRaw = null;
+/** @type {number | null} */
+let gainWriteTimer = null;
+const GAIN_WRITE_INTERVAL_MS = 40;
+/** @type {ReturnType<typeof setTimeout> | null} */
+let rigChangeRefreshTimer = null;
+/** @type {Set<string>} */
+const effectTypeEnrichInFlight = new Set();
 
 function updateConnectionPresentation(state) {
   const isBootLoading = state === CONNECTION_STATE.BOOT_LOADING;
@@ -427,6 +518,15 @@ function setStatus(message, tone = "neutral") {
 
 function setConnectionState(state) {
   if (connectionState === state) return;
+
+  if (state === CONNECTION_STATE.NO_MIDI) {
+    console.log("[MIDI DEBUG] setting NO_MIDI", {
+      from: connectionState,
+      initialBootComplete,
+      reconnectInProgress,
+      isRefreshingLiveData
+    });
+  }
 
   connectionState = state;
 
@@ -543,13 +643,28 @@ function adjustTempoBpmInput(delta) {
   }
 }
 
-async function refreshTempoOnly() {
+function canUseBidirectionalPushSync() {
+  return (
+    bidirectionalDiscovery.isBidirectionalModeActive() &&
+    bidirectionalDiscovery.isReceivingTraffic(PUSH_TRAFFIC_MAX_AGE_MS)
+  );
+}
+
+function wasPushedRecently(timestamp, windowMs = PUSH_CONFIRM_WINDOW_MS) {
+  return Boolean(timestamp) && Date.now() - timestamp <= windowMs;
+}
+
+async function refreshTempoOnly({ force = false } = {}) {
   if (
     !isConnectionOperational() ||
     isSettingTempo ||
     performanceLibraryScanInProgress ||
     isLoadingPerformanceSlot
   ) {
+    return;
+  }
+
+  if (!force && canUseBidirectionalPushSync() && wasPushedRecently(lastTempoPushAt)) {
     return;
   }
 
@@ -575,13 +690,13 @@ async function sendManualTapTempo() {
     const { output } = await getMidiPorts();
     sendMidiSafe(output, makeTapTempoCommand(), "Manual Tap Tempo");
     await delay(350);
-    await refreshTempoOnly();
+    await refreshTempoOnly({ force: !wasPushedRecently(lastTempoPushAt) });
   } catch (error) {
     console.warn("[Live Companion] Manual tap tempo failed:", error.message || error);
   }
 }
 
-async function setTempoViaTapSequence(bpm) {
+async function setTempoBpm(bpm) {
   if (
     isSettingTempo ||
     !isConnectionOperational() ||
@@ -609,25 +724,24 @@ async function setTempoViaTapSequence(bpm) {
     tempoSetButton.textContent = "Sending…";
   }
 
-  const intervalMs = Math.round(60000 / validatedBpm);
-
   try {
-    const { output } = await getMidiPorts();
+    // Ensure MIDI ports / bidirectional lease are active before SysEx write.
+    await getMidiPorts();
+    const tempoControl = parameterService.get(CONTROL_PARAMETERS.tempo.key);
+    if (!tempoControl) {
+      throw new Error("Tempo parameter binding missing");
+    }
+    const result = await tempoControl.writeScaled(validatedBpm);
 
-    for (let tapIndex = 0; tapIndex < TAP_TEMPO_TAP_COUNT; tapIndex += 1) {
-      sendMidiSafe(
-        output,
-        makeTapTempoCommand(),
-        `Tap Tempo ${tapIndex + 1}/${TAP_TEMPO_TAP_COUNT} @ ${validatedBpm} BPM`
-      );
-
-      if (tapIndex < TAP_TEMPO_TAP_COUNT - 1) {
-        await delay(intervalMs);
-      }
+    if (!result.ok) {
+      throw new Error(result.error || "Tempo SysEx write failed");
     }
 
+    // Optimistic UI; Kemper push remains source of truth.
+    renderCurrentTempo(result.rawValue);
+
     await delay(350);
-    await refreshTempoOnly();
+    await refreshTempoOnly({ force: !wasPushedRecently(lastTempoPushAt) });
   } catch (error) {
     console.warn("[Live Companion] Tempo set failed:", error.message || error);
     setStatus("Tempo konnte nicht gesetzt werden.", "error");
@@ -644,7 +758,7 @@ async function setTempoViaTapSequence(bpm) {
 }
 
 async function handleTempoSetRequest() {
-  await setTempoViaTapSequence(tempoBpmInput?.value);
+  await setTempoBpm(tempoBpmInput?.value);
 }
 
 function setTunerMode(isActive) {
@@ -670,7 +784,8 @@ function updateTunerControls() {
 const MORPH_PRESS_MS = 80;
 const MORPH_FLASH_MS = 360;
 const MORPH_GAIN_READ_DELAY_MS = 500;
-const GAIN_METER_SEGMENT_COUNT = 12;
+const GAIN_SCALE_MAX = 10;
+const GAIN_SCALE_TICK_COUNT = 101;
 
 function updateMorphControls() {
   if (!morphActionButton) return;
@@ -771,10 +886,6 @@ function makePerformanceSelectCommand(performanceIndex) {
 
 function makeRigNextCommand() {
   return makeControlChange(48, 0);
-}
-
-function makeEffectToggleCommand(module, isActive) {
-  return makeControlChange(module.cc, isActive ? 0 : 1);
 }
 
 function makeOpenTunerCommand() {
@@ -988,13 +1099,8 @@ function appendExplorerHighlightedText(container, text, query) {
 function setPerformanceExplorerExpanded(expanded) {
   performanceExplorerExpanded = expanded;
 
-  if (performanceExplorerToggle) {
-    performanceExplorerToggle.setAttribute("aria-expanded", expanded ? "true" : "false");
-
-    const icon = performanceExplorerToggle.querySelector(".performance-explorer-toggle-icon");
-    if (icon) {
-      icon.textContent = expanded ? "▼" : "▶";
-    }
+  if (performanceExplorerSearch) {
+    performanceExplorerSearch.setAttribute("aria-expanded", expanded ? "true" : "false");
   }
 
   if (performanceExplorerContent) {
@@ -1004,6 +1110,14 @@ function setPerformanceExplorerExpanded(expanded) {
   if (expanded) {
     renderPerformanceExplorer();
   }
+}
+
+function isPerformanceExplorerEventTarget(target) {
+  if (!(target instanceof Node)) return false;
+  return Boolean(
+    performanceExplorerSection?.contains(target) ||
+    performanceExplorerContent?.contains(target)
+  );
 }
 
 function updatePerformanceSectionLayout() {
@@ -1019,6 +1133,10 @@ function updatePerformanceSectionLayout() {
 
     if (!showExplorerSection && performanceExplorerContent) {
       performanceExplorerContent.hidden = true;
+      performanceExplorerExpanded = false;
+      if (performanceExplorerSearch) {
+        performanceExplorerSearch.setAttribute("aria-expanded", "false");
+      }
       return;
     }
   }
@@ -1362,6 +1480,7 @@ function renderPerformanceBrowser() {
     selectedPerformanceIndex = null;
     if (performanceEmptyState) performanceEmptyState.hidden = false;
     if (performanceBrowserControls) performanceBrowserControls.hidden = true;
+    if (performanceBrowserLabel) performanceBrowserLabel.hidden = true;
     if (createLibraryButton) {
       createLibraryButton.hidden = false;
       createLibraryButton.disabled = performanceLibraryScanInProgress;
@@ -1381,6 +1500,7 @@ function renderPerformanceBrowser() {
     performanceBrowserControls.hidden = performanceLibraryScanInProgress;
   }
   if (performanceBrowserLabel) {
+    performanceBrowserLabel.hidden = performanceLibraryScanInProgress;
     performanceBrowserLabel.textContent = `Performance ${selected.performanceIndex}`;
   }
   updatePerformanceNavButtons();
@@ -1587,6 +1707,7 @@ function renderLibraryScanProgress({
 
   setPerformanceScanPanelVisible(true);
   if (performanceBrowserControls) performanceBrowserControls.hidden = true;
+  if (performanceBrowserLabel) performanceBrowserLabel.hidden = true;
   if (performanceSlotGrid) performanceSlotGrid.hidden = true;
 
   if (phase === "performance-saved") {
@@ -1656,20 +1777,21 @@ async function createPerformanceLibrary() {
   }
 }
 
-function openAmpZoom(image) {
-  if (!ampZoomOverlay || !ampZoomImage || !image?.src) return;
-
-  ampZoomImage.src = image.src;
-  ampZoomImage.alt = image.alt || "Amp";
-  ampZoomOverlay.dataset.open = "true";
-  ampZoomOverlay.setAttribute("aria-hidden", "false");
+function updateLiveAmpDetailAffordance() {
+  if (!ampImageContainer) return;
+  const hasDetail = Boolean(currentLiveAmpId);
+  ampImageContainer.dataset.hasAmpDetail = hasDetail ? "true" : "false";
+  ampImageContainer.setAttribute(
+    "aria-label",
+    hasDetail ? "Open amplifier details" : "Amplifier image"
+  );
+  ampImageContainer.tabIndex = hasDetail ? 0 : -1;
+  ampImageContainer.setAttribute("role", hasDetail ? "button" : "presentation");
 }
 
-function closeAmpZoom() {
-  if (!ampZoomOverlay) return;
-
-  ampZoomOverlay.dataset.open = "false";
-  ampZoomOverlay.setAttribute("aria-hidden", "true");
+function openLiveAmpDetailsOverlay() {
+  if (!currentLiveAmpId) return false;
+  return openAmpDetailsOverlay(currentLiveAmpId, { source: "live" });
 }
 
 function fillSelect(select, ports, emptyText) {
@@ -1899,8 +2021,8 @@ function setMidiMonitorEnabled(enabled) {
 }
 
 function refreshPortSelects() {
-  fillSelect(inputPort, [...midiAccess.inputs.values()], "Kein Eingang gefunden");
-  fillSelect(outputPort, [...midiAccess.outputs.values()], "Kein Ausgang gefunden");
+  fillSelect(inputPort, [...midiAccess.inputs.values()], "No MIDI input found");
+  fillSelect(outputPort, [...midiAccess.outputs.values()], "No MIDI output found");
   preferProfilerPort(inputPort);
   preferProfilerPort(outputPort);
 }
@@ -1914,7 +2036,10 @@ function stopRigMonitor() {
 
 function handleDisconnected() {
   stopRigMonitor();
+  bidirectionalDiscovery.stop();
   consecutiveMonitorFailures = 0;
+  currentLiveAmpId = null;
+  updateLiveAmpDetailAffordance();
   setConnectionState(CONNECTION_STATE.NO_MIDI);
 }
 
@@ -1955,6 +2080,12 @@ function ensureConnectionWatcher() {
       !reconnectInProgress &&
       !isRefreshingLiveData
     ) {
+      console.log("[MIDI DEBUG] connection watcher firing", {
+        connectionState,
+        hasSelectablePorts: hasSelectablePorts(),
+        reconnectInProgress,
+        isRefreshingLiveData
+      });
       attemptConnection();
     }
   }, RECONNECT_INTERVAL_MS);
@@ -1975,6 +2106,20 @@ async function loadPorts() {
     }
 
     midiAccess = await navigator.requestMIDIAccess({ sysex: true });
+    console.log("[MIDI DEBUG] ports found", {
+      inputs: [...midiAccess.inputs.values()].map((port) => ({
+        id: port.id,
+        name: port.name,
+        state: port.state,
+        connection: port.connection
+      })),
+      outputs: [...midiAccess.outputs.values()].map((port) => ({
+        id: port.id,
+        name: port.name,
+        state: port.state,
+        connection: port.connection
+      }))
+    });
     refreshPortSelects();
     midiAccess.onstatechange = () => {
       refreshPortSelects();
@@ -1983,6 +2128,10 @@ async function loadPorts() {
     ensureConnectionWatcher();
     await attemptConnection();
   } catch (error) {
+    console.log("[MIDI DEBUG] refreshLiveData failed", {
+      source: "loadPorts",
+      error: String(error?.message || error)
+    });
     setStatus(String(error), "error");
     setConnectionState(CONNECTION_STATE.NO_MIDI);
   }
@@ -2030,7 +2179,25 @@ function parseStringResponse(data, address) {
 }
 
 function parseCurrentRigName(data) {
-  return parseStringResponse(data, STRING_TAGS.rigName);
+  const frame = getKemperFrame(data);
+  if (!frame) return "";
+
+  const isKnownKemperShape =
+    frame[4] === 0x00 &&
+    frame[5] === 0x00 &&
+    frame[6] === 0x03 &&
+    frame[7] === 0x00 &&
+    frame[8] === STRING_TAGS.rigName[0] &&
+    frame[9] === STRING_TAGS.rigName[1];
+
+  if (!isKnownKemperShape) return "";
+
+  const name = parseAsciiString(frame, 10);
+  console.log("[MIDI DEBUG] rig name response received", {
+    name: name || "(empty)",
+    hex: midiDebugHex(frame)
+  });
+  return name;
 }
 
 function parseNumericResponse(data, address) {
@@ -2071,6 +2238,31 @@ function parseRenderedStringResponse(data, address, value) {
   return parseAsciiString(frame, 12);
 }
 
+/**
+ * Like parseRenderedStringResponse, but returns null for non-matching frames
+ * so empty names ("") can be distinguished from "not this message".
+ * @returns {{ name: string } | null}
+ */
+function parseRenderedStringResponseMatch(data, address, value) {
+  const frame = getKemperFrame(data);
+  if (!frame) return null;
+
+  const valueMsb = (value >> 7) & 0x7f;
+  const valueLsb = value & 0x7f;
+  const isKnownKemperShape =
+    frame[4] === 0x00 &&
+    frame[5] === 0x00 &&
+    frame[6] === 0x3c &&
+    frame[7] === 0x00 &&
+    frame[8] === address[0] &&
+    frame[9] === address[1] &&
+    frame[10] === valueMsb &&
+    frame[11] === valueLsb;
+
+  if (!isKnownKemperShape) return null;
+  return { name: parseAsciiString(frame, 12) };
+}
+
 function makeStringRequest(address) {
   return [...KEMPER_REQUEST_PREFIX, 0x43, 0x00, address[0], address[1], 0xf7];
 }
@@ -2092,20 +2284,123 @@ function makeRenderedStringRequest(address, value) {
   ];
 }
 
+function midiDebugHex(data) {
+  return Array.from(data || [])
+    .map((byte) => (byte & 0xff).toString(16).toUpperCase().padStart(2, "0"))
+    .join(" ");
+}
+
+let midiDebugRxInput = null;
+let midiDebugRxCount = 0;
+const MIDI_DEBUG_RX_LIMIT = 80;
+/** @type {MIDIInput | null} */
+let midiRawDirectInput = null;
+
+function logMidiDebugRx(event) {
+  if (midiDebugRxCount >= MIDI_DEBUG_RX_LIMIT) {
+    if (midiDebugRxCount === MIDI_DEBUG_RX_LIMIT) {
+      midiDebugRxCount += 1;
+      console.log("[MIDI DEBUG] RX raw SysEx further logs suppressed");
+    }
+    return;
+  }
+  midiDebugRxCount += 1;
+  const bytes = Array.from(event.data || []);
+  const functionByte =
+    bytes[0] === 0xf0 && bytes.length > 6
+      ? `0x${(bytes[6] & 0xff).toString(16).toUpperCase().padStart(2, "0")}`
+      : null;
+  console.log("[MIDI DEBUG] RX raw SysEx", {
+    n: midiDebugRxCount,
+    length: bytes.length,
+    function: functionByte,
+    hex: midiDebugHex(bytes)
+  });
+}
+
+function attachMidiDebugRx(input) {
+  if (!input || midiDebugRxInput === input) return;
+  if (midiDebugRxInput) {
+    midiDebugRxInput.removeEventListener("midimessage", logMidiDebugRx);
+  }
+  midiDebugRxInput = input;
+  midiDebugRxCount = 0;
+  input.addEventListener("midimessage", logMidiDebugRx);
+}
+
 async function getMidiPorts() {
   if (!midiAccess) {
     midiAccess = await navigator.requestMIDIAccess({ sysex: true });
+    console.log("[MIDI DEBUG] ports found", {
+      inputs: [...midiAccess.inputs.values()].map((port) => ({
+        id: port.id,
+        name: port.name,
+        state: port.state,
+        connection: port.connection
+      })),
+      outputs: [...midiAccess.outputs.values()].map((port) => ({
+        id: port.id,
+        name: port.name,
+        state: port.state,
+        connection: port.connection
+      }))
+    });
   }
 
   const input = midiAccess.inputs.get(inputPort.value);
   const output = midiAccess.outputs.get(outputPort.value);
 
-  if (!input) throw new Error("Bitte einen MIDI-Eingang auswaehlen.");
-  if (!output) throw new Error("Bitte einen MIDI-Ausgang auswaehlen.");
+  console.log("[MIDI DEBUG] input selected", {
+    selectValue: inputPort.value,
+    id: input?.id ?? null,
+    name: input?.name ?? null,
+    state: input?.state ?? null,
+    connection: input?.connection ?? null
+  });
+  console.log("[MIDI DEBUG] output selected", {
+    selectValue: outputPort.value,
+    id: output?.id ?? null,
+    name: output?.name ?? null,
+    state: output?.state ?? null,
+    connection: output?.connection ?? null
+  });
+
+  if (!input) throw new Error("Please select a MIDI input.");
+  if (!output) throw new Error("Please select a MIDI output.");
 
   await input.open();
+  if (midiRawDirectInput !== input) {
+    midiRawDirectInput = input;
+    input.addEventListener("midimessage", (event) => {
+      console.log("[MIDI RAW DIRECT]", Array.from(event.data));
+    });
+  }
+  console.log("[MIDI DEBUG] input opened", {
+    id: input.id,
+    name: input.name,
+    state: input.state,
+    connection: input.connection
+  });
   await output.open();
+  console.log("[MIDI DEBUG] output ready", {
+    id: output.id,
+    name: output.name,
+    state: output.state,
+    connection: output.connection
+  });
+  attachMidiDebugRx(input);
   startPassiveMidiDebug(input);
+  const alreadyStarted =
+    bidirectionalDiscovery.active &&
+    bidirectionalDiscovery.input === input &&
+    bidirectionalDiscovery.output === output;
+  bidirectionalDiscovery.start(input, output);
+  console.log("[MIDI DEBUG] discovery start", {
+    skippedAlreadyActive: alreadyStarted,
+    active: bidirectionalDiscovery.active,
+    input: bidirectionalDiscovery.input?.name ?? null,
+    output: bidirectionalDiscovery.output?.name ?? null
+  });
 
   return { input, output };
 }
@@ -2131,6 +2426,9 @@ async function requestSysex({ request, parse, timeoutMs = 1200 }) {
     input.addEventListener("midimessage", onMessage);
     try {
       output.send(request);
+      if (request === CURRENT_RIG_NAME_REQUEST) {
+        console.log("[MIDI DEBUG] requestCurrentRigName sent", midiDebugHex(request));
+      }
     } catch (error) {
       window.clearTimeout(timeout);
       input.removeEventListener("midimessage", onMessage);
@@ -2146,7 +2444,10 @@ async function requestCurrentRigName() {
     timeoutMs: 5000
   });
 
-  if (!value) throw new Error("Keine Kemper SysEx-Antwort empfangen.");
+  if (!value) {
+    console.log("[MIDI DEBUG] requestCurrentRigName got no value");
+    throw new Error("Keine Kemper SysEx-Antwort empfangen.");
+  }
   return value;
 }
 
@@ -2178,8 +2479,27 @@ async function requestRenderedString(address, value) {
   );
 }
 
+/**
+ * Discovery helper: wait for rendered-string response.
+ * @returns {Promise<string | null>} name, "" if empty, null if timed out
+ */
+async function requestRenderedStringForDiscovery(address, value, timeoutMs = 1000) {
+  if (value === null || value === undefined) return null;
+
+  const matched = await requestSysex({
+    request: makeRenderedStringRequest(address, value),
+    parse: (data) => parseRenderedStringResponseMatch(data, address, value),
+    timeoutMs
+  });
+
+  if (!matched || typeof matched !== "object") return null;
+  return typeof matched.name === "string" ? matched.name : "";
+}
+
 function formatGain(value) {
   if (value === null || value === undefined) return "";
+  const decoded = parameterService.get(CONTROL_PARAMETERS.gain.key)?.decode(value);
+  if (decoded?.display && decoded.display !== "—") return decoded.display;
   return (value / 1638.3).toFixed(1);
 }
 
@@ -2212,13 +2532,14 @@ function getEffectImage(effectName, moduleGroup = "") {
 }
 
 function getEffectName(typeName, typeValue, module) {
+  void module;
   if (typeName) return typeName;
 
   if (!typeValue || typeValue === 0) {
     return "";
   }
 
-  return EFFECT_TYPE_NAMES[typeValue] || "";
+  return getEffectTypeName(typeValue) || EFFECT_TYPE_NAMES[typeValue] || "";
 }
 
 function getModuleEffectImage(typeName, module) {
@@ -2229,7 +2550,8 @@ function getModuleEffectImage(typeName, module) {
 }
 
 function isEffectActive(effect) {
-  return effect.active;
+  if (effect?.activeValue != null) return isBooleanOn(effect.activeValue);
+  return Boolean(effect?.active);
 }
 
 function getEffectModuleByKey(effectKey) {
@@ -2244,13 +2566,170 @@ function setEffectItemBusy(effectKey, busy) {
   item.setAttribute("aria-busy", busy ? "true" : "false");
 }
 
+function isEffectSyncDebugEnabled() {
+  try {
+    return localStorage.getItem("kompanion.effect-sync-debug") === "1";
+  } catch {
+    return false;
+  }
+}
+
+function logEffectSyncVerbose(stage, effectKey, details = {}) {
+  if (!isEffectSyncDebugEnabled()) return;
+  const module = getEffectModuleByKey(effectKey);
+  console.log(`[Effect Sync] ${stage}`, {
+    effectKey,
+    slot: module?.label ?? effectKey,
+    ...details
+  });
+}
+
+function logEffectSyncFailure(effectKey, reason, chain = {}) {
+  const module = getEffectModuleByKey(effectKey);
+  console.warn("[Effect Sync] Failure — full chain", {
+    stage: reason,
+    effectKey,
+    slot: module?.label ?? effectKey,
+    parameterId: module ? formatEffectParamIdHex(kemperParamId(module.page, module.onOff)) : null,
+    pushSyncHealthy: canUseBidirectionalPushSync(),
+    echoEnabled: bidirectionalDiscovery?.echoEnabled ?? null,
+    ...chain
+  });
+}
+
+function formatEffectParamIdHex(id) {
+  return `0x${(id & 0xffff).toString(16).padStart(4, "0")}`;
+}
+
+function logEffectOnOffRaw(source, module, raw) {
+  const parameterId = module
+    ? formatEffectParamIdHex(kemperParamId(module.page, module.onOff))
+    : null;
+  console.log(`[Effect Sync] ${module?.label ?? "?"} ${source} on/off`, {
+    parameterId,
+    raw,
+    on: isBooleanOn(raw)
+  });
+}
+
+function clearEffectWriteConfirmation(effectKey, resolveStatus = null) {
+  const pending = pendingEffectWriteConfirmations.get(effectKey);
+  if (!pending) return;
+  window.clearTimeout(pending.timer);
+  pendingEffectWriteConfirmations.delete(effectKey);
+  if (resolveStatus) {
+    pending.resolve({ status: resolveStatus });
+  }
+}
+
+/**
+ * @param {string} effectKey
+ * @param {boolean} expectedActive
+ * @param {number} expectedRaw
+ * @param {string} parameterIdHex
+ */
+function registerEffectWriteConfirmation(effectKey, expectedActive, expectedRaw, parameterIdHex) {
+  clearEffectWriteConfirmation(effectKey);
+
+  return new Promise((resolve) => {
+    const sentAt = Date.now();
+    const timer = window.setTimeout(() => {
+      if (!pendingEffectWriteConfirmations.has(effectKey)) return;
+      pendingEffectWriteConfirmations.delete(effectKey);
+      logEffectSyncFailure(effectKey, "timeout — no Kemper push after write", {
+        expectedActive,
+        expectedRaw,
+        parameterIdHex,
+        raw: null,
+        sentAt,
+        waitedMs: EFFECT_PUSH_CONFIRM_MS,
+        chain: "Write sent → (no RX) → Decode → Mapping → Slot → UI"
+      });
+      if (effectKey === "delay" || effectKey === "reverb") {
+        console.warn("[Effect Sync] Delay/Reverb did not update after write", {
+          effectKey,
+          parameterId: parameterIdHex,
+          raw: null,
+          expectedActive,
+          expectedRaw
+        });
+      }
+      resolve({ status: "timeout" });
+    }, EFFECT_PUSH_CONFIRM_MS);
+
+    pendingEffectWriteConfirmations.set(effectKey, {
+      expectedActive,
+      expectedRaw,
+      sentAt,
+      parameterIdHex,
+      resolve,
+      timer
+    });
+
+    logEffectSyncVerbose("Write registered — awaiting Kemper push", effectKey, {
+      expectedActive,
+      expectedRaw,
+      parameterIdHex
+    });
+  });
+}
+
+/**
+ * @param {typeof EFFECT_MODULES[number]} module
+ * @param {number} activeValue
+ * @param {number | null | undefined} kemperRaw
+ */
+function settleEffectWriteConfirmation(module, activeValue, kemperRaw) {
+  const pending = pendingEffectWriteConfirmations.get(module.key);
+  if (!pending) return false;
+
+  window.clearTimeout(pending.timer);
+  pendingEffectWriteConfirmations.delete(module.key);
+
+  const raw = kemperRaw == null ? null : Number(kemperRaw);
+  const kemperActive = isBooleanOn(raw ?? activeValue);
+  const confirmed = kemperActive === pending.expectedActive;
+
+  if (confirmed) {
+    logEffectSyncVerbose("Kemper confirmed write", module.key, {
+      kemperRaw: raw,
+      kemperActive,
+      latencyMs: Date.now() - pending.sentAt
+    });
+    pending.resolve({ status: "confirmed", kemperActive, kemperRaw: raw });
+    return true;
+  }
+
+  logEffectSyncFailure(module.key, "mismatch — Kemper value differs from write", {
+    expectedActive: pending.expectedActive,
+    expectedRaw: pending.expectedRaw,
+    kemperActive,
+    kemperRaw: raw,
+    parameterIdHex: pending.parameterIdHex,
+    latencyMs: Date.now() - pending.sentAt,
+    chain: "Write sent → RX → Decode → Mapping (mismatch) → Kemper wins → UI"
+  });
+  if (module.key === "delay" || module.key === "reverb") {
+    console.warn("[Effect Sync] Delay/Reverb write mismatch", {
+      slot: module.label,
+      parameterId: pending.parameterIdHex,
+      raw,
+      on: kemperActive,
+      expectedActive: pending.expectedActive
+    });
+  }
+  pending.resolve({ status: "mismatch", kemperActive, kemperRaw: raw });
+  return true;
+}
+
 function canToggleEffects() {
   return (
     connectionState === CONNECTION_STATE.CONNECTED &&
     !performanceLibraryScanInProgress &&
     !isLoadingPerformanceSlot &&
     !isRefreshingLiveData &&
-    !isTogglingEffect
+    !isTogglingEffect &&
+    !effectTypeDiscoveryRunning
   );
 }
 
@@ -2259,39 +2738,70 @@ async function toggleEffectModule(effectKey) {
 
   const module = getEffectModuleByKey(effectKey);
   const knownEffect = lastKnownEffectsByKey[effectKey];
+  const control = parameterService.get(effectKey);
 
-  if (!module || !knownEffect?.typeName) return;
+  if (!module || !knownEffect?.typeName || !control) return;
 
   const isCurrentlyActive = isEffectActive(knownEffect);
+  const expectedActive = !isCurrentlyActive;
+  const expectedRaw = expectedActive ? 1 : 0;
+  const parameterIdHex = control.parameterIdHex;
 
   isTogglingEffect = true;
   setEffectItemBusy(effectKey, true);
 
+  const confirmationPromise = registerEffectWriteConfirmation(
+    effectKey,
+    expectedActive,
+    expectedRaw,
+    parameterIdHex
+  );
+
   try {
-    const { output } = await getMidiPorts();
-    sendMidiSafe(
-      output,
-      makeEffectToggleCommand(module, isCurrentlyActive),
-      `Toggle ${module.label}`
-    );
+    await getMidiPorts();
 
-    const optimisticEffect = {
-      ...knownEffect,
-      active: !isCurrentlyActive,
-      activeValue: isCurrentlyActive ? 0 : 1
-    };
-    lastKnownEffectsByKey[effectKey] = optimisticEffect;
+    logEffectSyncVerbose("Write sending", effectKey, {
+      expectedActive,
+      expectedRaw,
+      parameterIdHex
+    });
 
-    const item = effectsList?.querySelector(`li[data-key="${effectKey}"]`);
-    if (item) {
-      updateEffectItem(item, optimisticEffect);
+    const result = await control.writeScaled(expectedActive);
+
+    if (!result.ok) {
+      clearEffectWriteConfirmation(effectKey, "write-failed");
+      throw new Error(result.error || `Toggle ${module.label} failed`);
     }
 
-    await delay(EFFECT_TOGGLE_SETTLE_MS);
+    const pending = pendingEffectWriteConfirmations.get(effectKey);
+    if (pending) {
+      pending.expectedRaw = result.rawValue;
+    }
 
-    const effects = await requestEffectsData();
-    renderEffects(effects);
+    logEffectSyncVerbose("Write sent — waiting for Kemper push", effectKey, {
+      expectedActive,
+      expectedRaw: result.rawValue,
+      parameterIdHex
+    });
+
+    const confirmation = await confirmationPromise;
+
+    if (confirmation.status === "timeout") {
+      // UI unchanged — Kemper remains source of truth; no poll fallback.
+      console.warn(
+        `[Live Companion] Effect toggle unconfirmed for ${module.label} — no Kemper push received.`
+      );
+    } else if (confirmation.status === "mismatch") {
+      console.warn(
+        `[Live Companion] Effect toggle rejected by Kemper for ${module.label}.`
+      );
+    }
   } catch (error) {
+    clearEffectWriteConfirmation(effectKey, "write-failed");
+    logEffectSyncFailure(effectKey, "write failed", {
+      message: error?.message || String(error),
+      chain: "Write → (failed) → UI unchanged"
+    });
     console.warn("[Live Companion] Effect toggle failed:", error.message || error);
   } finally {
     isTogglingEffect = false;
@@ -2301,6 +2811,233 @@ async function toggleEffectModule(effectKey) {
 
 function getAmpSearchText(...values) {
   return values.filter(Boolean).join(" ").toLowerCase();
+}
+
+function normalizeGearName(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+/**
+ * Display-only combo detection: identical Amp Name and Cabinet Name.
+ * Does not mutate amp or cabinet source data.
+ * @param {unknown} ampName
+ * @param {unknown} cabinetName
+ * @returns {boolean}
+ */
+function isComboAmpByIdenticalNames(ampName, cabinetName) {
+  const amp = normalizeGearName(ampName);
+  const cabinet = normalizeGearName(cabinetName);
+  return Boolean(amp) && amp === cabinet;
+}
+
+function isPresentCabinetValue(value) {
+  return Boolean(String(value ?? "").trim());
+}
+
+function valuesMatchIgnoreCase(left, right) {
+  const a = normalizeGearName(left);
+  const b = normalizeGearName(right);
+  return Boolean(a) && a === b;
+}
+
+function isRedundantCabinetValue(value, ampName) {
+  return !isPresentCabinetValue(value) || valuesMatchIgnoreCase(value, ampName);
+}
+
+/**
+ * @param {{
+ *   manufacturer?: unknown,
+ *   model?: unknown,
+ *   variant?: unknown
+ * }} fields
+ * @returns {{ label: string, value: string }[]}
+ */
+function buildRecognizedCabinetRows(fields) {
+  /** @type {{ label: string, value: string }[]} */
+  const rows = [];
+  const manufacturer = String(fields.manufacturer ?? "").trim();
+  const model = String(fields.model ?? "").trim();
+  const variant = String(fields.variant ?? "").trim();
+
+  if (manufacturer) rows.push({ label: "Manufacturer", value: manufacturer });
+  if (model) rows.push({ label: "Model", value: model });
+  if (variant) rows.push({ label: "Configuration", value: variant });
+
+  return rows;
+}
+
+/**
+ * Recognized Cabinet is Gear Library / image-map display data only.
+ * Kemper rig cabinet strings are never used as recognized manufacturer/model.
+ *
+ * @param {{
+ *   libraryView?: {
+ *     manufacturer?: string,
+ *     model?: string,
+ *     variant?: string,
+ *     imageSrc?: string | null,
+ *     recognizedRows?: { label: string, value: string }[]
+ *   } | null,
+ *   mapEntry?: {
+ *     image?: string,
+ *     manufacturer?: string,
+ *     model?: string,
+ *     variant?: string
+ *   } | null
+ * }} input
+ */
+function buildRecognizedCabinetView(input) {
+  const libraryView = input.libraryView || null;
+  const mapEntry = input.mapEntry || null;
+  const mapImageSrc = mapEntry?.image ? `/images/cabinets/${mapEntry.image}` : null;
+  const mapVariant = String(mapEntry?.variant ?? "").trim();
+
+  if (libraryView) {
+    const recognizedRows = [...(libraryView.recognizedRows || [])];
+    const hasConfigurationRow = recognizedRows.some((row) =>
+      valuesMatchIgnoreCase(row.label, "Configuration")
+    );
+    if (mapVariant && !hasConfigurationRow) {
+      recognizedRows.push({ label: "Configuration", value: mapVariant });
+    }
+
+    return {
+      manufacturer: libraryView.manufacturer || "",
+      model: libraryView.model || "",
+      imageSrc: libraryView.imageSrc || mapImageSrc,
+      recognizedRows
+    };
+  }
+
+  const manufacturer = String(mapEntry?.manufacturer ?? "").trim();
+  const model = String(mapEntry?.model ?? "").trim();
+  const recognizedRows = buildRecognizedCabinetRows({
+    manufacturer,
+    model,
+    variant: mapVariant
+  });
+
+  if (!recognizedRows.length && !mapImageSrc) {
+    return null;
+  }
+
+  return {
+    manufacturer,
+    model,
+    imageSrc: mapImageSrc,
+    recognizedRows
+  };
+}
+
+/**
+ * @param {HTMLElement | null} listEl
+ * @param {{ label: string, value: string }[]} rows
+ */
+function fillCabinetDetailList(listEl, rows) {
+  if (!listEl) return;
+  listEl.replaceChildren();
+
+  for (const row of rows) {
+    const item = document.createElement("div");
+    item.className = "cabinet-details-row";
+
+    const dt = document.createElement("dt");
+    dt.textContent = row.label;
+
+    const dd = document.createElement("dd");
+    dd.textContent = row.value;
+    dd.title = row.value;
+
+    item.append(dt, dd);
+    listEl.append(item);
+  }
+}
+
+/**
+ * @param {unknown} name
+ * @returns {{ label: string, value: string }[]}
+ */
+function buildReportedCabinetRows(name) {
+  /** @type {{ label: string, value: string }[]} */
+  const rows = [];
+  const nameText = String(name ?? "").trim();
+  if (nameText) {
+    rows.push({ label: "Name", value: nameText });
+  }
+  return rows;
+}
+
+/**
+ * Cabinet panel display only. Source cabinet fields stay populated.
+ * @param {{
+ *   originalAmpName?: string,
+ *   originalCabinetName?: string,
+ *   cabinetName?: string,
+ *   recognizedCabinet?: {
+ *     recognizedRows?: { label: string, value: string }[],
+ *     imageSrc?: string | null,
+ *     manufacturer?: string,
+ *     model?: string
+ *   } | null
+ * }} liveData
+ */
+function renderCabinetSection(liveData) {
+  const ampName = liveData.originalAmpName || "";
+  const cabinetName = liveData.originalCabinetName || liveData.cabinetName || "";
+  const isCombo = isComboAmpByIdenticalNames(ampName, cabinetName);
+  const recognized = liveData.recognizedCabinet || null;
+
+  let recognizedRows = (recognized?.recognizedRows || []).filter((row) =>
+    isPresentCabinetValue(row.value)
+  );
+  let reportedRows = buildReportedCabinetRows(liveData.cabinetName);
+
+  if (isCombo) {
+    recognizedRows = recognizedRows.filter(
+      (row) => !isRedundantCabinetValue(row.value, ampName)
+    );
+    reportedRows = reportedRows.filter(
+      (row) => !isRedundantCabinetValue(row.value, ampName)
+    );
+  }
+
+  const showRecognized = recognizedRows.length > 0;
+  const showReported = reportedRows.length > 0;
+  const showImage = Boolean(recognized?.imageSrc);
+
+  if (cabinetSection) {
+    cabinetSection.dataset.combo = isCombo ? "true" : "false";
+  }
+
+  if (cabinetComboLabel) {
+    cabinetComboLabel.hidden = !isCombo;
+  }
+
+  if (cabinetRecognizedGroup) {
+    cabinetRecognizedGroup.hidden = !showRecognized;
+  }
+  fillCabinetDetailList(cabinetRecognizedList, showRecognized ? recognizedRows : []);
+
+  if (cabinetReportedGroup) {
+    cabinetReportedGroup.hidden = !showReported;
+  }
+  fillCabinetDetailList(cabinetReportedList, showReported ? reportedRows : []);
+
+  if (!cabinetImageContainer) return;
+
+  if (!showImage) {
+    cabinetImageContainer.innerHTML = "";
+    cabinetImageContainer.hidden = true;
+    return;
+  }
+
+  cabinetImageContainer.hidden = false;
+  const image = document.createElement("img");
+  image.src = recognized.imageSrc;
+  image.className = "cabinet-image";
+  image.alt =
+    [recognized.manufacturer, recognized.model].filter(Boolean).join(" ") || "Cabinet";
+  cabinetImageContainer.replaceChildren(image);
 }
 
 function deriveManufacturer(ampName, modelName) {
@@ -2354,7 +3091,7 @@ function getCabinetEntryConfiguration(entry) {
   );
 }
 
-function getCabinetImage(manufacturer, model, configuration = "") {
+function matchCabinetImageMapEntry(manufacturer, model, configuration = "") {
   const normalizedConfiguration = getCabinetConfiguration(configuration);
   const search = normalizeCabinetSearch(
     `${manufacturer} ${model} ${normalizedConfiguration}`.trim()
@@ -2385,7 +3122,11 @@ function getCabinetImage(manufacturer, model, configuration = "") {
     }
   }
 
-  return bestMatch ? bestMatch.image : "";
+  return bestMatch;
+}
+
+function getCabinetImage(manufacturer, model, configuration = "") {
+  return matchCabinetImageMapEntry(manufacturer, model, configuration)?.image || "";
 }
 
 function getCabinetConfiguration(...values) {
@@ -2434,10 +3175,12 @@ async function requestEffectModule(module) {
   const renderedTypeName = await requestRenderedString(typeAddress, typeValue);
 
   const typeName = getEffectName(renderedTypeName, typeValue, module);
+  const kemperActive = isBooleanOn(activeValue);
+  logEffectOnOffRaw("refresh", module, activeValue);
 
   return {
     ...module,
-    active: activeValue === 1,
+    active: kemperActive,
     activeValue,
     typeValue,
     typeName,
@@ -2488,22 +3231,32 @@ async function requestLiveKemperData() {
     liveAmpModel
   );
 
-  const resolvedCabinetManufacturer =
-    liveCabinetManufacturer || deriveManufacturer(liveCabinetName, liveCabinetModel);
-  const resolvedCabinetModel = liveCabinetModel || liveCabinetName;
-  const cabinetConfigurationFromData = getCabinetConfiguration(
+  const resolvedCabinet = resolveCabinetRecordFromTextSources(
+    liveCabinetName,
     liveCabinetManufacturer,
-    liveCabinetModel,
+    liveCabinetModel
+  );
+  const libraryCabinetView = resolvedCabinet?.id
+    ? getCabinetDetailView(resolvedCabinet.id)
+    : null;
+  const mapEntry = matchCabinetImageMapEntry(
+    liveCabinetManufacturer,
+    liveCabinetModel || liveCabinetName,
     liveCabinetName
   );
-  const cabinetImage = getCabinetImage(
-    resolvedCabinetManufacturer,
-    resolvedCabinetModel,
-    cabinetConfigurationFromData
-  );
-  const cabinetConfiguration = cabinetConfigurationFromData || getCabinetConfiguration(cabinetImage);
+  const recognizedCabinet = buildRecognizedCabinetView({
+    libraryView: libraryCabinetView,
+    mapEntry
+  });
 
   const libraryYear = formatLibraryAmpYear(resolvedAmp?.introduced);
+  const libraryDetail = resolvedAmp?.id ? getAmpDetailView(resolvedAmp.id) : null;
+  const libraryPower = libraryDetail?.power || "";
+  const libraryTubeConfiguration = libraryDetail?.valveConfiguration?.length
+    ? libraryDetail.valveConfiguration
+        .map(({ label, value }) => `${label}: ${value}`)
+        .join("\n")
+    : "";
 
   return {
     rigName: currentRigName,
@@ -2513,14 +3266,17 @@ async function requestLiveKemperData() {
     manufacturer: resolvedAmp?.manufacturer ?? "",
     ampModel: resolvedAmp?.model ?? "",
     libraryYear,
+    libraryPower,
+    libraryTubeConfiguration,
     productionYear: libraryYear || liveAmpYear || "",
     originalRigName: currentRigName || "",
     originalAmpName: liveAmpName || "",
+    originalCabinetName: liveCabinetName || "",
     ampImageSrc: resolvedAmp ? getAmpImage(resolvedAmp.id) : null,
-    cabinetManufacturer: resolvedCabinetManufacturer,
-    cabinetModel: removeCabinetConfiguration(resolvedCabinetModel, cabinetConfiguration),
-    cabinetConfiguration,
-    cabinetImage,
+    cabinetName: String(liveCabinetName || "").trim(),
+    cabinetManufacturer: String(liveCabinetManufacturer || "").trim(),
+    cabinetModel: String(liveCabinetModel || "").trim(),
+    recognizedCabinet,
     gain: formatGain(liveGainValue),
     gainRaw: liveGainValue,
     tempoBpmRaw: liveTempoValue,
@@ -2623,6 +3379,7 @@ function updateEffectItem(item, effect) {
 function renderEffects(effects) {
   effects.forEach((effect) => {
     lastKnownEffectsByKey[effect.key] = effect;
+    logEffectSyncVerbose("UI update", effect.key, { source: "refresh", active: effect.active });
 
     if (effect.key === "stompA") {
       ensureEffectChainHeading("pre", "PRE AMP");
@@ -2643,38 +3400,242 @@ function renderEffects(effects) {
   });
 }
 
-function gainRawToPercent(rawValue) {
+function gainRawToScaleValue(rawValue) {
   const formatted = formatGain(rawValue);
   const numericValue = Number(formatted);
 
   if (Number.isFinite(numericValue)) {
-    return Math.max(0, Math.min(100, numericValue * 10));
+    return Math.max(0, Math.min(GAIN_SCALE_MAX, numericValue));
   }
 
-  return Math.max(0, Math.min(100, (rawValue / 16383) * 100));
+  if (rawValue === null || rawValue === undefined) return null;
+  return Math.max(0, Math.min(GAIN_SCALE_MAX, rawValue / 1638.3));
 }
 
-function ensureGainMeterSegments() {
-  if (!gainMeterFill || gainMeterFill.children.length === GAIN_METER_SEGMENT_COUNT) return;
+function ensureGainScaleTicks() {
+  if (!gainScaleTicks || gainScaleTicks.childElementCount === GAIN_SCALE_TICK_COUNT) {
+    return;
+  }
 
-  gainMeterFill.innerHTML = Array.from({ length: GAIN_METER_SEGMENT_COUNT }, (_, index) => {
-    const level = index + 1;
-    const tone = level <= 5 ? "low" : level <= 9 ? "mid" : "high";
-
-    return `<i data-tone="${tone}" data-level="${level}" data-active="false"></i>`;
+  gainScaleTicks.innerHTML = Array.from({ length: GAIN_SCALE_TICK_COUNT }, (_, index) => {
+    const isMajor = index % 10 === 0;
+    const isMid = !isMajor && index % 5 === 0;
+    const tickClass = isMajor
+      ? "gain-scale-tick is-major"
+      : isMid
+        ? "gain-scale-tick is-mid"
+        : "gain-scale-tick";
+    return `<i class="${tickClass}"></i>`;
   }).join("");
 }
 
-function applyGainDisplay(rawValue) {
-  if (!gainMeterFill) return;
+function applyGainDisplay(rawValue, formattedValue = "") {
+  if (!gainScale || !gainScaleFill || !gainScaleMarker || !gainScaleValue) {
+    console.log("[Gain Debug] Slider Updated skipped — DOM nodes missing");
+    return;
+  }
 
-  ensureGainMeterSegments();
+  ensureGainScaleTicks();
 
-  const activeSegments = Math.round((gainRawToPercent(rawValue) / 100) * GAIN_METER_SEGMENT_COUNT);
+  const scaleValue =
+    formattedValue !== "" && Number.isFinite(Number(formattedValue))
+      ? Math.max(0, Math.min(GAIN_SCALE_MAX, Number(formattedValue)))
+      : gainRawToScaleValue(rawValue);
 
-  gainMeterFill.querySelectorAll("i").forEach((segment) => {
-    const level = Number(segment.dataset.level);
-    segment.dataset.active = level <= activeSegments ? "true" : "false";
+  if (scaleValue === null || !Number.isFinite(scaleValue)) {
+    gainLocalRawValue = null;
+    gainScale.dataset.hasValue = "false";
+    gainScaleValue.textContent = "—";
+    gainScaleFill.style.width = "0%";
+    gainScaleMarker.style.left = "0%";
+    gainScale.setAttribute("aria-valuenow", "0");
+    gainScale.setAttribute("aria-valuetext", "unavailable");
+    console.log("[Gain Debug] Slider Updated", {
+      raw: rawValue,
+      decoded: null,
+      display: "—",
+      percent: 0,
+      source: gainScale.dataset.source || "unknown"
+    });
+    return;
+  }
+
+  const display = scaleValue.toFixed(1);
+  const percent = (scaleValue / GAIN_SCALE_MAX) * 100;
+  const raw =
+    rawValue != null && Number.isFinite(Number(rawValue))
+      ? Math.max(0, Math.min(16383, Math.round(Number(rawValue))))
+      : Math.round(scaleValue * 1638.3);
+
+  gainLocalRawValue = raw;
+  gainScale.dataset.hasValue = "true";
+  gainScaleValue.textContent = display;
+  gainScaleFill.style.width = `${percent}%`;
+  /* Keep green→amber→orange mapped to the full 0–10 track, not the fill width */
+  gainScaleFill.style.backgroundSize =
+    percent > 0 ? `${(100 / percent) * 100}% 100%` : "100% 100%";
+  gainScaleFill.style.backgroundPosition = "left center";
+  gainScaleMarker.style.left = `${percent}%`;
+  gainScale.setAttribute("aria-valuenow", display);
+  gainScale.setAttribute("aria-valuetext", `${display} of ${GAIN_SCALE_MAX}`);
+
+  // TEMP debug — slider DOM write
+  console.log("[Gain Debug] Slider Updated", {
+    raw,
+    decoded: display,
+    percent: Number(percent.toFixed(2)),
+    source: gainScale.dataset.source || "unknown",
+    dragging: gainScale.dataset.dragging || "false"
+  });
+}
+
+function canControlGain() {
+  return (
+    isConnectionOperational() &&
+    !performanceLibraryScanInProgress &&
+    !isLoadingPerformanceSlot &&
+    !effectTypeDiscoveryRunning
+  );
+}
+
+/**
+ * @param {number} clientX
+ * @returns {number | null}
+ */
+function pointerToGainScaleValue(clientX) {
+  const track = document.querySelector("#gainScaleTrack") || gainScale?.querySelector(".gain-scale-track");
+  if (!track) return null;
+  const rect = track.getBoundingClientRect();
+  if (rect.width <= 0) return null;
+  const ratio = (clientX - rect.left) / rect.width;
+  return Math.max(0, Math.min(GAIN_SCALE_MAX, ratio * GAIN_SCALE_MAX));
+}
+
+/**
+ * @param {number} scaleValue 0–10
+ * @param {{ send?: boolean }} [options]
+ */
+function setGainFromScaleValue(scaleValue, options = {}) {
+  const send = options.send !== false;
+  const clamped = Math.max(0, Math.min(GAIN_SCALE_MAX, scaleValue));
+  const raw = Math.max(0, Math.min(16383, Math.round(clamped * 1638.3)));
+  if (gainScale) gainScale.dataset.source = "local";
+  applyGainDisplay(raw, clamped.toFixed(1));
+  if (send) queueGainParameterWrite(raw);
+}
+
+/**
+ * @param {number} rawValue
+ */
+function queueGainParameterWrite(rawValue) {
+  pendingGainWriteRaw = Math.max(0, Math.min(16383, Math.round(rawValue)));
+  if (gainWriteTimer != null) return;
+
+  const flush = async () => {
+    gainWriteTimer = null;
+    const raw = pendingGainWriteRaw;
+    pendingGainWriteRaw = null;
+    if (raw == null || !canControlGain()) return;
+
+    try {
+      await getMidiPorts();
+      const result = await parameterService.setParameter(
+        CONTROL_PARAMETERS.gain.parameterId,
+        raw
+      );
+      if (result.ok) {
+        // Suppress echo race briefly; Kemper push remains authoritative afterward.
+        lastGainPushAt = Date.now();
+      }
+    } catch (error) {
+      console.warn("[Live Companion] Gain write failed:", error?.message || error);
+    }
+
+    if (pendingGainWriteRaw != null) {
+      gainWriteTimer = window.setTimeout(flush, GAIN_WRITE_INTERVAL_MS);
+    }
+  };
+
+  gainWriteTimer = window.setTimeout(flush, 0);
+}
+
+function endGainPointerInteraction() {
+  if (!gainScale) return;
+  gainInteractionActive = false;
+  gainDragPointerId = null;
+  gainScale.dataset.dragging = "false";
+}
+
+/**
+ * Wire click/drag/keyboard Gain control → SysEx parameter writes.
+ */
+function bindGainScaleControl() {
+  if (!gainScale) return;
+
+  const track =
+    document.querySelector("#gainScaleTrack") ||
+    gainScale.querySelector(".gain-scale-track");
+  if (!track) return;
+
+  gainScale.dataset.interactive = "true";
+
+  const applyFromClientX = (clientX) => {
+    const scaleValue = pointerToGainScaleValue(clientX);
+    if (scaleValue == null) return;
+    setGainFromScaleValue(scaleValue, { send: true });
+  };
+
+  track.addEventListener("pointerdown", (event) => {
+    if (!canControlGain()) return;
+    if (event.button != null && event.button !== 0) return;
+
+    gainInteractionActive = true;
+    gainDragPointerId = event.pointerId;
+    gainScale.dataset.dragging = "true";
+    track.setPointerCapture?.(event.pointerId);
+    applyFromClientX(event.clientX);
+    event.preventDefault();
+  });
+
+  track.addEventListener("pointermove", (event) => {
+    if (!gainInteractionActive || event.pointerId !== gainDragPointerId) return;
+    applyFromClientX(event.clientX);
+    event.preventDefault();
+  });
+
+  const release = (event) => {
+    if (event.pointerId != null && event.pointerId !== gainDragPointerId) return;
+    endGainPointerInteraction();
+  };
+
+  track.addEventListener("pointerup", release);
+  track.addEventListener("pointercancel", release);
+  track.addEventListener("lostpointercapture", () => {
+    endGainPointerInteraction();
+  });
+
+  gainScale.addEventListener("keydown", (event) => {
+    if (!canControlGain()) return;
+    const current =
+      gainRawToScaleValue(gainLocalRawValue) ??
+      Number(gainScale.getAttribute("aria-valuenow"));
+    if (!Number.isFinite(current)) return;
+
+    let next = current;
+    if (event.key === "ArrowRight" || event.key === "ArrowUp") next += 0.1;
+    else if (event.key === "ArrowLeft" || event.key === "ArrowDown") next -= 0.1;
+    else if (event.key === "PageUp") next += 1;
+    else if (event.key === "PageDown") next -= 1;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = GAIN_SCALE_MAX;
+    else return;
+
+    event.preventDefault();
+    gainInteractionActive = true;
+    setGainFromScaleValue(next, { send: true });
+    window.setTimeout(() => {
+      gainInteractionActive = false;
+    }, PUSH_CONFIRM_WINDOW_MS);
   });
 }
 
@@ -2682,6 +3643,10 @@ async function refreshGainAfterMorph() {
   await delay(MORPH_GAIN_READ_DELAY_MS);
 
   if (!isConnectionOperational()) return;
+
+  if (canUseBidirectionalPushSync() && wasPushedRecently(lastGainPushAt, MORPH_GAIN_READ_DELAY_MS + 250)) {
+    return;
+  }
 
   try {
     const rawValue = await requestNumericParam(NUMERIC_PARAMS.gain);
@@ -2692,52 +3657,358 @@ async function refreshGainAfterMorph() {
   }
 }
 
+/**
+ * Apply one effect slot update from bidirectional push (Kemper wins).
+ * @param {typeof EFFECT_MODULES[number]} module
+ * @param {{ active?: boolean, activeValue?: number, typeValue?: number, typeName?: string }} patch
+ * @param {"push" | "refresh" | "enrich"} [source]
+ */
+function upsertEffectFromPush(module, patch, source = "push") {
+  const previous = lastKnownEffectsByKey[module.key] || {
+    ...module,
+    active: false,
+    activeValue: 0,
+    typeValue: 0,
+    typeName: "",
+    image: ""
+  };
+
+  const typeValue =
+    patch.typeValue !== undefined ? patch.typeValue : previous.typeValue;
+  const typeName =
+    patch.typeName !== undefined
+      ? patch.typeName
+      : getEffectName("", typeValue, module) || previous.typeName;
+
+  if (
+    !effectTypeDiscoveryRunning &&
+    patch.typeValue !== undefined &&
+    typeValue &&
+    typeName
+  ) {
+    observeEffectType(typeValue, typeName);
+  }
+
+  const next = {
+    ...previous,
+    ...module,
+    active: patch.active !== undefined ? patch.active : previous.active,
+    activeValue:
+      patch.activeValue !== undefined ? patch.activeValue : previous.activeValue,
+    typeValue,
+    typeName,
+    image: getModuleEffectImage(typeName, module)
+  };
+
+  const stateChanged =
+    previous.active !== next.active ||
+    previous.activeValue !== next.activeValue ||
+    previous.typeValue !== next.typeValue ||
+    previous.typeName !== next.typeName;
+
+  lastKnownEffectsByKey[module.key] = next;
+
+  logEffectSyncVerbose("UI update", module.key, {
+    source,
+    active: next.active,
+    activeValue: next.activeValue,
+    typeValue: next.typeValue,
+    typeName: next.typeName,
+    stateChanged
+  });
+
+  if (!effectsList) return;
+
+  if (module.key === "stompA") {
+    ensureEffectChainHeading("pre", "PRE AMP");
+  }
+  if (module.key === "stompX") {
+    ensureEffectChainHeading("post", "POST AMP");
+  }
+
+  let item = effectsList.querySelector(`li[data-key="${module.key}"]`);
+  if (!item) {
+    item = createEffectItem(next);
+    effectsList.append(item);
+  }
+  updateEffectItem(item, next);
+}
+
+/**
+ * One-shot rendered-string lookup when push delivers an unknown effect type id.
+ * @param {typeof EFFECT_MODULES[number]} module
+ * @param {number} typeValue
+ */
+async function enrichEffectTypeNameFromDevice(module, typeValue) {
+  const enrichKey = `${module.key}:${typeValue}`;
+  if (effectTypeEnrichInFlight.has(enrichKey)) return;
+  effectTypeEnrichInFlight.add(enrichKey);
+
+  try {
+    const rendered = await requestRenderedString(
+      [module.page, module.type],
+      typeValue
+    );
+    const typeName = getEffectName(rendered, typeValue, module);
+    if (!typeName) return;
+
+    const current = lastKnownEffectsByKey[module.key];
+    if (!current || current.typeValue !== typeValue) return;
+    upsertEffectFromPush(module, { typeValue, typeName }, "enrich");
+  } catch {
+    // silent — keep numeric/empty label until next refresh
+  } finally {
+    effectTypeEnrichInFlight.delete(enrichKey);
+  }
+}
+
+/**
+ * @param {string | null | undefined} ascii
+ */
+function scheduleRigChangeRefreshFromPush(ascii) {
+  const nextName = String(ascii || "").trim();
+  if (!nextName || nextName === currentRigName) return;
+  if (performanceLibraryScanInProgress || isLoadingPerformanceSlot) return;
+
+  currentRigName = nextName;
+  if (rigName) {
+    rigName.textContent = nextName;
+    rigName.title = nextName;
+  }
+
+  if (rigChangeRefreshTimer != null) {
+    window.clearTimeout(rigChangeRefreshTimer);
+  }
+
+  rigChangeRefreshTimer = window.setTimeout(() => {
+    rigChangeRefreshTimer = null;
+    if (
+      isRefreshingLiveData ||
+      isLoadingPerformanceSlot ||
+      performanceLibraryScanInProgress ||
+      !isConnectionOperational()
+    ) {
+      return;
+    }
+    console.log("RIG CHANGE DETECTED (push)", performance.now());
+    void refreshLiveData();
+  }, RIG_CHANGE_REFRESH_DEBOUNCE_MS);
+}
+
+/**
+ * Bridge bidirectional ParameterStateStore → live stage UI.
+ * Outgoing controls are unchanged; Kemper push is preferred source of truth.
+ * @param {{ result: { changed: boolean, initial: boolean, state: any } }} event
+ */
+function handleBidirectionalLivePush(event) {
+  const result = event?.result;
+  const state = result?.state;
+  if (!state || performanceLibraryScanInProgress || isLoadingPerformanceSlot) {
+    // TEMP debug — Gain UI dispatch blocked before id check
+    if (event?.decoded?.parameterId === LIVE_PUSH_PARAM.gain || state?.id === LIVE_PUSH_PARAM.gain) {
+      console.log("[Gain Debug] UI Gain Update (blocked early)", {
+        hasState: Boolean(state),
+        performanceLibraryScanInProgress,
+        isLoadingPerformanceSlot,
+        raw: state?.rawValue ?? event?.decoded?.value ?? null
+      });
+    }
+    return;
+  }
+
+  const id = state.id;
+
+  if (id === LIVE_PUSH_PARAM.tempoBpm) {
+    lastTempoPushAt = Date.now();
+    if (state.rawValue != null) {
+      renderCurrentTempo(state.rawValue);
+    }
+    return;
+  }
+
+  if (id === LIVE_PUSH_PARAM.gain) {
+    lastGainPushAt = Date.now();
+    // TEMP debug — UI received a Gain update from bidirectional dispatch
+    console.log("[Gain Debug] UI Gain Update", {
+      raw: state.rawValue,
+      decoded: state.scaledDisplay ?? state.scaledValue ?? null,
+      changed: result?.changed,
+      initial: result?.initial,
+      gainInteractionActive,
+      willSync: !gainInteractionActive && state.rawValue != null
+    });
+    // Local drag temporarily owns the knob; otherwise Kemper is source of truth.
+    if (gainInteractionActive) {
+      console.log("[Gain Debug] UI Gain Update skipped — local interaction active");
+      return;
+    }
+    if (state.rawValue != null) {
+      syncGainFromDevice(state.rawValue);
+    } else {
+      console.log("[Gain Debug] UI Gain Update skipped — rawValue is null");
+    }
+    return;
+  }
+
+  if (id === LIVE_PUSH_PARAM.rigName) {
+    if (result.changed) {
+      scheduleRigChangeRefreshFromPush(state.ascii);
+    } else if (result.initial && state.ascii && !currentRigName) {
+      currentRigName = String(state.ascii).trim();
+      if (rigName && currentRigName) {
+        rigName.textContent = currentRigName;
+        rigName.title = currentRigName;
+      }
+    }
+    return;
+  }
+
+  const onOffModule = EFFECT_ON_OFF_BY_PARAM_ID.get(id);
+  if (onOffModule) {
+    lastEffectOnOffPushAt.set(onOffModule.key, Date.now());
+    const kemperActive = isBooleanOn(state.rawValue);
+    const activeValue = kemperActive ? 1 : 0;
+
+    logEffectOnOffRaw("push", onOffModule, state.rawValue);
+    logEffectSyncVerbose("Push → Slot mapping (on/off)", onOffModule.key, {
+      parameterId: formatEffectParamIdHex(id),
+      raw: state.rawValue,
+      scaled: state.scaledValue,
+      activeValue,
+      on: kemperActive,
+      changed: result?.changed,
+      initial: result?.initial
+    });
+
+    if (
+      (onOffModule.key === "delay" || onOffModule.key === "reverb") &&
+      state.rawValue == null
+    ) {
+      console.warn("[Effect Sync] Delay/Reverb push without raw value", {
+        slot: onOffModule.label,
+        parameterId: formatEffectParamIdHex(id),
+        raw: state.rawValue,
+        scaled: state.scaledValue
+      });
+    }
+
+    settleEffectWriteConfirmation(onOffModule, activeValue, state.rawValue);
+    upsertEffectFromPush(onOffModule, {
+      active: kemperActive,
+      activeValue
+    });
+    return;
+  }
+
+  const typeModule = EFFECT_TYPE_BY_PARAM_ID.get(id);
+  if (typeModule && state.rawValue != null) {
+    const typeValue = state.rawValue;
+    const typeName = getEffectName("", typeValue, typeModule);
+
+    logEffectSyncVerbose("Push → Slot mapping (type)", typeModule.key, {
+      parameterId: formatEffectParamIdHex(id),
+      typeValue,
+      typeName: typeName || null,
+      changed: result?.changed,
+      initial: result?.initial
+    });
+
+    upsertEffectFromPush(typeModule, { typeValue, typeName });
+    if (!typeName && typeValue) {
+      void enrichEffectTypeNameFromDevice(typeModule, typeValue);
+    }
+  }
+}
+
 function renderGain(value, rawValue) {
-  if (!gainMeterFill) return;
+  if (!gainScale) return;
 
   const hasFormattedValue = value !== null && value !== undefined && value !== "";
   const hasRawValue = rawValue !== null && rawValue !== undefined;
 
   if (!hasFormattedValue && !hasRawValue) {
-    ensureGainMeterSegments();
-    gainMeterFill.querySelectorAll("i").forEach((segment) => {
-      segment.dataset.active = "false";
+    applyGainDisplay(null, "");
+    return;
+  }
+
+  const formatted = hasFormattedValue ? String(value) : formatGain(rawValue);
+  const raw = hasRawValue ? rawValue : Math.round(Number(value) * 1638.3);
+  applyGainDisplay(raw, formatted);
+}
+
+/**
+ * Apply a Kemper-reported Gain value to the slider (animated, no user action).
+ * @param {number} rawValue
+ */
+function syncGainFromDevice(rawValue) {
+  if (!gainScale || rawValue == null || !Number.isFinite(Number(rawValue))) {
+    console.log("[Gain Debug] Slider Updated skipped — invalid sync input", {
+      hasGainScale: Boolean(gainScale),
+      rawValue
     });
     return;
   }
 
-  const raw = hasRawValue ? rawValue : Math.round(Number(value) * 1638.3);
-  applyGainDisplay(raw);
+  // Ensure remote updates always animate (even right after a local drag).
+  gainScale.dataset.dragging = "false";
+  gainScale.dataset.source = "device";
+
+  const raw = Math.max(0, Math.min(16383, Math.round(Number(rawValue))));
+  // Skip redundant paints only when already showing the same raw value.
+  if (gainLocalRawValue === raw && gainScale.dataset.hasValue === "true") {
+    console.log("[Gain Debug] Slider Updated skipped — same raw already shown", {
+      raw,
+      decoded: formatGain(raw)
+    });
+    return;
+  }
+
+  renderGain(formatGain(raw), raw);
 }
 
 function startRigMonitor() {
   if (monitorTimer) return;
 
   monitorTimer = window.setInterval(async () => {
-    if (performanceLibraryScanInProgress || isLoadingPerformanceSlot || isRefreshingLiveData || isCheckingRigName || isTogglingEffect || !midiAccess) return;
+    if (
+      performanceLibraryScanInProgress ||
+      isLoadingPerformanceSlot ||
+      isRefreshingLiveData ||
+      isCheckingRigName ||
+      isTogglingEffect ||
+      !midiAccess
+    ) {
+      return;
+    }
+
+    // Hybrid path: when Kemper push + lease are healthy, skip steady-state
+    // effects/tempo/rig-name polling. Connection health uses sensing traffic.
+    if (canUseBidirectionalPushSync()) {
+      consecutiveMonitorFailures = 0;
+      if (connectionState !== CONNECTION_STATE.CONNECTED) {
+        setConnectionState(CONNECTION_STATE.CONNECTED);
+      }
+      return;
+    }
 
     isCheckingRigName = true;
 
     try {
-      // Rigwechsel prüfen
+      // Legacy / fallback poll when bidirectional push is not healthy.
       console.time("requestCurrentRigName");
-const nextRigName = await requestCurrentRigName();
-console.timeEnd("requestCurrentRigName");
+      const nextRigName = await requestCurrentRigName();
+      console.timeEnd("requestCurrentRigName");
 
       consecutiveMonitorFailures = 0;
       setConnectionState(CONNECTION_STATE.CONNECTED);
 
-      if (
-        nextRigName &&
-        currentRigName &&
-        nextRigName !== currentRigName
-      ) {
-		  console.log("RIG CHANGE DETECTED", performance.now());
+      if (nextRigName && currentRigName && nextRigName !== currentRigName) {
+        console.log("RIG CHANGE DETECTED", performance.now());
         await refreshLiveData();
       } else {
         const effects = await requestEffectsData();
         renderEffects(effects);
-        await refreshTempoOnly();
+        await refreshTempoOnly({ force: true });
       }
     } catch {
       consecutiveMonitorFailures += 1;
@@ -2790,6 +4061,24 @@ async function refreshLiveData() {
       ampDetailsYear.title = year;
     }
 
+    if (ampDetailsPower) {
+      const power = liveData.libraryPower || "";
+      if (ampDetailsPowerRow) {
+        ampDetailsPowerRow.hidden = !power;
+      }
+      ampDetailsPower.textContent = power || "-";
+      ampDetailsPower.title = power;
+    }
+
+    if (ampDetailsTubeConfiguration) {
+      const tubes = liveData.libraryTubeConfiguration || "";
+      if (ampDetailsTubeRow) {
+        ampDetailsTubeRow.hidden = !tubes;
+      }
+      ampDetailsTubeConfiguration.textContent = tubes || "-";
+      ampDetailsTubeConfiguration.title = tubes.replaceAll("\n", " · ");
+    }
+
     if (rigAuthor) {
       rigAuthor.textContent = liveData.rigAuthor || "-";
       rigAuthor.title = liveData.rigAuthor || "";
@@ -2805,23 +4094,22 @@ async function refreshLiveData() {
       ampDetailsOriginalAmpName.title = liveData.originalAmpName || "";
     }
 
-    ampImageContainer.innerHTML = liveData.ampImageSrc
-      ? `<img src="${liveData.ampImageSrc}" class="amp-image" />`
-      : "";
+    currentLiveAmpId = liveData.ampId ?? null;
+    ampImageContainer.innerHTML = "";
+    if (liveData.ampImageSrc) {
+      const ampImage = document.createElement("img");
+      ampImage.src = liveData.ampImageSrc;
+      ampImage.className = "amp-image";
+      ampImage.alt = liveData.ampModel || liveData.manufacturer || "Amplifier";
+      ampImageContainer.append(ampImage);
+    }
+    updateLiveAmpDetailAffordance();
 
     productionYear.textContent =
       liveData.productionYear && liveData.productionYear !== "Unknown"
         ? `Amp Year ${liveData.productionYear}`
         : "";
-    cabinetManufacturer.textContent = liveData.cabinetManufacturer || "-";
-    cabinetModel.textContent = liveData.cabinetModel || "-";
-    cabinetConfiguration.textContent = liveData.cabinetConfiguration || "-";
-
-    if (cabinetImageContainer) {
-      cabinetImageContainer.innerHTML = liveData.cabinetImage
-        ? `<img src="/images/cabinets/${liveData.cabinetImage}" class="cabinet-image" />`
-        : "";
-    }
+    renderCabinetSection(liveData);
     renderGain(liveData.gain, liveData.gainRaw);
     renderCurrentTempo(liveData.tempoBpmRaw);
     renderEffects(liveData.effects);
@@ -2830,6 +4118,9 @@ async function refreshLiveData() {
     setConnectionState(CONNECTION_STATE.CONNECTED);
     startRigMonitor();
   } catch (error) {
+    console.log("[MIDI DEBUG] refreshLiveData failed", {
+      error: String(error?.message || error)
+    });
     setConnectionState(CONNECTION_STATE.NO_MIDI);
   } finally {
     isRefreshingLiveData = false;
@@ -2847,16 +4138,12 @@ async function refreshEffectsOnly() {
 
 if (ampImageContainer) {
   ampImageContainer.addEventListener("click", () => {
-    const image = ampImageContainer.querySelector(".amp-image");
-    openAmpZoom(image);
+    openLiveAmpDetailsOverlay();
   });
-}
-
-if (ampZoomOverlay) {
-  ampZoomOverlay.addEventListener("click", (event) => {
-    if (event.target === ampZoomOverlay) {
-      closeAmpZoom();
-    }
+  ampImageContainer.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openLiveAmpDetailsOverlay();
   });
 }
 
@@ -2864,18 +4151,30 @@ if (createLibraryButton) {
   createLibraryButton.addEventListener("click", createPerformanceLibrary);
 }
 
-if (performanceExplorerToggle) {
-  performanceExplorerToggle.addEventListener("click", () => {
-    setPerformanceExplorerExpanded(!performanceExplorerExpanded);
+if (performanceExplorerSearch) {
+  performanceExplorerSearch.addEventListener("focus", () => {
+    setPerformanceExplorerExpanded(true);
+  });
+  performanceExplorerSearch.addEventListener("input", () => {
+    if (!performanceExplorerExpanded) {
+      setPerformanceExplorerExpanded(true);
+      return;
+    }
+    renderPerformanceExplorer();
+  });
+  performanceExplorerSearch.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    setPerformanceExplorerExpanded(false);
+    performanceExplorerSearch.blur();
   });
 }
 
-if (performanceExplorerSearch) {
-  performanceExplorerSearch.addEventListener("input", () => {
-    if (!performanceExplorerExpanded) return;
-    renderPerformanceExplorer();
-  });
-}
+document.addEventListener("pointerdown", (event) => {
+  if (!performanceExplorerExpanded) return;
+  if (isPerformanceExplorerEventTarget(event.target)) return;
+  setPerformanceExplorerExpanded(false);
+});
 
 if (performanceExplorerList) {
   performanceExplorerList.addEventListener("click", (event) => {
@@ -2988,15 +4287,73 @@ tempoBpmStepButtons.forEach((button) => {
   });
 });
 
-window.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && ampZoomOverlay?.dataset.open === "true") {
-    closeAmpZoom();
-  }
-});
-
 if (noMidiReconnectButton) {
   noMidiReconnectButton.addEventListener("click", handleNoMidiReconnect);
 }
+
+const bidirectionalDiscovery = initializeBidirectionalDiscovery();
+bidirectionalDiscovery.subscribe(handleBidirectionalLivePush);
+// Research-only write harness inside MIDI Analyzer — isolated from production controls.
+initializeProtocolResearchLab({
+  discovery: bidirectionalDiscovery,
+  resolveLabel: async (parameterId, rawValue) => {
+    const module = EFFECT_TYPE_BY_PARAM_ID.get(parameterId & 0xffff);
+    if (!module) return "";
+    const known = getEffectTypeName(rawValue);
+    if (known) return known;
+    const name = await requestRenderedStringForDiscovery(
+      [module.page, module.type],
+      rawValue,
+      1000
+    );
+    return name || "";
+  }
+});
+initializeEffectTypesPanel({
+  ensureMidi: () => getMidiPorts(),
+  subscribeParameters: (listener) => bidirectionalDiscovery.subscribe(listener),
+  setParameterEchoEnabled: (enabled) => {
+    bidirectionalDiscovery.setParameterEchoEnabled(enabled);
+  },
+  readEffectTypeName: async (slotKey, typeId, timeoutMs = 1000) => {
+    const module = getEffectModuleByKey(slotKey);
+    if (!module) return null;
+    return requestRenderedStringForDiscovery(
+      [module.page, module.type],
+      typeId,
+      timeoutMs
+    );
+  },
+  readCurrentEffectType: async (slotKey) => {
+    const module = getEffectModuleByKey(slotKey);
+    if (!module) return null;
+    const value = await requestNumericParam([module.page, module.type]);
+    return value == null ? null : Number(value);
+  },
+  onDiscoveryRunningChange: (running) => {
+    effectTypeDiscoveryRunning = running;
+  }
+});
+
+initializePerformanceTrafficCapture({
+  discovery: bidirectionalDiscovery,
+  ensureMidi: () => getMidiPorts()
+});
+initializeExtendedParameterCapture({
+  discovery: bidirectionalDiscovery,
+  ensureMidi: () => getMidiPorts()
+});
+initializeRawMidiTrace({
+  discovery: bidirectionalDiscovery,
+  ensureMidi: () => getMidiPorts()
+});
+
+parameterService.setOutputProvider(async () => {
+  const { output } = await getMidiPorts();
+  return output;
+});
+
+bindGainScaleControl();
 
 const audioToolsView = initializeAudioTools();
 
@@ -3011,4 +4368,6 @@ registerViewChangeHandler((view) => {
 });
 
 initializeGearLibrary();
+ensureGainScaleTicks();
+applyGainDisplay(null, "");
 bootApplication();

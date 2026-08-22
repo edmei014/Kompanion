@@ -1,8 +1,8 @@
 # Gear Library Architecture
 
-The Gear Library is the **single source of truth** for all equipment data in Live Companion.
+The Gear Library is the **single source of truth** for all equipment data in Kompanion.
 
-Application code (UI, Live Companion, resolvers) must **never import from `src/data/` directly**.  
+Application code (UI, Kempanion, resolvers) must **never import from `src/data/` directly**.  
 Use the public API in `src/library/index.js`.
 
 ---
@@ -77,7 +77,7 @@ Import from `src/library/index.js`:
 | `getAmpImage(id)` | Public image URL or `null` |
 | `hasAmpImage(id)` | Whether an image exists |
 | `getAmpImageForText(text)` | Resolve rig text → image URL |
-| `getAmpImageFilenameForText(text)` | Resolve rig text → filename (Live Companion) |
+| `getAmpImageFilenameForText(text)` | Resolve rig text → filename (Kempanion) |
 | `getAmpBrowseEntries(options)` | UI-ready catalog entries |
 | `getAmpDetailView(id)` | UI-ready detail panel data |
 | `getAmpLibraryStats()` | Counts for stats bar |
@@ -158,7 +158,7 @@ export const marshallAmps = [
 
 ## Adding a new manufacturer
 
-One registration chain — Gear Library and Live Companion share it:
+One registration chain — Gear Library and Kempanion share it:
 
 1. Create `src/data/amps/<fileKey>.js` exporting `<fileKey>Amps` (each amp needs `manufacturerId` + `aliases`).
 2. Import + spread that array in `src/data/amps/index.js` (**required** — this is the only amp registry).
@@ -168,7 +168,7 @@ One registration chain — Gear Library and Live Companion share it:
 
 On first library access, `validateGearRegistry()` logs amp count and fails loudly in the console if an amp’s `manufacturerId` is missing from manufacturer records.
 
-Do **not** maintain a separate Live Companion amp list. Recognition uses `allAmpRecords` → `ampLibrary` → `aliasResolver`.
+Do **not** maintain a separate Kempanion amp list. Recognition uses `allAmpRecords` → `ampLibrary` → `aliasResolver`.
 
 ---
 
@@ -192,7 +192,7 @@ Do **not** maintain a separate Live Companion amp list. Recognition uses `allAmp
 
 ## Rules for contributors
 
-- **Do not** import `src/data/*` from UI or Live Companion code.
+- **Do not** import `src/data/*` from UI or Kempanion code.
 - **Do not** put alias logic or image paths in data files.
 - **Do not** add UI-specific formatting in data or resolver layers.
 - **Do** use `createAmpRecord()` and run the normalize script after data edits.

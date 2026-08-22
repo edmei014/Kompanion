@@ -42,7 +42,7 @@ export const dumbleAmps = [
     "SSS",
     "Steel String Singer"
   ],
-  image: null,
+  image: "steel-string-singer.png",
   description:
     "The Steel String Singer is an ultra-clean, high-headroom amplifier celebrated for its huge dynamic range, shimmering cleans and exceptional touch sensitivity.",
   history:
@@ -69,7 +69,7 @@ export const dumbleAmps = [
   aliases: [
     "Winterland"
   ],
-  image: null,
+  image: "winterland.png",
   description:
     "The Winterland is an extremely rare high-powered Dumble amplifier designed for exceptional clean headroom and massive stage volume.",
   history:
@@ -89,33 +89,6 @@ export const dumbleAmps = [
   tags: ["Rare", "High Headroom", "Boutique"]
 },
 {
-  id: "dumble-steel-string-singer-reverb",
-  manufacturerId: "dumble",
-  manufacturer: "Dumble",
-  model: "Steel String Singer Reverb",
-  aliases: [
-    "SSS Reverb"
-  ],
-  image: null,
-  description:
-    "A reverb-equipped version of the Steel String Singer featuring the same immense clean headroom with Dumble's lush onboard spring reverb.",
-  history:
-    "Produced in very small quantities, the Steel String Singer Reverb expanded the celebrated SSS platform by adding an integrated spring reverb while retaining its legendary clean response.",
-  introduced: 1975,
-  discontinued: 1990,
-  country: "United States",
-  ampType: "Tube Head",
-  power: "100 W",
-  channels: 1,
-  tubes: {
-    preamp: ["12AX7"],
-    power: ["6L6GC"]
-  },
-  genres: ["Blues", "Jazz"],
-  notableUsers: [],
-  tags: ["Reverb", "Boutique", "Clean"]
-},
-{
   id: "dumble-manzamp",
   manufacturerId: "dumble",
   manufacturer: "Dumble",
@@ -123,7 +96,7 @@ export const dumbleAmps = [
   aliases: [
     "Manzamp"
   ],
-  image: null,
+  image: "manzamp.png",
   description:
     "The Manzamp is one of Dumble's rarest and most powerful creations, combining enormous clean headroom with smooth overdrive in a custom-built platform.",
   history:
@@ -141,5 +114,53 @@ export const dumbleAmps = [
   genres: ["Fusion", "Rock", "Blues"],
   notableUsers: [],
   tags: ["Rare", "Boutique", "Custom Built"]
+},
+{
+  id: "dumble-dumbleland-special",
+  manufacturerId: "dumble",
+  manufacturer: "Dumble",
+  model: "Dumbleland Special",
+  aliases: [
+    "dumbleland",
+    "dumbleland special",
+    "dls"
+  ],
+  image: "dumbleland.png",
+  description:
+    "The Dumbleland Special is one of Alexander Dumble's earliest and most powerful amplifier designs, developed to deliver exceptional clean headroom, dynamic response and harmonic richness. Built entirely by hand in extremely limited numbers, it laid the foundation for many of Dumble's later high-headroom amplifiers.",
+  history:
+    "Introduced in the early 1970s, the Dumbleland Special was originally created for musicians requiring enormous clean power while preserving the touch sensitivity that became a hallmark of Dumble amplifiers. Every unit was individually voiced for its owner, resulting in numerous circuit variations throughout production. The model is widely regarded as the direct predecessor to the Steel String Singer, with many of its design concepts evolving into the later amplifier. Today the Dumbleland Special is considered one of the rarest and most collectible Dumble amplifiers ever built.",
+  introduced: 1971,
+  discontinued: 1980,
+
+  country: "United States",
+
+  ampType: "Tube Head",
+
+  power: "100–300 W",
+
+  channels: 1,
+
+  tubes: {
+    preamp: ["12AX7"],
+    power: ["6L6GC or 6550 (varied by build)"]
+  },
+
+  genres: [
+    "Blues",
+    "Jazz",
+    "Fusion",
+    "Rock"
+  ],
+
+  notableUsers: [],
+
+  tags: [
+    "Boutique",
+    "Handwired",
+    "High Headroom",
+    "Rare",
+    "Vintage"
+  ]
 }
 ]

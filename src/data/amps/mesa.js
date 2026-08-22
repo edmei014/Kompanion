@@ -11,7 +11,11 @@ export const mesaAmps = [
     "dual rectifier",
     "recto",
     "rectifier",
-    "rect"
+    "rect",
+    "dual rect",
+    "dual recto",
+    "dual rev",
+    "duel rev"
   ],
   image: "dual_rectifier.png",
   description:
@@ -95,7 +99,6 @@ export const mesaAmps = [
     "mark vii",
     "mark 7",
     "mesa vii",
-    "mark v"
   ],
   image: "mark_vii.png",
   description:
@@ -135,9 +138,10 @@ export const mesaAmps = [
     "mark iic+",
     "mark iic plus",
     "iic+",
-    "mark 2c+"
+    "mark 2c+",
+    "mk two"
   ],
-  image: null,
+  image: "markiic.png",
   description:
     "The Mark IIC+ is widely regarded as one of the greatest high-gain amplifiers ever built, combining exceptional clarity, singing sustain and a highly responsive lead channel.",
   history:
@@ -179,7 +183,7 @@ export const mesaAmps = [
     "lone star",
     "lonestar"
   ],
-  image: null,
+  image: "lonestar.png",
   description:
     "The Lone Star is known for its warm cleans, smooth overdrive and exceptional dynamic response, making it one of Mesa/Boogie's most respected non-high-gain amplifiers.",
   history:
@@ -219,7 +223,7 @@ export const mesaAmps = [
     "mesa mark i",
     "boogie"
   ],
-  image: null,
+  image: "marki.png",
   description:
     "The Mark I is the amplifier that launched Mesa/Boogie, combining cascading gain stages with exceptional sustain and expressive lead tones that changed the future of guitar amplification.",
   history:
@@ -259,7 +263,7 @@ export const mesaAmps = [
     "mark iv",
     "mark 4"
   ],
-  image: null,
+  image: "markiv.png",
   description:
     "The Mark IV combines pristine cleans, articulate crunch and singing lead tones in one of Mesa/Boogie's most versatile amplifier platforms.",
   history:
@@ -300,7 +304,7 @@ export const mesaAmps = [
     "mark 5",
     "mark five"
   ],
-  image: null,
+  image: "markv.png",
   description:
     "The Mark V brings together decades of Mesa history by recreating multiple classic Mark circuits within a single highly versatile amplifier.",
   history:
@@ -338,9 +342,10 @@ export const mesaAmps = [
   aliases: [
     "single rectifier",
     "single recto",
-    "solo 50"
+    "solo 50",
+    "sing rect"
   ],
-  image: null,
+  image: "single-rectifier.png",
   description:
     "The Single Rectifier delivers the unmistakable Rectifier sound with earlier power-stage saturation and a slightly more open, responsive feel than the Dual Rectifier.",
   history:
@@ -377,7 +382,7 @@ export const mesaAmps = [
     "triple recto",
     "triple rec"
   ],
-  image: null,
+  image: "triple-rectifier.png",
   description:
     "The Triple Rectifier offers enormous clean headroom, crushing low end and exceptional stage volume while retaining the signature Rectifier character.",
   history:
@@ -416,7 +421,7 @@ export const mesaAmps = [
     "badlander",
     "badlander 100"
   ],
-  image: null,
+  image: "badlander100.png",
   description:
     "The Badlander 100 reimagines the Rectifier platform with a tighter low end, more focused midrange and a more immediate response aimed at modern rock and metal players.",
   history:
@@ -454,7 +459,7 @@ export const mesaAmps = [
     "50 plus",
     "caliber .50+"
   ],
-  image: null,
+  image: "caliber50.png",
   description:
     "The Caliber .50+ offers Mesa's signature lead tones in a simpler, more compact package while maintaining excellent clean sounds and dynamic response.",
   history:
@@ -489,9 +494,10 @@ export const mesaAmps = [
   model: "Stiletto Deuce",
   aliases: [
     "stiletto",
-    "stiletto deuce"
+    "stiletto deuce",
+    "still netto"
   ],
-  image: null,
+  image: "stiletto-deuce.png",
   description:
     "The Stiletto Deuce delivers Mesa's interpretation of classic British amplifier tones, combining articulate crunch with powerful modern features.",
   history:
@@ -528,7 +534,7 @@ export const mesaAmps = [
     "road king ii",
     "roadking"
   ],
-  image: null,
+  image: "roadkingii.png",
   description:
     "The Road King II combines multiple Rectifier and vintage Mesa voices with extensive routing options, making it one of the most versatile tube amplifiers ever produced.",
   history:
@@ -566,7 +572,7 @@ export const mesaAmps = [
     "roadster",
     "recto roadster"
   ],
-  image: null,
+  image: "roadster.png",
   description:
     "The Roadster combines the signature Rectifier sound with expanded clean tones and flexible channel voicings, making it one of Mesa's most versatile modern amplifiers.",
   history:
@@ -604,7 +610,7 @@ export const mesaAmps = [
     "mini recto",
     "rectifier 25"
   ],
-  image: null,
+  image: "mini-rectifier.png",
   description:
     "The Mini Rectifier 25 delivers the unmistakable Rectifier character in a compact, recording-friendly format while retaining the aggressive attack and saturated gain that define the series.",
   history:
@@ -745,6 +751,67 @@ export const mesaAmps = [
   ]
 },
 {
+  id: "mesa-boogie-royal-atlantic-ra-100",
+  manufacturerId: "mesa-boogie",
+  manufacturer: "Mesa Boogie",
+  model: "Royal Atlantic RA-100",
+  aliases: [
+    "royal atlantic",
+    "royal atlantic ra-100",
+    "ra-100",
+    "ra100",
+    "royal atlantic 100",
+    "mesa ra100",
+    "royal atlas"
+  ],
+  image: "royal-atlantic.png",
+  description:
+    "The Royal Atlantic RA-100 is a versatile 100-watt tube amplifier that combines an American-style clean channel with two distinct British-inspired gain modes. Its channel-assignable Multi-Soak power attenuation allows power-amp saturation to be used from bedroom levels up to the full 100 watts, while switchable EL34 or 6L6 operation provides additional tonal flexibility.",
+  history:
+    "Introduced in 2011 as the flagship of Mesa/Boogie's TransAtlantic series, the Royal Atlantic RA-100 was designed to combine American clean tones with classic and modified British gain sounds. Its two channels provide Clean, Vintage Lo and Vintage Hi modes, while the Multi-Soak system offers five levels of channel-assignable power attenuation from 3 to 100 watts. The amplifier also features tube-driven spring reverb, a buffered effects loop and a bias switch allowing EL34 or 6L6 power tubes. It was offered both as a head and as a 2x12 combo.",
+
+  introduced: 2011,
+  discontinued: null,
+  country: "United States",
+  ampType: "Tube Head",
+  power: "100 W",
+  channels: 2,
+
+  tubes: {
+    preamp: [
+      "6 × 12AX7",
+      "1 × 12AT7"
+    ],
+    power: [
+      "4 × EL34",
+      "6L6 compatible"
+    ]
+  },
+
+  genres: [
+    "Rock",
+    "Hard Rock",
+    "Blues",
+    "Progressive Rock",
+    "Metal"
+  ],
+
+  notableUsers: [
+    "Mark Morton"
+  ],
+
+  tags: [
+    "High Gain",
+    "British Voicing",
+    "American Clean",
+    "EL34",
+    "6L6",
+    "Multi-Soak",
+    "Reverb",
+    "TransAtlantic"
+  ]
+},
+{
   id: "mesa-boogie-transatlantic-ta-30",
   manufacturerId: "mesa-boogie",
   manufacturer: "Mesa Boogie",
@@ -793,7 +860,7 @@ export const mesaAmps = [
     "express 550",
     "5:50 plus"
   ],
-  image: "express-5-50.png",
+  image: "express5-50.png",
   description:
     "The Express 5:50+ combines classic Mesa clean tones with smooth overdrive and switchable power settings, making it one of the company's most versatile all-purpose amplifiers.",
   history:

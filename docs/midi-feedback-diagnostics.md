@@ -4,7 +4,7 @@ Purpose: determine whether the Kemper sends current Performance and Slot feedbac
 
 ## What The Monitor Logs
 
-Enable `MIDI Monitor` in the Live Companion title bar.
+Enable `MIDI Monitor` in the Kempanion title bar.
 
 The browser console logs every incoming MIDI message from the selected input. These Control Changes are highlighted as `POSITION FEEDBACK`:
 
@@ -52,4 +52,4 @@ If CC47 is received reliably when the current Performance changes, the Performan
 
 If CC50-54 are received reliably when slots change, the current Slot can be inferred from the controller number.
 
-If either CC47 or CC50-54 are missing, inconsistent, or only emitted after app-originated CC commands, Live Companion should not use this as the sole source of truth for automatic position detection.
+If either CC47 or CC50-54 are missing, inconsistent, or only emitted after app-originated CC commands, Kempanion should not use this as the sole source of truth for automatic position detection.

@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Live Companion",
+  "productName": "Kompanion",
   "version": "0.1.0",
   "identifier": "com.codex.live-companion",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Live Companion for Kemper Profiler v2.0",
+        "title": "Kompanion",
         "width": 980,
         "height": 620,
         "minWidth": 760,
@@ -29,6 +29,11 @@
     "targets": ["nsis"],
 	"icon": [
     "icons/icon.ico"
-	]
+	],
+    "windows": {
+      "nsis": {
+        "template": "windows/nsis/installer.nsi"
+      }
+    }
   }
 }

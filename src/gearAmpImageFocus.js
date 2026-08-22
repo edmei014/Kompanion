@@ -1,22 +1,18 @@
 const MIN_SCALE = 1;
 const MAX_SCALE = 6;
 const DOUBLE_CLICK_SCALE = 2.5;
-const FIT_FRACTION = 0.88;
-const MIN_VISIBLE_FRACTION = 0.12;
+/** Default fit: ~90% of the viewport, centered with exhibit-like margins. */
+const FIT_FRACTION = 0.9;
 
 let overlay = null;
 let backdrop = null;
 let closeButton = null;
 let viewport = null;
 let focusImage = null;
-let expandButton = null;
+/** @type {HTMLImageElement | null} */
 let sourceImage = null;
-
-let largeOverlay = null;
-let largeBackdrop = null;
-let largeCloseButton = null;
-let largeFocusButton = null;
-let largeImage = null;
+/** @type {((isOpen: boolean) => void) | null} */
+let onOpenChange = null;
 
 let baseWidth = 0;
 let baseHeight = 0;
@@ -29,17 +25,19 @@ let panStartX = 0;
 let panStartY = 0;
 let panOriginX = 0;
 let panOriginY = 0;
-
-export function isGearAmpImageLargeOpen() {
-  return largeOverlay?.dataset.open === "true";
-}
+let activePointerId = null;
 
 export function isGearAmpImageFocusOpen() {
   return overlay?.dataset.open === "true";
 }
 
+/** @deprecated Large view removed — alias for focus open state. */
+export function isGearAmpImageLargeOpen() {
+  return false;
+}
+
 export function isAnyGearAmpImageViewOpen() {
-  return isGearAmpImageLargeOpen() || isGearAmpImageFocusOpen();
+  return isGearAmpImageFocusOpen();
 }
 
 function clamp(value, min, max) {
@@ -55,6 +53,9 @@ function getCenteredPosition(nextScale = scale) {
   };
 }
 
+/**
+ * Edge-based clamp: free pan while image content remains; stop at true edges.
+ */
 function clampPosition(nextX, nextY, nextScale = scale) {
   if (!viewport) return { x: nextX, y: nextY };
 
@@ -63,17 +64,22 @@ function clampPosition(nextX, nextY, nextScale = scale) {
   const width = baseWidth * nextScale;
   const height = baseHeight * nextScale;
 
-  if (width <= vw && height <= vh) {
-    return getCenteredPosition(nextScale);
+  let clampedX = nextX;
+  let clampedY = nextY;
+
+  if (width <= vw) {
+    clampedX = (vw - width) / 2;
+  } else {
+    clampedX = clamp(nextX, vw - width, 0);
   }
 
-  const minVisibleX = width * MIN_VISIBLE_FRACTION;
-  const minVisibleY = height * MIN_VISIBLE_FRACTION;
+  if (height <= vh) {
+    clampedY = (vh - height) / 2;
+  } else {
+    clampedY = clamp(nextY, vh - height, 0);
+  }
 
-  return {
-    x: clamp(nextX, vw - width + minVisibleX, -minVisibleX),
-    y: clamp(nextY, vh - height + minVisibleY, -minVisibleY)
-  };
+  return { x: clampedX, y: clampedY };
 }
 
 function applyTransform(animate = false) {
@@ -89,7 +95,7 @@ function applyTransform(animate = false) {
 }
 
 function canPan() {
-  if (!viewport || scale <= MIN_SCALE + 0.001) return false;
+  if (!viewport || !baseWidth) return false;
 
   return (
     baseWidth * scale > viewport.clientWidth + 1 ||
@@ -110,7 +116,10 @@ function layoutBaseImage() {
   const vh = viewport.clientHeight;
   const maxWidth = vw * FIT_FRACTION;
   const maxHeight = vh * FIT_FRACTION;
-  const fitScale = Math.min(maxWidth / focusImage.naturalWidth, maxHeight / focusImage.naturalHeight);
+  const fitScale = Math.min(
+    maxWidth / focusImage.naturalWidth,
+    maxHeight / focusImage.naturalHeight
+  );
 
   baseWidth = focusImage.naturalWidth * fitScale;
   baseHeight = focusImage.naturalHeight * fitScale;
@@ -128,6 +137,8 @@ function resetViewerState() {
   y = 0;
   baseWidth = 0;
   baseHeight = 0;
+  isPanning = false;
+  activePointerId = null;
 
   if (focusImage) {
     focusImage.classList.remove("is-animating");
@@ -139,8 +150,6 @@ function resetViewerState() {
   if (viewport) {
     viewport.classList.remove("is-panning");
   }
-
-  isPanning = false;
 }
 
 function zoomAtPoint(clientX, clientY, targetScale, animate) {
@@ -168,7 +177,7 @@ function handleWheel(event) {
   event.preventDefault();
 
   const factor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
-  zoomAtPoint(event.clientX, event.clientY, scale * factor, true);
+  zoomAtPoint(event.clientX, event.clientY, scale * factor, false);
 }
 
 function handleDoubleClick(event) {
@@ -188,22 +197,25 @@ function handleDoubleClick(event) {
 
 function handlePointerDown(event) {
   if (!isGearAmpImageFocusOpen() || event.button !== 0 || !canPan()) return;
-  if (event.target !== focusImage) return;
+  if (event.target !== focusImage && event.target !== viewport) return;
 
   event.preventDefault();
 
   focusImage?.classList.remove("is-animating");
   isPanning = true;
+  activePointerId = event.pointerId;
   panStartX = event.clientX;
   panStartY = event.clientY;
   panOriginX = x;
   panOriginY = y;
   viewport?.classList.add("is-panning");
-  focusImage.setPointerCapture(event.pointerId);
+
+  const captureTarget = event.target === viewport ? viewport : focusImage;
+  captureTarget?.setPointerCapture?.(event.pointerId);
 }
 
 function handlePointerMove(event) {
-  if (!isPanning) return;
+  if (!isPanning || event.pointerId !== activePointerId) return;
 
   const dx = event.clientX - panStartX;
   const dy = event.clientY - panStartY;
@@ -212,24 +224,18 @@ function handlePointerMove(event) {
 }
 
 function handlePointerUp(event) {
-  if (!isPanning) return;
+  if (!isPanning || event.pointerId !== activePointerId) return;
 
   isPanning = false;
+  activePointerId = null;
   viewport?.classList.remove("is-panning");
 
-  if (focusImage?.hasPointerCapture(event.pointerId)) {
+  if (focusImage?.hasPointerCapture?.(event.pointerId)) {
     focusImage.releasePointerCapture(event.pointerId);
   }
-}
-
-function syncLargeImageFromSource() {
-  if (!largeImage || !sourceImage?.src) return;
-
-  const nextSrc = sourceImage.currentSrc || sourceImage.src;
-  if (largeImage.src !== nextSrc) {
-    largeImage.src = nextSrc;
+  if (viewport?.hasPointerCapture?.(event.pointerId)) {
+    viewport.releasePointerCapture(event.pointerId);
   }
-  largeImage.alt = sourceImage.alt || "";
 }
 
 function syncImageFromSource() {
@@ -246,48 +252,54 @@ function finishOpenLayout() {
   layoutBaseImage();
 }
 
+function notifyOpenChange(isOpen) {
+  onOpenChange?.(isOpen);
+}
+
 export function closeGearAmpImageFocus() {
-  if (!overlay) return;
+  if (!overlay || !isGearAmpImageFocusOpen()) {
+    resetViewerState();
+    return;
+  }
 
   resetViewerState();
   overlay.dataset.open = "false";
   overlay.setAttribute("aria-hidden", "true");
+  notifyOpenChange(false);
 }
 
+/** @deprecated Large view removed — closes the single fullscreen viewer. */
 export function closeGearAmpImageLarge() {
   closeGearAmpImageFocus();
-  if (!largeOverlay) return;
-
-  largeOverlay.dataset.open = "false";
-  largeOverlay.setAttribute("aria-hidden", "true");
 }
 
 export function closeGearAmpImageViews() {
-  closeGearAmpImageLarge();
-}
-
-export function openGearAmpImageLarge() {
-  if (!largeOverlay || !largeImage || !sourceImage?.src) return;
-
   closeGearAmpImageFocus();
-  syncLargeImageFromSource();
-
-  largeOverlay.dataset.open = "true";
-  largeOverlay.setAttribute("aria-hidden", "false");
-
-  if (largeCloseButton) {
-    largeCloseButton.focus();
-  }
 }
 
-export function openGearAmpImageFocus() {
-  if (!overlay || !focusImage || !sourceImage?.src) return;
+/**
+ * Opens the single fullscreen amp viewer from any image element.
+ * @param {HTMLImageElement | null | undefined} image
+ */
+export function openGearAmpImageFocus(image) {
+  if (!overlay || !focusImage) return;
 
+  const nextSource =
+    image instanceof HTMLImageElement
+      ? image
+      : sourceImage instanceof HTMLImageElement
+        ? sourceImage
+        : null;
+
+  if (!nextSource?.src) return;
+
+  sourceImage = nextSource;
   resetViewerState();
   syncImageFromSource();
 
   overlay.dataset.open = "true";
   overlay.setAttribute("aria-hidden", "false");
+  notifyOpenChange(true);
 
   if (focusImage.complete && focusImage.naturalWidth) {
     finishOpenLayout();
@@ -300,71 +312,53 @@ export function openGearAmpImageFocus() {
   }
 }
 
+/** @deprecated Large view removed — opens the single fullscreen viewer. */
+export function openGearAmpImageLarge(image) {
+  openGearAmpImageFocus(image);
+}
+
 /**
- * @param {{ sourceImage?: HTMLImageElement | null, expandButton?: HTMLButtonElement | null }} [options]
+ * @param {{
+ *   sourceImage?: HTMLImageElement | null,
+ *   onOpenChange?: ((isOpen: boolean) => void) | null
+ * }} [options]
  */
 export function initializeGearAmpImageFocus(options = {}) {
-  largeOverlay = document.querySelector("#gearAmpImageLargeOverlay");
-  largeBackdrop = document.querySelector("#gearAmpImageLargeBackdrop");
-  largeCloseButton = document.querySelector("#gearAmpImageLargeClose");
-  largeFocusButton = document.querySelector("#gearAmpImageLargeFocus");
-  largeImage = document.querySelector("#gearAmpImageLargeImage");
   overlay = document.querySelector("#gearAmpImageFocusOverlay");
   backdrop = document.querySelector("#gearAmpImageFocusBackdrop");
   closeButton = document.querySelector("#gearAmpImageFocusClose");
   viewport = document.querySelector("#gearAmpImageFocusViewport");
   focusImage = document.querySelector("#gearAmpImageFocusImage");
-  expandButton = options.expandButton ?? document.querySelector("#gearAmpDetailExpandImage");
   sourceImage = options.sourceImage ?? document.querySelector("#gearAmpDetailImage");
-
-  if (expandButton) {
-    expandButton.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      openGearAmpImageLarge();
-    });
-  }
-
-  if (largeCloseButton) {
-    largeCloseButton.addEventListener("click", (event) => {
-      event.preventDefault();
-      closeGearAmpImageLarge();
-    });
-  }
-
-  if (largeFocusButton) {
-    largeFocusButton.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      openGearAmpImageFocus();
-    });
-  }
-
-  if (largeBackdrop) {
-    largeBackdrop.addEventListener("click", closeGearAmpImageLarge);
-  }
+  onOpenChange = options.onOpenChange ?? null;
 
   if (closeButton) {
     closeButton.addEventListener("click", (event) => {
       event.preventDefault();
       closeGearAmpImageFocus();
-      if (isGearAmpImageLargeOpen() && largeFocusButton) {
-        largeFocusButton.focus();
-      }
     });
   }
 
   if (backdrop) {
     backdrop.addEventListener("click", () => {
+      if (isPanning) return;
       closeGearAmpImageFocus();
-      if (isGearAmpImageLargeOpen() && largeFocusButton) {
-        largeFocusButton.focus();
-      }
     });
   }
 
   if (overlay) {
     overlay.addEventListener("wheel", handleWheel, { passive: false });
+  }
+
+  if (viewport) {
+    viewport.addEventListener("click", (event) => {
+      if (event.target !== viewport || isPanning) return;
+      closeGearAmpImageFocus();
+    });
+    viewport.addEventListener("pointerdown", handlePointerDown);
+    viewport.addEventListener("pointermove", handlePointerMove);
+    viewport.addEventListener("pointerup", handlePointerUp);
+    viewport.addEventListener("pointercancel", handlePointerUp);
   }
 
   if (focusImage) {
@@ -378,4 +372,15 @@ export function initializeGearAmpImageFocus(options = {}) {
       focusImage.classList.remove("is-animating");
     });
   }
+
+  window.addEventListener("resize", () => {
+    if (!isGearAmpImageFocusOpen() || !focusImage?.naturalWidth) return;
+
+    const previousScale = scale;
+    layoutBaseImage();
+
+    if (previousScale > MIN_SCALE + 0.01 && viewport) {
+      zoomAtPoint(viewport.clientWidth / 2, viewport.clientHeight / 2, previousScale, false);
+    }
+  });
 }

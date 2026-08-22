@@ -55,7 +55,9 @@ export const fenderAmps = [
     "princeton",
     "tweed princeton",
     "5f2",
-    "5f2-a"
+    "5f2-a",
+    "fender prince",
+    "fan prince"
   ],
   image: "tweed-princeton.png",
   description:
@@ -257,6 +259,60 @@ export const fenderAmps = [
   ]
 },
 {
+  id: "fender-bassman-blackface-aa864",
+  manufacturerId: "fender",
+  manufacturer: "Fender",
+  model: "Bassman Blackface AA864",
+  aliases: [
+    "bassman blackface",
+    "blackface bassman",
+    "bassman aa864",
+    "aa864 bassman",
+    "fender aa864",
+    "blackface bassman 50",
+    "bm black"
+  ],
+  image: "bm black.png",
+  description:
+    "The Blackface Bassman AA864 is the definitive early Blackface version of Fender's 50-watt Bassman head. Originally designed as a bass amplifier, its clean, powerful 6L6-based circuit became highly regarded by guitarists for its punchy low end, clear response and natural tube overdrive.",
+  history:
+    "Introduced in 1964, the AA864 marked the major transition of the Bassman into Fender's Blackface era. It replaced the earlier Blonde 6G6-B design with a redesigned circuit, black Tolex, black control panel and silver grille cloth. The AA864 was followed by the briefly produced AA165 and then the AB165 after Fender's acquisition by CBS. Blackface Bassman production continued until the transition to Silverface styling in 1967. The AA864 is particularly prized by vintage enthusiasts as the original Leo Fender Blackface Bassman circuit.",
+  introduced: 1964,
+  discontinued: 1965,
+  country: "United States",
+  ampType: "Tube Head",
+  power: "50 W",
+  channels: 2,
+  tubes: {
+    preamp: [
+      "3 × 7025 / 12AX7",
+      "1 × 12AT7"
+    ],
+    power: [
+      "2 × 6L6GC"
+    ],
+    rectifier: [
+      "GZ34 / 5AR4"
+    ]
+  },
+  genres: [
+    "Blues",
+    "Rock",
+    "Classic Rock",
+    "Country"
+  ],
+  notableUsers: [],
+  tags: [
+    "Vintage",
+    "Blackface",
+    "Bassman",
+    "50 W",
+    "6L6",
+    "American",
+    "Historic"
+  ]
+},
+{
   id: "fender-tweed-twin",
   manufacturerId: "fender",
   manufacturer: "Fender",
@@ -265,7 +321,9 @@ export const fenderAmps = [
     "fender twin",
     "fan twin",
     "fan twins",
-    "twin amp"
+    "twin amp",
+    "fan tweed twin",
+    "tweed twin"
   ],
   image: "fender twin amp.png",
   description:
@@ -395,7 +453,12 @@ export const fenderAmps = [
   aliases: [
     "twin reverb",
     "blackface twin",
-    "silverface twin"
+    "silverface twin",
+    "twins reverb",
+    "fender twin reverb",
+    "fan twin reverb",
+    "twins rev",
+    "fan twins rev"
   ],
   image: "fender_twins_dark_face.png",
   description:
@@ -473,13 +536,147 @@ export const fenderAmps = [
   ]
 },
 {
+  id: "fender-blues-junior",
+  manufacturerId: "fender",
+  manufacturer: "Fender",
+  model: "Blues Junior",
+  aliases: [
+    "blues junior",
+    "blues jr",
+    "blues jr.",
+    "bj",
+    "fender blues junior",
+    "blue june",
+    "blues junior i",
+    "blues junior 1"
+  ],
+  image: "blues-junior-i.png",
+  description:
+    "The Blues Junior is one of Fender's most popular compact tube combos, delivering warm Fender cleans, natural tube overdrive and spring reverb in a portable 15-watt 1x12 format.",
+  history:
+    "Introduced in 1993 as part of Fender's Hot Rod series, the Blues Junior became one of the company's most successful modern tube amplifiers. Its compact format, EL84 power section, simple controls and accessible price made it popular with blues, rock, country and studio players. The platform evolved through several revisions before the Blues Junior III and later Blues Junior IV.",
+  introduced: 1993,
+  discontinued: null,
+  country: "United States",
+  ampType: "Tube Combo",
+  power: "15 W",
+  channels: 1,
+  tubes: {
+    preamp: ["3 × 12AX7"],
+    power: ["2 × EL84"]
+  },
+  genres: [
+    "Blues",
+    "Rock",
+    "Country",
+    "Indie"
+  ],
+  notableUsers: [],
+  tags: [
+    "American",
+    "Compact",
+    "EL84",
+    "Spring Reverb",
+    "Hot Rod"
+  ]
+},
+{
+  id: "fender-blues-junior-iv",
+  manufacturerId: "fender",
+  manufacturer: "Fender",
+  model: "Blues Junior IV",
+  aliases: [
+    "blues junior iv",
+    "blues jr iv",
+    "blues jr. iv",
+    "blues junior 4",
+    "blues jr 4"
+  ],
+  image: "blues-junior-iv.png",
+  description:
+    "The Blues Junior IV is the refined fourth-generation version of Fender's compact 15-watt tube combo, featuring a modified preamp, smoother spring reverb and a Celestion A-Type 12-inch speaker.",
+  history:
+    "The Blues Junior IV refined the established Blues Junior platform with modifications to the preamp and spring reverb for a fuller and smoother response. Fender equips the standard IV with a 12-inch Celestion A-Type speaker, two EL84 power tubes and three 12AX7 preamp tubes.",
+  introduced: 2018,
+  discontinued: null,
+  country: "United States",
+  ampType: "Tube Combo",
+  power: "15 W",
+  channels: 1,
+  tubes: {
+    preamp: ["3 × 12AX7"],
+    power: ["2 × EL84"]
+  },
+  genres: [
+    "Blues",
+    "Rock",
+    "Country",
+    "Indie"
+  ],
+  notableUsers: [],
+  tags: [
+    "American",
+    "Compact",
+    "EL84",
+    "Spring Reverb",
+    "Hot Rod",
+    "Modern Classic"
+  ]
+},
+{
+  id: "fender-blues-junior-iv-30th-anniversary",
+  manufacturerId: "fender",
+  manufacturer: "Fender",
+  model: "Blues Junior IV 30th Anniversary",
+  aliases: [
+    "blues junior 30th anniversary",
+    "blues junior iv 30th anniversary",
+    "blues jr 30th anniversary",
+    "blues jr iv 30th anniversary",
+    "blues junior 30th"
+  ],
+  image: "blues-junior-30th.png",
+  description:
+    "The Blues Junior IV 30th Anniversary is a limited-edition version of Fender's 15-watt Blues Junior, featuring modified preamp and reverb circuitry, a Celestion G12M-65 Creamback speaker and distinctive Black Western cosmetics.",
+  history:
+    "Released in 2025 to celebrate more than 30 years of the Blues Junior, the limited-edition model retains the core 15-watt EL84 platform while adding a Celestion G12M-65 Creamback speaker, modified preamp and reverb circuitry, Black Western textured vinyl, vintage-style Bassman grille cloth and a leather handle. Each amplifier includes a 30th Anniversary badge and certificate of authenticity.",
+  introduced: 2025,
+  discontinued: null,
+  country: "United States",
+  ampType: "Tube Combo",
+  power: "15 W",
+  channels: 1,
+  tubes: {
+    preamp: ["3 × 12AX7"],
+    power: ["2 × EL84"]
+  },
+  genres: [
+    "Blues",
+    "Rock",
+    "Country",
+    "Indie"
+  ],
+  notableUsers: [],
+  tags: [
+    "Limited Edition",
+    "30th Anniversary",
+    "American",
+    "EL84",
+    "Spring Reverb",
+    "Creamback",
+    "Hot Rod"
+  ]
+},
+{
   id: "fender-super-reverb",
   manufacturerId: "fender",
   manufacturer: "Fender",
   model: "Super Reverb",
   aliases: [
     "super reverb",
-    "super"
+    "fan super reverb",
+    "twins dark face",
+    "super reverb 4x10"
   ],
   image: "super-reverb.png",
   description:
@@ -596,7 +793,9 @@ export const fenderAmps = [
   model: "Bandmaster Reverb",
   aliases: [
     "bandmaster reverb",
-    "bandmaster"
+    "bandmaster",
+    "twinmaster",
+    "twin master"
   ],
   image: "bandmaster-reverb.png",
   description:
@@ -1186,7 +1385,9 @@ export const fenderAmps = [
   model: "Vibro-King",
   aliases: [
     "vibro king",
-    "vibro-king"
+    "vibro-king",
+    "vibr queen",
+    "vibr. queen"
   ],
   image: "vibro-king.png",
   description:

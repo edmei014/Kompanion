@@ -9,7 +9,12 @@ export const peaveyAmps = [
   model: "5150",
   aliases: [
     "peavey 5150",
-    "pea v 5150"
+    "pea v 5150",
+    "pea v 150",
+    "fifty-one fifty",
+    "five one five zero",
+    "five fifteen zero",
+    "five fifteen oh"
   ],
   image: "peavey5150.png",
   description:
@@ -52,7 +57,7 @@ export const peaveyAmps = [
     "6505",
     "6505 standard"
   ],
-  image: null,
+  image: "6505.png",
   description:
     "The 6505 is the direct continuation of the original Peavey 5150, delivering the same aggressive high-gain character, tight low end and cutting midrange that made the amplifier a staple of modern metal.",
   history:
@@ -135,7 +140,7 @@ export const peaveyAmps = [
     "5150 2",
     "5150ii"
   ],
-  image: null,
+  image: "5150-ii.png",
   description:
     "The 5150 II refined the original 5150 design with an additional preamp tube and independent EQ controls for each channel, delivering greater flexibility while preserving its legendary high-gain character.",
   history:
@@ -176,7 +181,7 @@ export const peaveyAmps = [
     "joe satriani",
     "jsx head"
   ],
-  image: null,
+  image: "jsx.png",
   description:
     "The JSX was developed with Joe Satriani to provide pristine cleans, articulate crunch and fluid lead tones in a highly versatile three-channel design.",
   history:
@@ -216,7 +221,7 @@ export const peaveyAmps = [
     "triple x",
     "peavey xxx"
   ],
-  image: null,
+  image: "xxx.png",
   description:
     "The XXX delivers aggressive modern gain while offering excellent clean and crunch channels, making it one of Peavey's most versatile high-gain amplifiers.",
   history:
@@ -253,7 +258,7 @@ export const peaveyAmps = [
     "ultra+",
     "ultra"
   ],
-  image: null,
+  image: "ultra-plus.png",
   description:
     "The Ultra Plus was Peavey's flagship high-gain amplifier before the arrival of the 5150, offering tight distortion, powerful cleans and excellent versatility.",
   history:
@@ -289,7 +294,7 @@ export const peaveyAmps = [
     "ultra 120",
     "ultra"
   ],
-  image: null,
+  image: "ultra120.png",
   description:
     "The Ultra 120 introduced Peavey's early high-gain platform, delivering aggressive distortion, excellent clean headroom and exceptional reliability.",
   history:
@@ -325,7 +330,7 @@ export const peaveyAmps = [
     "vtm 60",
     "vtm60"
   ],
-  image: null,
+  image: "vtm60.png",
   description:
     "The VTM 60 is a hot-rodded British-inspired amplifier featuring switchable gain modifications and powerful classic rock tones.",
   history:
@@ -361,7 +366,7 @@ export const peaveyAmps = [
     "vtm 120",
     "vtm120"
   ],
-  image: null,
+  image: "vtm120.png",
   description:
     "The VTM 120 expands the VTM platform with increased headroom while preserving its hot-rodded British character and dynamic response.",
   history:
@@ -397,7 +402,7 @@ export const peaveyAmps = [
     "classic 30",
     "classic thirty"
   ],
-  image: null,
+  image: "classic30.png",
   description:
     "The Classic 30 delivers warm American-style cleans, smooth overdrive and excellent pedal compatibility, making it one of Peavey's most successful combo amplifiers.",
   history:
@@ -437,7 +442,7 @@ export const peaveyAmps = [
     "classic 50",
     "classic fifty"
   ],
-  image: null,
+  image: "classic50.png",
   description:
     "The Classic 50 builds upon the Classic 30 with greater clean headroom and stage volume while retaining its warm vintage-inspired character.",
   history:
@@ -474,7 +479,7 @@ export const peaveyAmps = [
     "delta blues",
     "delta"
   ],
-  image: null,
+  image: "deltablues210.png",
   description:
     "The Delta Blues combines the warm character of the Classic Series with onboard tremolo, delivering expressive vintage-inspired American tones for blues, country and rock players.",
   history:
@@ -512,7 +517,7 @@ export const peaveyAmps = [
     "windsor",
     "windsor head"
   ],
-  image: null,
+  image: "windsor.png",
   description:
     "The Windsor delivers classic British-inspired crunch with a straightforward single-channel layout, making it one of Peavey's most Marshall-style amplifiers.",
   history:
@@ -549,7 +554,7 @@ export const peaveyAmps = [
     "invective 120",
     "invective.120"
   ],
-  image: null,
+  image: "invective.png",
   description:
     "Developed with Misha Mansoor, the Invective.120 refines the legendary 6505 platform with expanded clean tones, integrated noise gate, boost and MIDI functionality for modern progressive metal players.",
   history:
@@ -588,7 +593,7 @@ export const peaveyAmps = [
     "butcher",
     "butcher head"
   ],
-  image: null,
+  image: "butcher.png",
   description:
     "The Butcher is a classic British-inspired amplifier known for its straightforward design, punchy EL34 power section and dynamic rock tones.",
   history:
@@ -623,9 +628,11 @@ export const peaveyAmps = [
   aliases: [
     "6534+",
     "6534 plus",
-    "6534"
+    "6534",
+    "534 plus",
+    "534+"
   ],
-  image: null,
+  image: "6534plus.png",
   description:
     "The 6534+ combines the legendary 6505+ preamp with an EL34 power section, delivering a more British-flavored midrange while preserving Peavey's signature high-gain aggression.",
   history:

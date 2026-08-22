@@ -47,6 +47,12 @@ export { AMP_IMAGE_BASE_PATH };
  */
 
 /**
+ * @typedef {Object} AmpSpecItem
+ * @property {string} label
+ * @property {string} value
+ */
+
+/**
  * @typedef {Object} AmpBrowseEntry
  * @property {string} id
  * @property {string} manufacturerId
@@ -91,9 +97,11 @@ export { AMP_IMAGE_BASE_PATH };
  * @property {string} model
  * @property {string | null} imageSrc
  * @property {boolean} hasImage
+ * @property {import("../theme/ampTheme.js").AmpTheme} theme
  * @property {string} description
  * @property {string} history
- * @property {string[]} specs
+ * @property {string | null} power
+ * @property {AmpSpecItem[]} specs
  * @property {AmpValveConfigurationLine[] | null} valveConfiguration
  * @property {string[]} playedBy
  */
@@ -106,9 +114,9 @@ export const AMP_BROWSER_VIEW = Object.freeze({
 });
 
 export const AMP_BROWSER_VIEWS = [
-  { value: AMP_BROWSER_VIEW.MANUFACTURER, label: "Manufacturer View" },
-  { value: AMP_BROWSER_VIEW.MODEL, label: "Model View" },
-  { value: AMP_BROWSER_VIEW.TIMELINE, label: "Timeline View" }
+  { value: AMP_BROWSER_VIEW.MANUFACTURER, label: "Manufacturer" },
+  { value: AMP_BROWSER_VIEW.MODEL, label: "Model" },
+  { value: AMP_BROWSER_VIEW.TIMELINE, label: "Timeline" }
 ];
 
 export const AMP_BROWSER_VIEW_DEFAULT = AMP_BROWSER_VIEW.MANUFACTURER;
@@ -255,8 +263,8 @@ function formatProductionPeriod(introduced, discontinued) {
   const end = isMissingGearFieldValue(discontinued) ? null : String(discontinued).trim();
 
   if (start && end) return `${start}–${end}`;
-  if (start) return `${start}–`;
-  if (end) return `–${end}`;
+  if (start) return start;
+  if (end) return end;
   return null;
 }
 
@@ -325,19 +333,26 @@ function buildPlayedByList(notableUsers) {
   return [String(notableUsers).trim()].filter(Boolean);
 }
 
-/** @param {AmpRecord} amp */
+/** @param {AmpRecord} amp @returns {AmpSpecItem[]} */
 function buildAmpSpecsBar(amp) {
-  /** @type {string[]} */
+  /** @type {AmpSpecItem[]} */
   const specs = [];
 
-  const power = formatAmpSpecPower(amp.power);
-  if (power) specs.push(power);
+  if (!isMissingGearFieldValue(amp.country)) {
+    specs.push({ label: "Country", value: String(amp.country).trim() });
+  }
 
   const period = formatProductionPeriod(amp.introduced, amp.discontinued);
-  if (period) specs.push(period);
+  if (period) specs.push({ label: "Year", value: period });
 
-  const channels = formatAmpSpecChannels(amp.channels);
-  if (channels) specs.push(channels);
+  if (!isMissingGearFieldValue(amp.ampType)) {
+    specs.push({ label: "Type", value: String(amp.ampType).trim() });
+  }
+
+  if (!isMissingGearFieldValue(amp.power)) {
+    const power = formatAmpSpecPower(amp.power);
+    if (power) specs.push({ label: "Power", value: power });
+  }
 
   return specs;
 }
@@ -347,6 +362,10 @@ export function getAmpDetailView(ampId) {
   const amp = getAmpById(ampId);
   if (!amp) return null;
 
+  const power = !isMissingGearFieldValue(amp.power)
+    ? formatAmpSpecPower(amp.power)
+    : null;
+
   return {
     id: amp.id,
     manufacturerId: amp.manufacturerId,
@@ -354,8 +373,10 @@ export function getAmpDetailView(ampId) {
     model: amp.model,
     imageSrc: getAmpImage(ampId),
     hasImage: hasAmpImage(ampId),
+    theme: resolveThemeForAmp(amp, { detail: true }),
     description: formatGearFieldValue(amp.description),
     history: formatGearFieldValue(amp.history),
+    power,
     specs: buildAmpSpecsBar(amp),
     valveConfiguration: buildAmpValveConfiguration(amp.tubes),
     playedBy: buildPlayedByList(amp.notableUsers)
@@ -622,12 +643,12 @@ export function compareAmpBrowseEntries(left, right, sortMode) {
     }
     case "manufacturer":
     default:
+      // Keep manufacturers A–Z; within each manufacturer reuse year order
+      // (oldest first, unknown years last, then model name).
       return (
         left.manufacturer.localeCompare(right.manufacturer, undefined, {
           sensitivity: "base"
-        }) ||
-        left.model.localeCompare(right.model, undefined, { sensitivity: "base" }) ||
-        left.sortIndex - right.sortIndex
+        }) || compareAmpBrowseEntries(left, right, "year")
       );
   }
 }

@@ -1,0 +1,1438 @@
+/*
+ * Gear Library — boutique / museum material themes
+ * Museum Dark (default) · Museum Light
+ *
+ * Aesthetic: Leica · B&O · exhibition catalog — not gaming/dashboard luxury.
+ * Kempanion keeps its own palette.
+ *
+ * Typography: Cormorant Garamond (editorial titles) + Inter (UI / body).
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Typography                                                                  */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  --gear-font-serif: "Cormorant Garamond", "EB Garamond", "Libre Baskerville", Georgia, "Times New Roman", serif;
+  --gear-font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+#gearLibraryView,
+#gearArchiveAmpDetailOverlay,
+#gearManufacturerDetailOverlay {
+  font-family: var(--gear-font-sans);
+  font-variant-numeric: lining-nums;
+  font-feature-settings: "lnum" 1, "onum" 0;
+}
+
+/* True display headlines only — not micro-labels */
+#gearLibraryView .gear-library-title,
+#gearLibraryView .amp-browser-group-title,
+#gearLibraryView button.amp-browser-group-title.gear-manufacturer-link,
+#gearLibraryView .amp-browser-group-title.gear-manufacturer-link,
+#gearLibraryView .amp-browser-year-title,
+#gearLibraryView .gear-discover-heading,
+#gearLibraryView .gear-discover-category,
+#gearLibraryView .gear-discover-title,
+#gearArchiveAmpDetailOverlay .gear-archive-detail-model,
+#gearManufacturerDetailOverlay .gear-manufacturer-detail-title {
+  font-family: var(--gear-font-serif);
+  font-variant-numeric: lining-nums;
+  font-feature-settings: "lnum" 1, "onum" 0;
+}
+
+#gearLibraryView .gear-library-title,
+#gearLibraryView .gear-discover-title,
+#gearArchiveAmpDetailOverlay .gear-archive-detail-model,
+#gearManufacturerDetailOverlay .gear-manufacturer-detail-title {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+#gearLibraryView .amp-browser-group-title,
+#gearLibraryView button.amp-browser-group-title.gear-manufacturer-link,
+#gearLibraryView .amp-browser-group-title.gear-manufacturer-link,
+#gearLibraryView .gear-discover-heading,
+#gearLibraryView .gear-discover-category {
+  font-weight: 600;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Token sets                                                                  */
+/* -------------------------------------------------------------------------- */
+
+body[data-gear-theme="museum-dark"],
+[data-gear-theme="museum-dark"] {
+  /* Outer canvas — warm brown-black, never pure #000 */
+  --gear-bg: #151210;
+  --gear-surface: #1a1612;
+  --gear-surface-elevated: #1d1914;
+  --gear-museum-wall: #14110f;
+  --gear-museum-panel: #1a1612;
+  /* Catalog field: espresso charcoal (header + amp collection) */
+  --gear-atlas-field: #1b1713;
+  /* Discover field: cooler, slightly deeper editorial wall */
+  --gear-discover-field: #110f0d;
+  --gear-discover-panel-bg: #0f0d0b;
+  --gear-discover-panel-border: rgba(176, 141, 87, 0.13);
+  --gear-discover-panel-radius: 16px;
+  --gear-discover-entry-divider: rgba(176, 141, 87, 0.09);
+  /* Atlas map tiles — scroll layer only; async tile sizes avoid synced repeats */
+  --gear-atlas-map-image: url("/images/gear-atlas-map.svg");
+  --gear-atlas-map-size: min(100%, 2200px) auto;
+  --gear-atlas-details-image: url("/images/gear-atlas-details.svg");
+  --gear-atlas-details-size: min(100%, 1200px) auto;
+  --gear-atlas-details-opacity: 0.05;
+  --gear-card: #1d1915;
+  --gear-card-hover: #221d18;
+  --gear-border: rgba(176, 141, 87, 0.18);
+  --gear-border-strong: rgba(176, 141, 87, 0.32);
+  --gear-divider: rgba(232, 220, 196, 0.07);
+  --gear-accent: #b08d57;
+  --gear-accent-hover: #c7a36b;
+  --gear-accent-highlight: #d8b882;
+  --gear-accent-soft: rgba(176, 141, 87, 0.1);
+  --gear-accent-glow: rgba(176, 141, 87, 0.2);
+  --gear-accent-faint: rgba(176, 141, 87, 0.05);
+  --gear-label: #8d7a55;
+  --gear-text: #f5f2ea;
+  --gear-text-secondary: #a9a094;
+  --gear-text-muted: #7f766b;
+  --gear-placeholder: rgba(255, 255, 255, 0.7);
+  --gear-input-bg: #14110f;
+  --gear-chip-bg: #14110f;
+  --gear-chip-active-text: #f5f2ea;
+  --gear-scrollbar: rgba(176, 141, 87, 0.28);
+  --gear-scrollbar-hover: rgba(176, 141, 87, 0.42);
+  --gear-scrollbar-track: rgba(20, 18, 16, 0.9);
+  --gear-shadow: 0 14px 28px rgba(0, 0, 0, 0.22);
+  --gear-shadow-soft: 0 6px 16px rgba(0, 0, 0, 0.14);
+  --gear-overlay-scrim: rgba(12, 10, 9, 0.55);
+  --gear-focus-ring: rgba(176, 141, 87, 0.18);
+  --gear-radius-control: 12px;
+  --gear-radius-card: 22px;
+}
+
+body[data-gear-theme="museum-light"],
+[data-gear-theme="museum-light"] {
+  /* Museum board / paper — never pure white, never neutral gray */
+  --gear-bg: #f4f0e8;
+  --gear-surface: #f7f4ed;
+  --gear-surface-elevated: #f8f5ef;
+  --gear-museum-wall: #f7f4ed;
+  --gear-museum-panel: #f8f5ef;
+  --gear-atlas-field: #f7f3eb;
+  --gear-discover-field: #efe9df;
+  --gear-discover-panel-bg: #e7e1d6;
+  --gear-discover-panel-border: rgba(176, 141, 87, 0.2);
+  --gear-discover-panel-radius: 16px;
+  --gear-discover-entry-divider: rgba(176, 141, 87, 0.16);
+  --gear-atlas-field-image: none;
+  --gear-atlas-field-image-opacity: 0.04;
+  --gear-atlas-map-image: url("/images/gear-atlas-map.svg");
+  --gear-atlas-map-size: min(100%, 2200px) auto;
+  --gear-atlas-details-image: url("/images/gear-atlas-details.svg");
+  --gear-atlas-details-size: min(100%, 1200px) auto;
+  --gear-atlas-details-opacity: 0.05;
+  --gear-card: #f8f5ef;
+  --gear-card-inner: #fbf8f3;
+  --gear-card-hover: #faf7f1;
+  --gear-border: #d8c6a4;
+  --gear-border-strong: #b08d57;
+  --gear-divider: rgba(176, 141, 87, 0.22);
+  --gear-accent: #b08d57;
+  --gear-accent-hover: #9a7848;
+  --gear-accent-highlight: #c29a4d;
+  --gear-accent-soft: rgba(176, 141, 87, 0.1);
+  --gear-accent-glow: rgba(176, 141, 87, 0.14);
+  --gear-accent-faint: rgba(176, 141, 87, 0.06);
+  --gear-label: #8e6b2c;
+  --gear-text: #2a241d;
+  --gear-text-secondary: #6a6257;
+  --gear-text-muted: #7a7165;
+  --gear-placeholder: rgba(0, 0, 0, 0.6);
+  --gear-input-bg: #f7f3ec;
+  --gear-chip-bg: #f0ebe1;
+  --gear-chip-active-text: #2a241d;
+  --gear-scrollbar: rgba(176, 141, 87, 0.32);
+  --gear-scrollbar-hover: rgba(176, 141, 87, 0.48);
+  --gear-scrollbar-track: rgba(218, 208, 188, 0.55);
+  --gear-shadow: 0 14px 28px rgba(70, 55, 30, 0.1);
+  --gear-shadow-soft: 0 6px 16px rgba(70, 55, 30, 0.07);
+  --gear-overlay-scrim: rgba(55, 45, 30, 0.32);
+  --gear-focus-ring: rgba(176, 141, 87, 0.16);
+  --gear-radius-control: 12px;
+  --gear-radius-card: 22px;
+}
+
+body[data-app-view="gear"][data-gear-theme="museum-dark"],
+body[data-app-view="gear"][data-gear-theme="museum-light"] {
+  background: var(--gear-bg) !important;
+  color: var(--gear-text);
+}
+
+body[data-app-view="gear"][data-gear-theme="museum-light"] {
+  color-scheme: light;
+}
+
+body[data-app-view="gear"][data-gear-theme="museum-dark"] {
+  color-scheme: dark;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Stage / chrome                                                              */
+/* -------------------------------------------------------------------------- */
+
+#gearLibraryView {
+  background: var(--gear-bg);
+  color: var(--gear-text);
+}
+
+#gearLibraryView .shell--gear {
+  background: var(--gear-bg);
+  color: var(--gear-text);
+  border: 0;
+  box-shadow: none;
+}
+
+#gearLibraryView .gear-library-panel {
+  /* Main Gear Atlas field — warm charcoal / paper, not a floating card */
+  background: var(--gear-atlas-field);
+  color: var(--gear-text);
+  border-color: color-mix(in srgb, var(--gear-border) 55%, transparent);
+  box-shadow: none;
+  padding: 22px 40px 48px;
+  gap: 22px;
+}
+
+#gearLibraryView .gear-library-header {
+  position: relative;
+  padding-right: clamp(8rem, 28vw, 14.5rem);
+}
+
+#gearLibraryView .gear-atlas-signet {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+  display: block;
+  height: clamp(2.15rem, 4.6vw, 3.05rem);
+  width: auto;
+  max-width: min(34vw, 13.25rem);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  object-fit: contain;
+  object-position: top right;
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (max-width: 720px) {
+  #gearLibraryView .gear-library-header {
+    padding-right: clamp(6.5rem, 36vw, 11rem);
+  }
+
+  #gearLibraryView .gear-atlas-signet {
+    height: clamp(1.85rem, 8vw, 2.45rem);
+    max-width: min(42vw, 11rem);
+  }
+}
+
+#gearLibraryView .gear-library-layout,
+#gearLibraryView .gear-amp-browser-stage {
+  background: transparent;
+  color: var(--gear-text);
+}
+
+#gearLibraryView .gear-library-scroll {
+  color: var(--gear-text);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Surface hierarchy — Atlas field vs Discover editorial wall                  */
+/* -------------------------------------------------------------------------- */
+
+#gearLibraryView .gear-category-shell {
+  position: relative;
+  isolation: isolate;
+  background-color: transparent;
+  color: var(--gear-text);
+}
+
+/* Reserved — atlas map scrolls on .gear-library-scroll instead */
+#gearLibraryView .gear-category-shell::before {
+  content: none;
+}
+
+#gearLibraryView .gear-library-scroll {
+  position: relative;
+  isolation: isolate;
+  background-color: transparent;
+  /* Layer 1 map + layer 2 details — both scroll via background-attachment: local */
+  background-image: var(--gear-atlas-details-image), var(--gear-atlas-map-image);
+  background-repeat: repeat-y, repeat-y;
+  background-size: var(--gear-atlas-details-size), var(--gear-atlas-map-size);
+  background-position: top center, top center;
+  background-attachment: local, local;
+}
+
+/* Layer 3: scrollable catalog content above both background layers */
+#gearLibraryView .gear-library-scroll > * {
+  position: relative;
+  z-index: 3;
+}
+
+#gearLibraryView .gear-discover-column {
+  align-self: stretch;
+  margin: clamp(10px, 1.35vw, 16px) 0 clamp(14px, 1.75vw, 22px);
+  padding: clamp(24px, 2.5vw, 32px) clamp(20px, 2.1vw, 28px);
+  border: 1px solid var(--gear-discover-panel-border);
+  border-radius: var(--gear-discover-panel-radius);
+  background: var(--gear-discover-panel-bg);
+  color: var(--gear-text);
+  box-shadow: none;
+}
+
+@media (max-width: 900px) {
+  #gearLibraryView .gear-discover-column {
+    margin: clamp(18px, 2.4vw, 24px) 0 0;
+    padding: clamp(22px, 3vw, 28px) clamp(18px, 2.6vw, 24px);
+  }
+}
+
+#gearLibraryView .gear-library-eyebrow,
+#gearLibraryView .gear-library-toolbar-caption,
+#gearLibraryView .gear-library-sort-caption,
+#gearLibraryView .gear-library-view-caption,
+#gearLibraryView .gear-library-image-filter-caption {
+  color: var(--gear-label);
+}
+
+#gearLibraryView .gear-library-title {
+  color: var(--gear-text);
+  border-bottom-color: var(--gear-divider);
+}
+
+#gearLibraryView .gear-library-collection-meta,
+#gearLibraryView .gear-library-stats,
+#gearLibraryView .gear-library-stat,
+#gearLibraryView .gear-collection-footnote {
+  color: var(--gear-text-secondary);
+}
+
+#gearLibraryView .gear-library-stat-muted,
+#gearLibraryView .gear-library-stat-separator,
+#gearLibraryView .gear-collection-footnote-separator {
+  color: var(--gear-label);
+}
+
+#gearLibraryView .gear-discover-heading,
+#gearLibraryView .gear-discover-category {
+  color: color-mix(in srgb, var(--gear-label) 88%, var(--gear-accent) 12%);
+}
+
+#gearLibraryView .gear-discover-heading {
+  opacity: 0.92;
+}
+
+#gearLibraryView .gear-discover-category {
+  opacity: 0.86;
+  font-weight: 650;
+}
+
+#gearLibraryView .gear-discover-title {
+  color: var(--gear-text);
+  font-weight: 600;
+}
+
+#gearLibraryView .gear-discover-text {
+  color: var(--gear-text-secondary);
+}
+
+#gearLibraryView .gear-discover-entry + .gear-discover-entry {
+  border-top-color: var(--gear-discover-entry-divider);
+}
+
+/* Light: Discover editorial inset panel */
+body[data-gear-theme="museum-light"] #gearLibraryView .gear-discover-column {
+  background: var(--gear-discover-panel-bg);
+  border-color: var(--gear-discover-panel-border);
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .gear-library-search,
+body[data-gear-theme="museum-light"] #gearLibraryView .gear-library-toolbar-select,
+body[data-gear-theme="museum-light"] #gearLibraryView .gear-design-preview-select,
+body[data-gear-theme="museum-light"] #gearLibraryView .gear-library-chapter-select,
+body[data-gear-theme="museum-light"] #gearLibraryView .gear-color-theme-select,
+body[data-gear-theme="museum-light"] #gearLibraryView .gear-presentation-button {
+  border-color: var(--gear-border);
+  background: var(--gear-input-bg);
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .gear-library-image-filter,
+body[data-gear-theme="museum-light"] #gearLibraryView .gear-category-button {
+  border-color: var(--gear-border);
+  background: var(--gear-input-bg);
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-group-grid,
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-flat-grid {
+  gap: 36px 32px;
+}
+
+/*
+ * Light cards: exhibition panel / museum board.
+ * Brand color = fine edge + label + 2–4% top wash only.
+ * No radial brand blobs behind the amp.
+ */
+body[data-gear-theme="museum-light"] #gearLibraryView .collections-thumb {
+  border-color: var(--gear-border);
+  background: var(--gear-card);
+  box-shadow: var(--gear-shadow-soft);
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card {
+  border-color: color-mix(in srgb, var(--amp-theme-border) 22%, var(--gear-border));
+  /* Brand tint mixes into paper — never a translucent dark veil */
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--amp-theme-border) 9%, var(--gear-card-inner)) 0%,
+    var(--gear-card-inner) 34%,
+    var(--gear-card) 100%
+  );
+  box-shadow: var(--gear-shadow-soft);
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card:hover {
+  border-color: color-mix(in srgb, var(--amp-theme-border) 48%, var(--gear-border-strong));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--amp-theme-border) 12%, var(--gear-card-inner)) 0%,
+    var(--gear-card-inner) 36%,
+    var(--gear-card-hover) 100%
+  );
+  box-shadow: var(--gear-shadow);
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card[data-selected="true"] {
+  border-color: color-mix(in srgb, var(--amp-theme-border) 58%, var(--gear-border-strong));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--amp-theme-border) 10%, var(--gear-card-inner)) 0%,
+    var(--gear-card-inner) 34%,
+    var(--gear-card) 100%
+  );
+  box-shadow: var(--gear-shadow-soft);
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card:focus-visible {
+  outline-color: color-mix(in srgb, var(--amp-theme-border) 40%, var(--gear-border-strong));
+}
+
+/* Amp stage stays neutral paper — no brand wash under the image */
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card-media {
+  background: transparent;
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card-manufacturer {
+  color: color-mix(in srgb, var(--amp-theme-border) 42%, var(--gear-label));
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card-image {
+  filter: drop-shadow(0 12px 18px rgba(70, 55, 30, 0.12));
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card:hover .amp-browser-card-image {
+  filter: drop-shadow(0 14px 22px rgba(70, 55, 30, 0.15));
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .gear-library-title {
+  border-bottom-color: var(--gear-divider);
+}
+
+body[data-gear-theme="museum-light"] #gearArchiveAmpDetailOverlay .gear-archive-detail-dialog,
+body[data-gear-theme="museum-light"] #gearManufacturerDetailOverlay .gear-manufacturer-detail-dialog {
+  background: var(--gear-card);
+  border-color: var(--gear-border);
+  box-shadow: var(--gear-shadow);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Controls                                                                    */
+/* -------------------------------------------------------------------------- */
+
+#gearLibraryView .gear-category-button {
+  border-color: var(--gear-divider);
+  background: var(--gear-chip-bg);
+  color: var(--gear-text-secondary);
+}
+
+#gearLibraryView .gear-category-button.is-active {
+  color: var(--gear-chip-active-text);
+  border-color: var(--gear-border);
+  background: var(--gear-accent-soft);
+}
+
+#gearLibraryView .gear-library-search,
+#gearLibraryView .gear-library-toolbar-select,
+#gearLibraryView .gear-library-sort,
+#gearLibraryView .gear-library-view-select,
+#gearLibraryView .gear-design-preview-select,
+#gearLibraryView .gear-library-chapter-select,
+#gearLibraryView .gear-color-theme-select,
+#gearLibraryView .gear-presentation-button {
+  border: 1px solid var(--gear-divider);
+  border-radius: var(--gear-radius-control);
+  background: var(--gear-input-bg);
+  color: var(--gear-text);
+  box-shadow: none;
+}
+
+#gearLibraryView .gear-library-search::placeholder {
+  color: var(--gear-placeholder);
+  opacity: 1;
+}
+
+#gearLibraryView .gear-library-search:focus,
+#gearLibraryView .gear-library-toolbar-select:focus,
+#gearLibraryView .gear-library-view-select:focus,
+#gearLibraryView .gear-design-preview-select:focus,
+#gearLibraryView .gear-library-chapter-select:focus,
+#gearLibraryView .gear-color-theme-select:focus,
+#gearLibraryView .gear-presentation-button:focus-visible {
+  outline: none;
+  border-color: var(--gear-border-strong);
+  box-shadow: 0 0 0 2px var(--gear-focus-ring);
+}
+
+#gearLibraryView .gear-presentation-menu {
+  border-color: var(--gear-divider);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--gear-text) 4%, transparent), transparent 40%),
+    color-mix(in srgb, var(--gear-input-bg) 96%, #000 4%);
+}
+
+#gearLibraryView .gear-presentation-menu-item {
+  color: var(--gear-text-secondary);
+}
+
+#gearLibraryView .gear-presentation-menu-item:hover,
+#gearLibraryView .gear-presentation-menu-item:focus-visible {
+  color: var(--gear-text);
+  background: color-mix(in srgb, var(--gear-accent-soft) 55%, transparent);
+}
+
+#gearLibraryView .gear-presentation-menu-item.is-active {
+  color: var(--gear-chip-active-text, var(--gear-text));
+  background: var(--gear-accent-soft);
+}
+
+#gearLibraryView .gear-library-image-filter {
+  border-color: var(--gear-divider);
+  background: var(--gear-chip-bg);
+}
+
+#gearLibraryView .gear-library-image-filter-option {
+  color: var(--gear-text-secondary);
+}
+
+#gearLibraryView .gear-library-image-filter-option:hover {
+  color: var(--gear-accent-hover);
+}
+
+#gearLibraryView .gear-library-image-filter-option.is-active {
+  color: var(--gear-chip-active-text);
+  background: var(--gear-accent-soft);
+  box-shadow: none;
+}
+
+#gearLibraryView .gear-library-image-filter-marker {
+  border-color: var(--gear-divider);
+  box-shadow: none;
+}
+
+#gearLibraryView .gear-library-image-filter-option.is-active .gear-library-image-filter-marker {
+  border-color: var(--gear-accent);
+  background: var(--gear-accent);
+  box-shadow: none;
+}
+
+#gearLibraryView .gear-amp-timeline-year-marker {
+  background: var(--gear-divider);
+  box-shadow: none;
+}
+
+#gearLibraryView .gear-amp-timeline-year:hover .gear-amp-timeline-year-marker,
+#gearLibraryView .gear-amp-timeline-year.is-active .gear-amp-timeline-year-marker {
+  background: var(--gear-accent);
+  box-shadow: none;
+}
+
+#gearLibraryView .gear-amp-timeline-year:focus-visible {
+  outline: 2px solid var(--gear-border-strong);
+}
+
+#gearLibraryView .gear-amp-timeline-track {
+  border-right-color: var(--gear-divider);
+}
+
+#gearLibraryView .gear-amp-timeline-year-label {
+  color: var(--gear-text-secondary);
+}
+
+#gearLibraryView .gear-amp-timeline-year.is-active .gear-amp-timeline-year-label,
+#gearLibraryView .gear-amp-timeline-year:hover .gear-amp-timeline-year-label {
+  color: var(--gear-accent);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Exhibition cards                                                            */
+/* -------------------------------------------------------------------------- */
+
+#gearLibraryView .amp-browser-group-grid,
+#gearLibraryView .amp-browser-flat-grid {
+  gap: 36px 30px;
+}
+
+#gearLibraryView .amp-browser-group {
+  gap: 72px;
+}
+
+/*
+ * Gallery cards: near-black frame. Brand identity only as whisper accents
+ * (wash / outline / hover) — never a filled brand surface.
+ */
+#gearLibraryView .amp-browser-card {
+  gap: 36px;
+  padding: 44px 38px 38px;
+  border: 1px solid color-mix(in srgb, var(--amp-theme-border) 55%, var(--gear-border));
+  border-radius: var(--gear-radius-card);
+  background:
+    radial-gradient(
+      ellipse 68% 52% at 50% 30%,
+      color-mix(in srgb, var(--amp-theme-glow) 70%, transparent),
+      transparent 74%
+    ),
+    radial-gradient(
+      ellipse 78% 58% at 50% 18%,
+      color-mix(in srgb, var(--amp-theme-gradient-start) 85%, transparent),
+      transparent 72%
+    ),
+    var(--gear-card);
+  color: var(--gear-text);
+  box-shadow: var(--gear-shadow-soft);
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    background 220ms ease,
+    transform 220ms ease;
+}
+
+#gearLibraryView .amp-browser-card:hover {
+  background:
+    radial-gradient(
+      ellipse 70% 54% at 50% 30%,
+      color-mix(in srgb, var(--amp-theme-glow) 90%, transparent),
+      transparent 76%
+    ),
+    radial-gradient(
+      ellipse 80% 60% at 50% 18%,
+      color-mix(in srgb, var(--amp-theme-gradient-start) 100%, transparent),
+      transparent 74%
+    ),
+    var(--gear-card-hover);
+  border-color: color-mix(in srgb, var(--amp-theme-border) 70%, var(--gear-border-strong));
+  box-shadow:
+    var(--gear-shadow),
+    0 0 0 1px color-mix(in srgb, var(--amp-theme-glow) 35%, transparent);
+  transform: translateY(-2px);
+}
+
+#gearLibraryView .amp-browser-card:focus-visible,
+#gearLibraryView .manufacturer-browser-card:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--amp-theme-border) 60%, var(--gear-border-strong));
+  outline-offset: 3px;
+}
+
+#gearLibraryView .amp-browser-card[data-selected="true"] {
+  border-color: color-mix(in srgb, var(--amp-theme-border) 75%, var(--gear-accent));
+  box-shadow:
+    var(--gear-shadow-soft),
+    0 0 0 1px color-mix(in srgb, var(--amp-theme-glow) 40%, transparent);
+  transform: none;
+}
+
+#gearLibraryView .amp-browser-card-media {
+  min-height: 280px;
+  padding: 12px 6px 4px;
+  border-radius: 0;
+  background: transparent;
+}
+
+#gearLibraryView .amp-browser-card-image {
+  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.45));
+}
+
+#gearLibraryView .amp-browser-card:hover .amp-browser-card-image {
+  transform: none;
+  filter: drop-shadow(0 22px 32px rgba(0, 0, 0, 0.5));
+}
+
+#gearLibraryView .amp-browser-card-manufacturer {
+  color: color-mix(in srgb, var(--amp-theme-border) 70%, var(--gear-label));
+}
+
+#gearLibraryView .amp-browser-card-model,
+#gearLibraryView .amp-browser-card-name,
+#gearLibraryView .manufacturer-browser-card-name {
+  color: var(--gear-text);
+}
+
+#gearLibraryView .amp-browser-card-meta,
+#gearLibraryView .manufacturer-browser-card-meta,
+#gearLibraryView .amp-browser-group-meta {
+  color: var(--gear-text-secondary);
+}
+
+#gearLibraryView .amp-browser-group-rule {
+  background: var(--gear-divider);
+}
+
+#gearLibraryView button.amp-browser-group-title.gear-manufacturer-link,
+#gearLibraryView .amp-browser-group-title.gear-manufacturer-link,
+#gearLibraryView .gear-manufacturer-link {
+  color: var(--gear-text);
+}
+
+#gearLibraryView .gear-manufacturer-link:hover,
+#gearLibraryView button.amp-browser-group-title.gear-manufacturer-link:hover {
+  color: var(--gear-accent-hover);
+}
+
+#gearLibraryView .gear-manufacturer-link:focus-visible {
+  outline: 2px solid var(--gear-border-strong);
+}
+
+#gearLibraryView .manufacturer-browser-card {
+  border: 1px solid var(--gear-border);
+  border-radius: var(--gear-radius-card);
+  background: var(--gear-card);
+  box-shadow: var(--gear-shadow-soft);
+  color: var(--gear-text);
+}
+
+#gearLibraryView .manufacturer-browser-card:hover {
+  border-color: var(--gear-border-strong);
+  background: var(--gear-card-hover);
+  box-shadow: var(--gear-shadow);
+}
+
+#gearLibraryView .gear-library-empty,
+#gearLibraryView .gear-library-empty-state,
+#gearLibraryView .amp-browser-empty {
+  color: var(--gear-text-secondary);
+}
+
+#gearLibraryView .amp-browser-card-placeholder {
+  border-color: var(--gear-divider);
+  background: var(--gear-surface);
+}
+
+#gearLibraryView .amp-browser-year-section {
+  border-top-color: var(--gear-divider);
+}
+
+#gearLibraryView .amp-browser-year-title {
+  color: var(--gear-label);
+}
+
+#gearLibraryView .gear-category-shell {
+  border-right-color: transparent;
+}
+
+#gearLibraryView .collections-box,
+body[data-gear-design="collections"] #gearLibraryView .collections-box {
+  border-color: var(--gear-border);
+  border-radius: var(--gear-radius-card);
+  background: var(--gear-surface);
+  box-shadow: none;
+}
+
+#gearLibraryView .collections-box-header,
+body[data-gear-design="collections"] #gearLibraryView .collections-box-header {
+  border-bottom-color: var(--gear-divider);
+}
+
+#gearLibraryView .collections-box-title,
+#gearLibraryView .museum-exhibit-title,
+#gearLibraryView .museum-exhibit-fact dd {
+  color: var(--gear-text);
+}
+
+#gearLibraryView .collections-thumb,
+body[data-gear-design="collections"] #gearLibraryView .collections-thumb {
+  border-color: var(--gear-border);
+  border-radius: 16px;
+  background: var(--gear-card);
+  box-shadow: var(--gear-shadow-soft);
+}
+
+#gearLibraryView .collections-thumb:hover,
+body[data-gear-design="collections"] #gearLibraryView .collections-thumb:hover {
+  border-color: var(--gear-border-strong);
+  background: var(--gear-card-hover);
+}
+
+#gearLibraryView .collections-thumb-label,
+#gearLibraryView .collections-thumb-name {
+  color: var(--gear-text);
+}
+
+#gearLibraryView .collections-box-meta {
+  color: var(--gear-label);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Museum exhibition wall — shared language, light/dark via tokens             */
+/* -------------------------------------------------------------------------- */
+
+#gearLibraryView .museum-catalog,
+#gearLibraryView .museum-stage,
+#gearLibraryView .museum-exhibit,
+#gearLibraryView .museum-exhibit-layout {
+  background: transparent;
+  color: var(--gear-text);
+}
+
+#gearLibraryView .museum-stage {
+  border: 1px solid var(--gear-divider);
+  border-radius: var(--gear-radius-card);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--gear-accent) 2.5%, var(--gear-museum-wall)) 0%,
+    var(--gear-museum-wall) 38%,
+    color-mix(in srgb, var(--gear-bg) 55%, var(--gear-museum-wall)) 100%
+  );
+  box-shadow: none;
+}
+
+#gearLibraryView .museum-exhibit-hero {
+  background: transparent;
+}
+
+#gearLibraryView .museum-exhibit-panel {
+  background: transparent;
+  color: var(--gear-text);
+}
+
+#gearLibraryView .museum-exhibit-header {
+  border-bottom-color: var(--gear-divider);
+}
+
+#gearLibraryView .museum-exhibit-kicker,
+#gearLibraryView .museum-exhibit-fact dt,
+#gearLibraryView .museum-exhibit-section-title {
+  color: var(--gear-label);
+  font-family: var(--gear-font-sans);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+#gearLibraryView .museum-exhibit-title {
+  color: var(--gear-text);
+  font-family: var(--gear-font-serif);
+}
+
+#gearLibraryView .museum-exhibit-fact dd,
+#gearLibraryView .museum-exhibit-artists {
+  color: var(--gear-text);
+}
+
+#gearLibraryView .museum-exhibit-section-text {
+  color: var(--gear-text-secondary);
+}
+
+#gearLibraryView .museum-exhibit-empty {
+  color: var(--gear-text-muted);
+}
+
+#gearLibraryView .museum-exhibit-image {
+  filter: drop-shadow(0 28px 48px rgba(0, 0, 0, 0.55));
+}
+
+#gearLibraryView .museum-model-nav {
+  border-bottom-color: var(--gear-divider);
+}
+
+#gearLibraryView .museum-model-nav-track {
+  border-color: transparent;
+}
+
+#gearLibraryView .museum-model-nav-item {
+  border-color: transparent;
+  background: transparent;
+  color: var(--gear-text-secondary);
+}
+
+#gearLibraryView .museum-model-nav-item:hover {
+  color: var(--gear-text);
+  border-color: var(--gear-divider);
+  background: var(--gear-accent-faint);
+}
+
+#gearLibraryView .museum-model-nav-item[data-active="true"],
+#gearLibraryView .museum-model-nav-item.is-active,
+#gearLibraryView .museum-model-nav-item[aria-current="true"] {
+  color: var(--gear-text);
+  border-color: color-mix(in srgb, var(--amp-theme-border, var(--gear-border)) 40%, var(--gear-border));
+  background: var(--gear-accent-soft);
+}
+
+/* Light: continuous warm gallery wall — no gray layers, no dark stage */
+body[data-gear-theme="museum-light"] #gearLibraryView .museum-stage {
+  border-color: color-mix(in srgb, var(--gear-border) 75%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--gear-accent) 2%, var(--gear-museum-wall)) 0%,
+    var(--gear-museum-wall) 42%,
+    var(--gear-museum-panel) 100%
+  );
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .museum-exhibit-hero,
+body[data-gear-theme="museum-light"] #gearLibraryView .museum-exhibit-panel,
+body[data-gear-theme="museum-light"] #gearLibraryView .museum-exhibit,
+body[data-gear-theme="museum-light"] #gearLibraryView .museum-catalog {
+  background: transparent;
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .museum-exhibit-image {
+  filter: drop-shadow(0 16px 28px rgba(70, 55, 30, 0.12));
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .museum-model-nav-item[data-active="true"],
+body[data-gear-theme="museum-light"] #gearLibraryView .museum-model-nav-item.is-active,
+body[data-gear-theme="museum-light"] #gearLibraryView .museum-model-nav-item[aria-current="true"] {
+  border-color: color-mix(in srgb, var(--amp-theme-border, var(--gear-border-strong)) 35%, var(--gear-border));
+  background: color-mix(in srgb, var(--amp-theme-border, var(--gear-accent)) 8%, var(--gear-card-inner));
+  color: var(--gear-text);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Scrollbars                                                                  */
+/* -------------------------------------------------------------------------- */
+
+#gearLibraryView .companion-scroll,
+#gearLibraryView .gear-library-scroll,
+#gearArchiveAmpDetailOverlay .companion-scroll,
+#gearManufacturerDetailOverlay .companion-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gear-scrollbar) var(--gear-scrollbar-track);
+}
+
+#gearLibraryView .companion-scroll::-webkit-scrollbar-track,
+#gearLibraryView .gear-library-scroll::-webkit-scrollbar-track,
+#gearArchiveAmpDetailOverlay .companion-scroll::-webkit-scrollbar-track,
+#gearManufacturerDetailOverlay .companion-scroll::-webkit-scrollbar-track {
+  background: var(--gear-scrollbar-track);
+}
+
+#gearLibraryView .companion-scroll::-webkit-scrollbar-thumb,
+#gearLibraryView .gear-library-scroll::-webkit-scrollbar-thumb,
+#gearArchiveAmpDetailOverlay .companion-scroll::-webkit-scrollbar-thumb,
+#gearManufacturerDetailOverlay .companion-scroll::-webkit-scrollbar-thumb {
+  background: var(--gear-scrollbar);
+  border-color: var(--gear-scrollbar-track);
+}
+
+#gearLibraryView .companion-scroll::-webkit-scrollbar-thumb:hover,
+#gearLibraryView .gear-library-scroll::-webkit-scrollbar-thumb:hover,
+#gearArchiveAmpDetailOverlay .companion-scroll::-webkit-scrollbar-thumb:hover,
+#gearManufacturerDetailOverlay .companion-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--gear-scrollbar-hover);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Manufacturer overlay                                                        */
+/* -------------------------------------------------------------------------- */
+
+#gearManufacturerDetailOverlay .gear-manufacturer-detail-backdrop {
+  background: var(--gear-overlay-scrim);
+  backdrop-filter: none;
+}
+
+#gearManufacturerDetailOverlay .gear-manufacturer-detail-dialog {
+  border: 1px solid var(--gear-border);
+  border-radius: var(--gear-radius-card);
+  background: var(--gear-surface-elevated);
+  box-shadow: var(--gear-shadow);
+  color: var(--gear-text);
+}
+
+#gearManufacturerDetailOverlay .gear-manufacturer-detail-title {
+  color: var(--gear-text);
+}
+
+#gearManufacturerDetailOverlay .gear-manufacturer-detail-meta,
+#gearManufacturerDetailOverlay .gear-manufacturer-detail-paragraph {
+  color: var(--gear-text-secondary);
+}
+
+#gearManufacturerDetailOverlay .gear-manufacturer-detail-close {
+  border-color: var(--gear-divider);
+  background: transparent;
+  color: var(--gear-text-secondary);
+}
+
+#gearManufacturerDetailOverlay .gear-manufacturer-detail-close:hover {
+  color: var(--gear-text);
+  border-color: var(--gear-border);
+  background: transparent;
+}
+
+#gearManufacturerDetailOverlay .gear-manufacturer-detail-website {
+  color: var(--gear-accent);
+}
+
+#gearManufacturerDetailOverlay .gear-manufacturer-detail-website:hover {
+  color: var(--gear-accent-hover);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Archive Amp Detail Card — exhibition catalog                                */
+/* -------------------------------------------------------------------------- */
+
+.gear-archive-detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  place-items: start center;
+  padding: clamp(16px, 3vh, 40px) 16px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  isolation: isolate;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  color: var(--gear-text);
+  transition:
+    opacity 200ms ease,
+    visibility 200ms ease;
+}
+
+.gear-archive-detail-overlay[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.gear-archive-detail-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  margin: 0;
+  padding: 0;
+  background: var(--gear-overlay-scrim);
+  backdrop-filter: none;
+  cursor: default;
+}
+
+.gear-archive-detail-dialog {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  /* ~20% wider than prior 1680px cap — extra width feeds the amp stage */
+  width: min(96vw, 2016px);
+  height: auto;
+  max-height: none;
+  margin: auto 0;
+  overflow: visible;
+  border: 1px solid var(--gear-border);
+  border-radius: var(--gear-radius-card);
+  background: var(--gear-surface-elevated);
+  box-shadow: var(--gear-shadow);
+  padding: clamp(48px, 4.5vw, 80px) clamp(48px, 4.8vw, 88px);
+  transform: none;
+}
+
+.gear-archive-detail-overlay[data-open="true"] .gear-archive-detail-dialog {
+  transform: none;
+}
+
+.gear-archive-detail-close {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid var(--gear-divider);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--gear-text-secondary);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease;
+}
+
+.gear-archive-detail-close:hover {
+  color: var(--gear-text);
+  border-color: var(--gear-border);
+  background: transparent;
+}
+
+.gear-archive-detail-scene {
+  min-width: 0;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+}
+
+.gear-archive-detail-layout {
+  display: grid;
+  /* Compact museum plaque · expansive amp stage (extra card width → image only) */
+  grid-template-columns: minmax(18rem, 40rem) minmax(0, 1fr);
+  gap: clamp(48px, 5vw, 88px);
+  align-items: start;
+  min-height: 0;
+}
+
+.gear-archive-detail-content {
+  display: grid;
+  gap: clamp(40px, 4.2vw, 64px);
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  padding: 8px 0 24px;
+  order: 1;
+}
+
+.gear-archive-detail-hero {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+  min-height: min(74vh, 860px);
+  padding: clamp(16px, 2vw, 28px) clamp(8px, 1.2vw, 20px);
+  border: 0;
+  background: transparent;
+  order: 2;
+}
+
+.gear-archive-detail-hero[data-has-image="false"]::before {
+  content: none;
+}
+
+.gear-archive-detail-image {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: min(100%, 1180px);
+  height: auto;
+  max-height: min(78vh, 920px);
+  margin: 0 auto;
+  object-fit: contain;
+  object-position: center center;
+  filter: none;
+  cursor: zoom-in;
+}
+
+.gear-archive-detail-header {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 4px;
+}
+
+/* Dominant display title — only true serif headline on the card */
+.gear-archive-detail-model {
+  margin: 0;
+  color: var(--gear-text);
+  font-family: var(--gear-font-serif);
+  font-size: clamp(2.55rem, 4vw, 3.55rem);
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  line-height: 1.05;
+  font-variant-numeric: lining-nums;
+  font-feature-settings: "lnum" 1, "onum" 0;
+}
+
+/* Manufacturer sits under the amp name — Inter, not serif */
+.gear-archive-detail-manufacturer {
+  justify-self: start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--gear-accent);
+  font-family: var(--gear-font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-variant-numeric: lining-nums;
+  font-feature-settings: "lnum" 1, "onum" 0;
+}
+
+.gear-archive-detail-manufacturer:hover {
+  color: var(--gear-accent-hover);
+}
+
+/* Metadata strip — labeled catalog fields under manufacturer */
+.gear-archive-detail-specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 28px;
+  margin-top: 8px;
+  padding-top: 4px;
+}
+
+.gear-archive-detail-spec {
+  display: grid;
+  gap: 6px;
+  min-width: 4.5rem;
+}
+
+.gear-archive-detail-spec:not(:last-child)::after {
+  content: none;
+}
+
+.gear-archive-detail-spec-label {
+  color: var(--gear-accent);
+  font-family: var(--gear-font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.gear-archive-detail-spec-value {
+  color: var(--gear-text-secondary);
+  font-family: var(--gear-font-sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+  font-variant-numeric: lining-nums;
+}
+
+.gear-archive-detail-narrative {
+  display: grid;
+  gap: clamp(36px, 4vw, 56px);
+}
+
+.gear-archive-detail-section {
+  display: grid;
+  gap: 14px;
+  padding: 0;
+  border: 0;
+}
+
+.gear-archive-detail-section[hidden] {
+  display: none !important;
+}
+
+/* Catalog chapter labels — Inter Semibold, catalog-scale, not footnotes */
+.gear-archive-detail-section-title {
+  margin: 0;
+  color: var(--gear-accent);
+  font-family: var(--gear-font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.gear-archive-detail-section-text {
+  margin: 0;
+  color: var(--gear-text);
+  font-family: var(--gear-font-sans);
+  font-size: clamp(1.02rem, 1.1vw, 1.12rem);
+  font-weight: 400;
+  line-height: 1.75;
+}
+
+.gear-archive-detail-valve-list {
+  display: grid;
+  gap: 18px;
+}
+
+.gear-archive-detail-valve-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.38fr) minmax(0, 1fr);
+  gap: 12px 28px;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.gear-archive-detail-valve-label {
+  margin: 0;
+  color: var(--gear-accent);
+  font-family: var(--gear-font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.gear-archive-detail-valve-value {
+  margin: 0;
+  color: var(--gear-text);
+  font-family: var(--gear-font-sans);
+  font-size: clamp(1.02rem, 1.1vw, 1.12rem);
+  font-weight: 400;
+  line-height: 1.55;
+}
+
+.gear-archive-detail-played-by-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+}
+
+.gear-archive-detail-artist-chip {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 7px 14px;
+  border: 1px solid color-mix(in srgb, var(--gear-border) 70%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gear-chip-bg) 80%, transparent);
+  color: var(--gear-text);
+  font-size: clamp(0.95rem, 1.05vw, 1.05rem);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+/* Overlay open: calm muted state */
+body[data-app-view="gear"][data-gear-overlay-open="true"] #gearLibraryView .gear-manufacturer-link,
+body[data-app-view="gear"][data-gear-overlay-open="true"] #gearLibraryView .gear-manufacturer-link:hover,
+body[data-app-view="gear"][data-gear-overlay-open="true"] #gearLibraryView .amp-browser-group-title.gear-manufacturer-link,
+body[data-app-view="gear"][data-gear-overlay-open="true"] #gearLibraryView .amp-browser-group-title.gear-manufacturer-link:hover {
+  color: var(--gear-text-secondary);
+}
+
+body[data-app-view="gear"][data-gear-overlay-open="true"] #gearLibraryView .manufacturer-browser-card,
+body[data-app-view="gear"][data-gear-overlay-open="true"] #gearLibraryView .manufacturer-browser-card:hover,
+body[data-app-view="gear"][data-gear-overlay-open="true"] #gearLibraryView .manufacturer-browser-card[data-selected="true"] {
+  border-color: var(--gear-border);
+}
+
+body[data-app-view="gear"][data-gear-theme="museum-light"] .app-module-launcher-button {
+  border-color: var(--gear-border);
+  background: var(--gear-card);
+  color: var(--gear-text);
+  box-shadow: var(--gear-shadow-soft);
+}
+
+body[data-app-view="gear"][data-gear-theme="museum-light"] .app-module-menu {
+  border-color: var(--gear-border);
+  background: var(--gear-card);
+  color: var(--gear-text);
+  box-shadow: var(--gear-shadow);
+}
+
+body[data-app-view="gear"][data-gear-theme="museum-light"] .app-module-menu-item {
+  color: var(--gear-text-secondary);
+}
+
+body[data-app-view="gear"][data-gear-theme="museum-light"] .app-module-menu-item.is-active,
+body[data-app-view="gear"][data-gear-theme="museum-light"] .app-module-menu-item:hover {
+  color: var(--gear-text);
+  background: var(--gear-accent-soft);
+}
+
+@media (max-width: 1100px) {
+  .gear-archive-detail-dialog {
+    width: min(94vw, 1100px);
+    height: auto;
+    padding: 36px 28px 40px;
+  }
+
+  .gear-archive-detail-layout {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+
+  .gear-archive-detail-content {
+    max-width: 40rem;
+    order: 2;
+  }
+
+  .gear-archive-detail-hero {
+    min-height: min(42vh, 420px);
+    order: 1;
+  }
+
+  .gear-archive-detail-image {
+    max-height: min(48vh, 520px);
+  }
+}
+
+#gearLibraryView .gear-library-controls {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto auto;
+}
+
+@media (max-width: 1280px) {
+  #gearLibraryView .gear-library-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Combo amp label — display-only, tokenized for Museum Light / Dark */
+body[data-gear-theme="museum-light"] .cabinet-combo-label,
+[data-gear-theme="museum-light"] .cabinet-combo-label,
+body[data-gear-theme="museum-light"] .cabinet-details-group-title,
+[data-gear-theme="museum-light"] .cabinet-details-group-title {
+  color: var(--gear-label);
+}
+
+body[data-gear-theme="museum-dark"] .cabinet-combo-label,
+[data-gear-theme="museum-dark"] .cabinet-combo-label,
+body[data-gear-theme="museum-dark"] .cabinet-details-group-title,
+[data-gear-theme="museum-dark"] .cabinet-details-group-title {
+  color: var(--gear-label);
+}
+
+body[data-gear-theme="museum-light"] .cabinet-details-group,
+[data-gear-theme="museum-light"] .cabinet-details-group {
+  border-color: var(--gear-border);
+  background:
+    linear-gradient(180deg, var(--gear-accent-faint), transparent 46%),
+    var(--gear-card-inner, var(--gear-surface-elevated));
+}
+
+body[data-gear-theme="museum-light"] .cabinet-details-row dt,
+[data-gear-theme="museum-light"] .cabinet-details-row dt {
+  color: var(--gear-text-muted);
+}
+
+body[data-gear-theme="museum-light"] .cabinet-details-row dd,
+[data-gear-theme="museum-light"] .cabinet-details-row dd,
+body[data-gear-theme="museum-light"] .cabinet-configuration-line,
+[data-gear-theme="museum-light"] .cabinet-configuration-line {
+  color: var(--gear-text);
+}

@@ -11,7 +11,8 @@ export const englAmps = [
     "savage",
     "savage 120",
     "e610",
-    "engl savage"
+    "engl savage",
+    "safe age"
   ],
   image: "savage120.png",
   description:
@@ -433,6 +434,57 @@ export const englAmps = [
   ]
 },
 {
+  id: "engl-extreme-aggression",
+  manufacturerId: "engl",
+  manufacturer: "ENGL",
+  model: "Extreme Aggression",
+  aliases: [
+    "extreme aggression",
+    "engl extreme aggression",
+    "e636",
+    "e636 extreme aggression",
+    "mille petrozza",
+    "mille petrozza signature",
+    "kreator engl",
+    "engle extra"
+  ],
+  image: "extreme-aggression.png",
+  description:
+    "The Extreme Aggression is ENGL's limited-edition signature amplifier developed with Kreator guitarist Mille Petrozza. Based on the Fireball 100, it delivers an exceptionally aggressive high-gain sound with tight punch, deep lows and pronounced low-mid weight, specifically voiced to Petrozza's requirements.",
+  history:
+    "Introduced in 2013 as a Mille Petrozza signature model, the Extreme Aggression was based on the ENGL Fireball 100 but extensively voiced to match Petrozza's specifications. The E636 features two channels, 100 watts of 6L6GC power, two master volumes, switchable Bright, Bottom and Mid Boost functions, a built-in noise gate and ENGL's Power Tube Monitoring system. The amplifier and matching E412VGR cabinet were produced as a limited edition of only 150 complete stacks worldwide.",
+  introduced: 2013,
+  discontinued: 2013,
+  country: "Germany",
+  ampType: "Tube Head",
+  power: "100 W",
+  channels: 2,
+  tubes: {
+    preamp: [
+      "4 × ECC83 / 12AX7"
+    ],
+    power: [
+      "4 × 6L6GC"
+    ]
+  },
+  genres: [
+    "Thrash Metal",
+    "Heavy Metal",
+    "Death Metal"
+  ],
+  notableUsers: [
+    "Mille Petrozza"
+  ],
+  tags: [
+    "Signature",
+    "High Gain",
+    "6L6",
+    "Limited Edition",
+    "German",
+    "Metal"
+  ]
+},
+{
   id: "engl-artist-edition-100",
   manufacturerId: "engl",
   manufacturer: "ENGL",
@@ -827,6 +879,56 @@ export const englAmps = [
     "MIDI",
     "Four Channel",
     "German"
+  ]
+},
+{
+  id: "engl-invader-150",
+  manufacturerId: "engl",
+  manufacturer: "ENGL",
+  model: "Invader 150",
+  aliases: [
+    "invader 150",
+    "invader 150w",
+    "invader",
+    "e640",
+    "e640 invader",
+    "engl e640",
+    "intruder 150"
+
+  ],
+  image: "invader150.png",
+  description:
+    "The Invader 150 is ENGL's highly versatile four-channel flagship tube amplifier, combining everything from articulate cleans and classic crunch to modern high-gain tones with extensive MIDI control and independent channel voicing.",
+  history:
+    "Introduced in the mid-2000s, the Invader 150 was designed as one of ENGL's most comprehensive professional amplifier platforms. Its four independently voiced channels cover a wide range of gain structures, while separate EQ sections, switchable Low/High Gain modes, MIDI control, dual effects loops and ENGL's power tube monitoring system provide extensive control for live and studio applications. The 150-watt design uses four EL34 power tubes and became one of ENGL's defining high-end amplifiers.",
+  introduced: 2005,
+  discontinued: null,
+  country: "Germany",
+  ampType: "Tube Head",
+  power: "150 W",
+  channels: 4,
+  tubes: {
+    preamp: [
+      "6 × ECC83 / 12AX7"
+    ],
+    power: [
+      "4 × EL34"
+    ]
+  },
+  genres: [
+    "Rock",
+    "Hard Rock",
+    "Progressive Metal",
+    "Metal"
+  ],
+  notableUsers: [],
+  tags: [
+    "High Gain",
+    "Four Channel",
+    "EL34",
+    "MIDI",
+    "German",
+    "Flagship"
   ]
 }
 ];

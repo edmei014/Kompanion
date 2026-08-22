@@ -22,6 +22,9 @@ import { soldanoAmps } from "./soldano.js";
 import { thirdPowerAmps } from "./thirdPower.js";
 import { toneKingAmps } from "./toneKing.js";
 import { voxAmps } from "./vox.js";
+import { matchlessAmps } from "./matchless.js";
+import { victoryAmps } from "./victory.js";
+import { revvAmps } from "./revv.js";
 
 /**
  * Sole amp registration list.
@@ -54,5 +57,8 @@ export const allAmpRecords = [
   ...soldanoAmps,
   ...thirdPowerAmps,
   ...toneKingAmps,
-  ...voxAmps
+  ...voxAmps,
+  ...matchlessAmps,
+  ...victoryAmps,
+  ...revvAmps
 ];

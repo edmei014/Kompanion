@@ -212,9 +212,40 @@ export function createDiscoverRotationController(options = {}) {
     clearAllTimers();
   }
 
+  /**
+   * Advances every category once (independent picks). Used by Presentation
+   * Discover Only — does not require the background interval engine.
+   *
+   * @param {{ emit?: boolean }} [options]
+   * @returns {DiscoverBoardState}
+   */
+  function rotateAll(options = {}) {
+    const { emit = true } = options;
+
+    if (!state) {
+      state = createDiscoverBoardState({ strategy: "random" });
+    }
+
+    for (const { id } of DISCOVER_BOARD_CATEGORIES) {
+      const records = getDiscoverRecordsByCategory(id);
+      if (!records.length) continue;
+      state = rotateDiscoverSlot(state, id);
+      if (emit) {
+        onSlotRotate?.({
+          categoryId: id,
+          view: state[id]?.view ?? null,
+          state
+        });
+      }
+    }
+
+    return state;
+  }
+
   return {
     start,
     stop,
+    rotateAll,
     isRunning: () => running,
     getState: () => state
   };

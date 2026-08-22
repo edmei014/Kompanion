@@ -48,7 +48,7 @@ export const randallAmps = [
     "t2",
     "t two"
   ],
-  image: null,
+  image: "t2.png",
   description:
     "The T2 is Randall's most aggressive production tube amplifier, delivering enormous gain reserves, crushing low end and exceptional articulation for modern metal.",
   history:
@@ -85,7 +85,7 @@ export const randallAmps = [
     "rg100es",
     "rg 100"
   ],
-  image: null,
+  image: "rg100es.png",
   description:
     "The RG100ES is Randall's legendary solid-state amplifier, famous for its razor-sharp attack, tight distortion and unmistakable 1980s metal sound.",
   history:
@@ -120,7 +120,7 @@ export const randallAmps = [
     "warhead",
     "war head"
   ],
-  image: null,
+  image: "warhead.png",
   description:
     "The Warhead was developed with Dimebag Darrell and delivers massive solid-state power, aggressive distortion and exceptional low-end punch.",
   history:
@@ -156,7 +156,7 @@ export const randallAmps = [
     "satan",
     "randall satan"
   ],
-  image: null,
+  image: "satan.png",
   description:
     "Designed with Ola Englund, the Satan delivers exceptionally tight modern high-gain tones with outstanding note separation and precision for extended-range guitars.",
   history:
@@ -195,7 +195,7 @@ export const randallAmps = [
     "thrasher",
     "randall thrasher"
   ],
-  image: null,
+  image: "thrasher.png",
   description:
     "The Thrasher delivers aggressive modern high-gain tones with exceptional clarity, tight bass response and fast transient attack, making it ideal for contemporary metal styles.",
   history:
@@ -232,7 +232,7 @@ export const randallAmps = [
     "kirk hammett",
     "kh120"
   ],
-  image: null,
+  image: "kh120.png",
   description:
     "Developed with Kirk Hammett, the KH120RH combines Randall's aggressive solid-state attack with signature voicing tailored for articulate rhythm and soaring lead tones.",
   history:
@@ -268,7 +268,7 @@ export const randallAmps = [
     "mts",
     "modular amp"
   ],
-  image: null,
+  image: "rm100.png",
   description:
     "The RM100 introduced Randall's Modular Tube System (MTS), allowing players to swap interchangeable preamp modules for different amplifier voices.",
   history:
@@ -305,9 +305,10 @@ export const randallAmps = [
   aliases: [
     "diavlo",
     "rd100",
-    "diavlo rd100"
+    "diavlo rd100",
+    "diabolo"
   ],
-  image: null,
+  image: "rd100.png",
   description:
     "The Diavlo RD100 delivers tight modern distortion with excellent articulation, fast tracking and impressive versatility for contemporary rock and metal players.",
   history:
@@ -344,7 +345,7 @@ export const randallAmps = [
     "century",
     "rg200"
   ],
-  image: null,
+  image: "century200.png",
   description:
     "The Century 200 is one of Randall's classic solid-state amplifiers, delivering enormous clean headroom, aggressive distortion and exceptional reliability.",
   history:
@@ -378,7 +379,7 @@ export const randallAmps = [
     "nb king 100",
     "nuno bettencourt"
   ],
-  image: null,
+  image: "nb-king.png",
   description:
     "Developed with Nuno Bettencourt, the NB King 100 combines articulate clean tones, aggressive rhythm sounds and expressive lead voicings in a highly dynamic tube amplifier.",
   history:
@@ -418,7 +419,7 @@ export const randallAmps = [
     "lb100",
     "george lynch"
   ],
-  image: null,
+  image: "lynch-box.png",
   description:
     "The Lynch Box LB100 was developed with George Lynch to deliver classic hot-rodded British tones with outstanding dynamics and harmonic richness.",
   history:
@@ -458,7 +459,7 @@ export const randallAmps = [
     "commander 2",
     "commander"
   ],
-  image: null,
+  image: "commander-ii.png",
   description:
     "The Commander II is one of Randall's earliest professional solid-state amplifiers, offering powerful clean headroom, reliable performance and the unmistakable punch that helped define the brand.",
   history:

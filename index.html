@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark" />
-    <title>Live Companion</title>
+    <title>Kompanion</title>
     <style id="boot-critical">
       html {
         color-scheme: dark;
@@ -117,64 +117,102 @@
         }
       }
     </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@400;500;600;700&family=Michroma&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
-  <body data-boot="loading" data-connection="boot_loading" data-app-view="live">
+  <body data-boot="loading" data-connection="boot_loading" data-app-view="live" data-gear-theme="museum-dark">
     <div id="bootLoadingOverlay" class="connection-overlay connection-overlay--fullscreen boot-loading-overlay" data-visible="true" aria-live="polite" aria-busy="true">
       <div class="connection-overlay-content">
-        <h1 class="connection-overlay-title">Kemper Live Companion</h1>
+        <h1 class="connection-overlay-title">Kompanion</h1>
         <p class="connection-overlay-message">Load Data...</p>
         <div class="boot-loading-spinner" aria-hidden="true"></div>
       </div>
     </div>
 
-    <div id="appRoot" class="app-root">
-    <nav class="primary-nav" aria-label="Hauptnavigation">
+    <div class="app-module-launcher" data-open="false">
       <button
         type="button"
-        class="primary-nav-button is-active"
-        data-view="live"
-        aria-current="page"
+        id="appModuleLauncherButton"
+        class="app-module-launcher-button"
+        aria-label="Modules"
+        aria-haspopup="menu"
+        aria-expanded="false"
+        aria-controls="appModuleMenu"
       >
-        Live Companion
+        <span class="app-module-launcher-glyph" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
       </button>
-      <button
-        type="button"
-        class="primary-nav-button"
-        data-view="gear"
-        aria-current="false"
+      <div
+        id="appModuleMenu"
+        class="app-module-menu"
+        role="menu"
+        aria-label="Modules"
+        hidden
       >
-        Gear Library
-      </button>
-      <button
-        type="button"
-        class="primary-nav-button"
-        data-view="audio"
-        aria-current="false"
-      >
-        Audio Tools
-      </button>
-    </nav>
+        <button
+          type="button"
+          role="menuitem"
+          class="app-module-menu-item is-active"
+          data-view="live"
+          aria-current="page"
+        >
+          Kempanion
+        </button>
+        <button
+          type="button"
+          role="menuitem"
+          class="app-module-menu-item"
+          data-view="gear"
+          aria-current="false"
+        >
+          Gear Atlas
+        </button>
+        <button
+          type="button"
+          role="menuitem"
+          class="app-module-menu-item"
+          data-view="audio"
+          aria-current="false"
+        >
+          Audio Tools
+        </button>
+      </div>
+    </div>
 
+    <div id="appRoot" class="app-root">
     <div id="liveView" class="app-view-root" aria-hidden="false">
       <div id="noMidiOverlay" class="no-midi-overlay" data-visible="false" aria-live="polite" aria-hidden="true">
         <div class="connection-overlay-content no-midi-content">
-          <h1 class="connection-overlay-title">Kemper Live Companion</h1>
-          <p class="no-midi-headline">>No Kemper Profiler connected</p>
-          <p class="no-midi-subline">Please:</p>
-          <ul class="no-midi-steps">
-            <li>Kemper turned on</li>
-            <li>Active MIDI-Connection</li>
-            <li>MIDI-Port Options</li>
-          </ul>
+          <p class="no-midi-brand">Kompanion</p>
+          <h1 class="no-midi-headline">No Kemper Profiler Connected</h1>
+          <p class="no-midi-lead">
+            Connect your Kemper Profiler to start exploring rigs, profiles and real-time information.
+          </p>
+          <div class="no-midi-begin">
+            <h2 class="no-midi-begin-title">Before you begin</h2>
+            <ul class="no-midi-steps">
+              <li>Turn on your Kemper Profiler</li>
+              <li>Connect a MIDI interface</li>
+              <li>Select the correct MIDI input and output</li>
+              <li>Press Reconnect</li>
+            </ul>
+          </div>
           <div class="no-midi-ports">
             <label>
-              In
-              <select id="inputPort"></select>
+              MIDI Input
+              <select id="inputPort" aria-label="MIDI input"></select>
             </label>
             <label>
-              Out
-              <select id="outputPort"></select>
+              MIDI Output
+              <select id="outputPort" aria-label="MIDI output"></select>
             </label>
           </div>
           <button id="noMidiReconnectButton" class="no-midi-reconnect-button" type="button">
@@ -187,7 +225,7 @@
   <div class="title-row">
 
     <div class="title-brand">
-      <h1 class="app-title">LIVE COMPANION</h1>
+      <h1 class="app-title">KEMPANION</h1>
     </div>
 
     <div class="title-row-controls">
@@ -229,59 +267,68 @@
           </p>
 
           <div id="performanceBrowserPanel" class="performance-browser-panel">
-          <div id="performanceBrowserControls" class="performance-browser-controls" hidden>
-            <button id="performancePrevFastButton" class="performance-nav-button performance-nav-button--fast" type="button" aria-label="10 Performances zurück">
-              &lt;&lt;
-            </button>
-            <button id="performancePrevButton" class="performance-nav-button" type="button" aria-label="1 Performance zurück">
-              &lt;
-            </button>
-            <span id="performanceBrowserLabel" class="performance-browser-label">Performance 1</span>
-            <button id="performanceNextButton" class="performance-nav-button" type="button" aria-label="1 Performance vor">
-              &gt;
-            </button>
-            <button id="performanceNextFastButton" class="performance-nav-button performance-nav-button--fast" type="button" aria-label="10 Performances vor">
-              &gt;&gt;
-            </button>
-          </div>
-
-          <div id="performanceScanPanel" class="performance-scan-panel" hidden>
-            <p id="performanceScanStatus" class="performance-scan-status" hidden aria-hidden="true">Scanning Performance Library...</p>
-            <div id="performanceProgress" class="performance-progress">
-              <span id="performanceProgressFill"></span>
-            </div>
-          </div>
-
-          <div id="performanceSlotGrid" class="performance-slot-grid"></div>
-          </div>
-
-          <div id="performanceExplorerSection" class="performance-explorer-section" hidden>
-            <button
-              id="performanceExplorerToggle"
-              class="performance-explorer-toggle"
-              type="button"
-              aria-expanded="false"
-              aria-controls="performanceExplorerContent"
-            >
-              <span class="performance-explorer-toggle-icon" aria-hidden="true">▶</span>
-              <span class="performance-explorer-toggle-label">Performance Explorer</span>
-            </button>
-            <div id="performanceExplorerContent" class="performance-explorer-content" hidden>
-              <label class="performance-explorer-search-label" for="performanceExplorerSearch">
-                <span>Search</span>
+            <div class="performance-browser-row">
+              <div id="performanceExplorerSection" class="performance-explorer-section" hidden>
                 <input
                   id="performanceExplorerSearch"
                   class="performance-explorer-search"
                   type="search"
-                  placeholder="Rig- or Slotname…"
+                  placeholder="Search rigs..."
                   autocomplete="off"
                   spellcheck="false"
+                  aria-label="Search performances, rigs"
+                  aria-expanded="false"
+                  aria-controls="performanceExplorerContent"
                 />
-              </label>
+              </div>
+
+              <div id="performanceBrowserControls" class="performance-browser-controls" hidden>
+                <div class="performance-browser-nav performance-browser-nav--prev">
+                  <button id="performancePrevFastButton" class="performance-nav-button performance-nav-button--fast" type="button" aria-label="10 Performances zurück">
+                    &lt;&lt;
+                  </button>
+                  <button id="performancePrevButton" class="performance-nav-button" type="button" aria-label="1 Performance zurück">
+                    &lt;
+                  </button>
+                </div>
+
+                <div id="performanceSlotGrid" class="performance-slot-grid"></div>
+
+                <div class="performance-browser-nav performance-browser-nav--next">
+                  <button id="performanceNextButton" class="performance-nav-button" type="button" aria-label="1 Performance vor">
+                    &gt;
+                  </button>
+                  <button id="performanceNextFastButton" class="performance-nav-button performance-nav-button--fast" type="button" aria-label="10 Performances vor">
+                    &gt;&gt;
+                  </button>
+                </div>
+              </div>
+
+              <span id="performanceBrowserLabel" class="performance-browser-label" hidden>Performance 1</span>
+            </div>
+
+            <div id="performanceExplorerContent" class="performance-explorer-content" hidden>
+              <div class="performance-explorer-table">
+                <div class="performance-explorer-head" aria-hidden="true">
+                  <span class="performance-explorer-head-name"></span>
+                  <span>1</span>
+                  <span>2</span>
+                  <span>3</span>
+                  <span>4</span>
+                  <span>5</span>
+                </div>
+                <div id="performanceExplorerList" class="performance-explorer-list companion-scroll" role="list"></div>
+              </div>
               <p id="performanceExplorerEmpty" class="performance-explorer-empty" hidden>
                 No Rig Matches Found
               </p>
-              <div id="performanceExplorerList" class="performance-explorer-list companion-scroll" role="list"></div>
+            </div>
+
+            <div id="performanceScanPanel" class="performance-scan-panel" hidden>
+              <p id="performanceScanStatus" class="performance-scan-status" hidden aria-hidden="true">Scanning Performance Library...</p>
+              <div id="performanceProgress" class="performance-progress">
+                <span id="performanceProgressFill"></span>
+              </div>
             </div>
           </div>
         </div>
@@ -367,6 +414,14 @@
                     <dt>Year of Production</dt>
                     <dd id="ampDetailsYear">-</dd>
                   </div>
+                  <div class="amp-details-row" id="ampDetailsPowerRow" hidden>
+                    <dt>Power</dt>
+                    <dd id="ampDetailsPower">-</dd>
+                  </div>
+                  <div class="amp-details-row amp-details-row--tubes" id="ampDetailsTubeRow" hidden>
+                    <dt>Tube Configuration</dt>
+                    <dd id="ampDetailsTubeConfiguration">-</dd>
+                  </div>
                 </dl>
               </section>
 
@@ -399,12 +454,36 @@
               >
                 <dl class="amp-details-list">
                   <div class="amp-details-row amp-details-row--gain">
-                    <dt>Gain</dt>
+                    <dt class="visually-hidden">Gain</dt>
                     <dd>
                       <div class="gain-panel">
-                        <div class="gain-readout">
-                          <div class="gain-meter" aria-hidden="true">
-                            <div id="gainMeterFill" class="gain-meter-segments"></div>
+                        <div
+                          class="gain-scale"
+                          id="gainScale"
+                          role="slider"
+                          tabindex="0"
+                          aria-label="Gain"
+                          aria-valuemin="0"
+                          aria-valuemax="10"
+                          aria-valuenow="0"
+                          aria-valuetext="unavailable"
+                          aria-orientation="horizontal"
+                        >
+                          <div class="gain-scale-header">
+                            <span class="gain-scale-caption">GAIN</span>
+                            <span class="gain-scale-dot" aria-hidden="true">•</span>
+                            <span class="gain-scale-value" id="gainScaleValue">—</span>
+                            <span class="gain-scale-range">/ 10</span>
+                          </div>
+                          <div class="gain-scale-track" id="gainScaleTrack">
+                            <div id="gainScaleTicks" class="gain-scale-ticks"></div>
+                            <div id="gainScaleFill" class="gain-scale-fill"></div>
+                            <div id="gainScaleMarker" class="gain-scale-marker"></div>
+                          </div>
+                          <div class="gain-scale-labels" aria-hidden="true">
+                            <span>0</span>
+                            <span>5</span>
+                            <span>10</span>
                           </div>
                         </div>
                       </div>
@@ -438,34 +517,1105 @@
             </div>
           </div>
         </div>
-        <div class="gear-section cabinet-section">
-			<div class="section-title">
-				<span>Cabinet</span>
-			</div>
+        <div class="gear-section cabinet-section cabinet-details-section" data-combo="false">
+          <div class="cabinet-details-body">
+            <div class="section-title">
+              <span>Cabinet</span>
+            </div>
 
-			<div class="gear-fields">
-				<div>
-					<span>Manufacturer</span>
-					<strong id="cabinetManufacturer">-</strong>
-				</div>
+            <p id="cabinetComboLabel" class="cabinet-combo-label" hidden>COMBO AMP</p>
 
-				<div>
-				  <span>Model</span>
-				  <strong id="cabinetModel">-</strong>
-				</div>
+            <div id="cabinetImageContainer" class="cabinet-image-container"></div>
 
-				<div>
-				  <span>Configuration</span>
-				  <strong id="cabinetConfiguration">-</strong>
-				</div>
-			</div>
+            <div class="cabinet-details-stack">
+              <section
+                class="cabinet-details-group"
+                data-cabinet-recognized
+                hidden
+                aria-labelledby="cabinetRecognizedHeading"
+              >
+                <h3 id="cabinetRecognizedHeading" class="cabinet-details-group-title">
+                  Recognized Cabinet
+                </h3>
+                <dl class="cabinet-details-list" data-cabinet-recognized-list></dl>
+              </section>
 
-			<div id="cabinetImageContainer" class="cabinet-image-container"></div>
-		</div>
+              <section
+                class="cabinet-details-group"
+                data-cabinet-reported
+                hidden
+                aria-labelledby="cabinetReportedHeading"
+              >
+                <h3 id="cabinetReportedHeading" class="cabinet-details-group-title">
+                  Rig Cabinet
+                </h3>
+                <dl class="cabinet-details-list" data-cabinet-reported-list></dl>
+              </section>
+            </div>
+          </div>
+        </div>
         <div class="effects-block">
           <span>Effects</span>
           <ul id="effectsList" class="effects-list companion-scroll"></ul>
         </div>
+      </section>
+
+      <section
+        id="bidirectionalMonitor"
+        class="bidirectional-monitor"
+        data-active="false"
+        data-learn="false"
+        data-init="1"
+        aria-labelledby="bidirectionalMonitorTitle"
+      >
+        <header class="bidirectional-monitor-header">
+          <h2 id="bidirectionalMonitorTitle" class="bidirectional-monitor-title">
+            MIDI Analyzer
+          </h2>
+          <p class="bidirectional-monitor-subtitle">
+            Live device state, watched parameters, learn mode — not a packet recorder
+          </p>
+        </header>
+
+        <div class="bidirectional-monitor-status" aria-live="polite">
+          <dl class="bidirectional-monitor-meta">
+            <div>
+              <dt>Link</dt>
+              <dd>
+                <span data-bidi-status="beacon">○ Beacon Pending</span>
+                <span data-bidi-status="lease">○ Lease Waiting</span>
+                <span data-bidi-status="mode">○ Bidirectional Mode Idle</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Last Sensing</dt>
+              <dd data-bidi-sensing>—</dd>
+            </div>
+            <div>
+              <dt>Parameters</dt>
+              <dd data-bidi-param-count>0</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="bidirectional-analyzer-toolbar">
+          <button
+            type="button"
+            class="bidirectional-analyzer-button bidirectional-analyzer-button--learn"
+            data-bidi-action="learn"
+            data-state="idle"
+          >
+            Learn Mode
+          </button>
+          <button type="button" class="bidirectional-analyzer-button" data-bidi-action="clear-state">
+            Reset State
+          </button>
+          <button type="button" class="bidirectional-analyzer-button" data-bidi-action="clear-changelog">
+            Clear Log
+          </button>
+        </div>
+
+        <aside class="bidirectional-learn-panel" data-bidi-learn-panel hidden>
+          <p class="bidirectional-learn-prompt" data-bidi-learn-prompt></p>
+          <div data-bidi-learn-results></div>
+        </aside>
+
+        <section class="bidirectional-state-panel bidirectional-state-panel--primary" aria-labelledby="bidiCurrentParamsTitle">
+          <div class="bidirectional-state-panel-header">
+            <div>
+              <h3 id="bidiCurrentParamsTitle" class="bidirectional-state-panel-title">
+                Current Parameters
+              </h3>
+              <p class="bidirectional-state-panel-copy">
+                Last known value for every observed parameter — use Lab to load a write test
+              </p>
+            </div>
+          </div>
+          <div class="bidirectional-analyzer-scroll companion-scroll bidirectional-analyzer-scroll--tall">
+            <table class="bidirectional-analyzer-table">
+              <thead>
+                <tr>
+                  <th scope="col" class="bidirectional-col-watch"></th>
+                  <th scope="col" class="bidirectional-col-research"></th>
+                  <th scope="col">Parameter</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Raw</th>
+                  <th scope="col">Value</th>
+                  <th scope="col">Updated</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody data-bidi-current-params>
+                <tr class="bidirectional-analyzer-empty-row">
+                  <td colspan="8">Waiting for parameter traffic…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="bidirectional-state-panel" aria-labelledby="bidiWatchedTitle">
+          <div class="bidirectional-state-panel-header">
+            <div>
+              <h3 id="bidiWatchedTitle" class="bidirectional-state-panel-title">
+                ★ Watched Parameters
+              </h3>
+              <p class="bidirectional-state-panel-copy">
+                Pinned live values for focused testing
+              </p>
+            </div>
+          </div>
+          <div class="bidirectional-analyzer-scroll companion-scroll">
+            <table class="bidirectional-analyzer-table">
+              <thead>
+                <tr>
+                  <th scope="col" class="bidirectional-col-watch"></th>
+                  <th scope="col" class="bidirectional-col-research"></th>
+                  <th scope="col">Parameter</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Raw</th>
+                  <th scope="col">Value</th>
+                  <th scope="col">Updated</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody data-bidi-watched-params>
+                <tr class="bidirectional-analyzer-empty-row">
+                  <td colspan="8">Pin parameters with ☆ to watch them here.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section
+          class="bidirectional-state-panel"
+          data-effect-types-panel
+          aria-labelledby="knownEffectTypesTitle"
+        >
+          <div class="bidirectional-state-panel-header">
+            <div>
+              <h3 id="knownEffectTypesTitle" class="bidirectional-state-panel-title">
+                Known Effect Types
+              </h3>
+              <p class="bidirectional-state-panel-copy">
+                Active discovery registry —
+                <span data-effect-types-count>0</span> confirmed
+              </p>
+            </div>
+            <div class="research-lab-write-row">
+              <label class="visually-hidden" for="effectTypesSort">Sort</label>
+              <select
+                id="effectTypesSort"
+                class="research-lab-write-input effect-types-sort"
+                data-effect-types-sort
+              >
+                <option value="id" selected>Sort by ID</option>
+                <option value="name">Sort by name</option>
+              </select>
+              <button
+                type="button"
+                class="bidirectional-analyzer-button"
+                data-effect-types-export
+              >
+                Export JSON
+              </button>
+            </div>
+          </div>
+
+          <div class="effect-types-discovery">
+            <div class="research-lab-write-row">
+              <label class="research-lab-write-label" for="effectTypesSlot">Slot</label>
+              <select
+                id="effectTypesSlot"
+                class="research-lab-write-input effect-types-sort"
+                data-effect-types-slot
+              >
+                <option value="stompA">Stomp A</option>
+                <option value="stompB">Stomp B</option>
+                <option value="stompC">Stomp C</option>
+                <option value="stompD">Stomp D</option>
+                <option value="stompX">Stomp X</option>
+                <option value="mod">MOD</option>
+                <option value="delay">Delay</option>
+                <option value="reverb">Reverb</option>
+              </select>
+              <label class="research-lab-write-label" for="effectTypesDelay">Timeout ms</label>
+              <input
+                id="effectTypesDelay"
+                class="research-lab-write-input effect-types-delay"
+                data-effect-types-delay
+                type="number"
+                min="200"
+                max="5000"
+                step="50"
+                value="1000"
+                title="Max wait for each Kemper response before marking No Response"
+              />
+              <button
+                type="button"
+                class="bidirectional-analyzer-button bidirectional-analyzer-button--learn"
+                data-effect-types-discover
+              >
+                Discover Effect Types
+              </button>
+              <button
+                type="button"
+                class="bidirectional-analyzer-button"
+                data-effect-types-stop
+                hidden
+              >
+                Stop
+              </button>
+            </div>
+            <p class="effect-types-progress" data-effect-types-progress>
+              Event-driven: write one ID → wait for Kemper → store name → next. Exports JSON when finished.
+            </p>
+          </div>
+
+          <div class="bidirectional-analyzer-scroll companion-scroll">
+            <table class="bidirectional-analyzer-table">
+              <thead>
+                <tr>
+                  <th scope="col">Effect ID</th>
+                  <th scope="col">Effect Name</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Times observed</th>
+                </tr>
+              </thead>
+              <tbody data-effect-types-body>
+                <tr class="bidirectional-analyzer-empty-row">
+                  <td colspan="4">No effect types yet — run Discover Effect Types.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section
+          class="bidirectional-state-panel perf-read-test-panel perf-traffic-capture-panel"
+          data-raw-midi-trace
+          aria-labelledby="rawMidiTraceTitle"
+        >
+          <div class="bidirectional-state-panel-header">
+            <div>
+              <h3 id="rawMidiTraceTitle" class="bidirectional-state-panel-title">
+                RAW MIDI Trace
+              </h3>
+              <p class="bidirectional-state-panel-copy">
+                Temporary — every incoming SysEx at the MIDI input, including unknown functions.
+              </p>
+            </div>
+          </div>
+
+          <p class="research-lab-muted">
+            Listens at the earliest Web MIDI midimessage handler. No parameter mapping.
+            Start, change Performance/Slot on the Kemper, then Stop. Also logged to the browser console as [RAW MIDI TRACE].
+          </p>
+
+          <div class="research-lab-wizard-actions">
+            <button
+              type="button"
+              class="bidirectional-analyzer-button"
+              data-raw-trace-start
+            >
+              Start RAW MIDI Trace
+            </button>
+            <button
+              type="button"
+              class="bidirectional-analyzer-button"
+              data-raw-trace-stop
+              disabled
+            >
+              Stop
+            </button>
+            <button
+              type="button"
+              class="bidirectional-analyzer-button"
+              data-raw-trace-clear
+            >
+              Clear Results
+            </button>
+          </div>
+
+          <div class="research-lab-census-filters" data-raw-trace-filters>
+            <button type="button" class="research-lab-filter-chip" data-raw-trace-filter="all" aria-pressed="true">
+              Show all
+            </button>
+            <button type="button" class="research-lab-filter-chip" data-raw-trace-filter="4000" aria-pressed="false">
+              Show possible $4000+
+            </button>
+            <button type="button" class="research-lab-filter-chip" data-raw-trace-filter="05" aria-pressed="false">
+              Function 05
+            </button>
+            <button type="button" class="research-lab-filter-chip" data-raw-trace-filter="06" aria-pressed="false">
+              Function 06
+            </button>
+            <button type="button" class="research-lab-filter-chip" data-raw-trace-filter="07" aria-pressed="false">
+              Function 07
+            </button>
+          </div>
+
+          <p class="effect-types-progress" data-raw-trace-progress>
+            Ready — connect Kemper MIDI, then Start RAW MIDI Trace.
+          </p>
+          <p class="research-lab-muted" data-raw-trace-stats></p>
+          <p class="perf-read-summary" data-raw-trace-summary hidden></p>
+
+          <div
+            class="bidirectional-analyzer-scroll companion-scroll perf-read-results perf-capture-feed"
+            data-raw-trace-feed
+          ></div>
+        </section>
+
+        <section
+          class="bidirectional-state-panel perf-read-test-panel perf-traffic-capture-panel"
+          data-performance-traffic-capture
+          aria-labelledby="performanceTrafficCaptureTitle"
+        >
+          <div class="bidirectional-state-panel-header">
+            <div>
+              <h3 id="performanceTrafficCaptureTitle" class="bidirectional-state-panel-title">
+                Performance Traffic Capture
+              </h3>
+              <p class="bidirectional-state-panel-copy">
+                Function 0x07 only — 5-byte extended address $4000–$4015. No library write.
+              </p>
+            </div>
+          </div>
+
+          <p class="research-lab-muted">
+            Hits require Function 0x07 and a decoded 5-byte address in $4000–$4005 or
+            $4010–$4015. 2-byte IDs from Function 0x01 are ignored.
+          </p>
+
+          <div class="research-lab-wizard-actions">
+            <button
+              type="button"
+              class="bidirectional-analyzer-button"
+              data-perf-capture-start
+            >
+              Start Capture
+            </button>
+            <button
+              type="button"
+              class="bidirectional-analyzer-button"
+              data-perf-capture-stop
+              disabled
+            >
+              Stop Capture
+            </button>
+            <button
+              type="button"
+              class="bidirectional-analyzer-button"
+              data-perf-capture-clear
+            >
+              Clear Results
+            </button>
+          </div>
+
+          <p class="effect-types-progress" data-perf-capture-progress>
+            Ready — connect Kemper MIDI, then Start Capture.
+          </p>
+
+          <p class="perf-read-summary" data-perf-capture-summary hidden></p>
+
+          <div class="perf-capture-columns">
+            <div class="perf-capture-column">
+              <h4 class="perf-capture-column-title">All captured SysEx</h4>
+              <div
+                class="bidirectional-analyzer-scroll companion-scroll perf-read-results perf-capture-feed"
+                data-perf-capture-all
+              ></div>
+            </div>
+            <div class="perf-capture-column">
+              <h4 class="perf-capture-column-title">Function 0x07 · $4000–$4015</h4>
+              <div
+                class="bidirectional-analyzer-scroll companion-scroll perf-read-results perf-capture-feed"
+                data-perf-capture-matched
+              ></div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          class="bidirectional-state-panel perf-read-test-panel perf-traffic-capture-panel"
+          data-extended-parameter-capture
+          aria-labelledby="extendedParameterCaptureTitle"
+        >
+          <div class="bidirectional-state-panel-header">
+            <div>
+              <h3 id="extendedParameterCaptureTitle" class="bidirectional-state-panel-title">
+                Extended Parameter Capture
+              </h3>
+              <p class="bidirectional-state-panel-copy">
+                Research only — Function 0x05 / 0x06 / 0x07. Full 5-byte addresses, no parameter mapping.
+              </p>
+            </div>
+          </div>
+
+          <p class="research-lab-muted">
+            When bidirectional is active, Kemper may send strings above $3FFF as extended
+            messages. Start capture, change Performance or Slot on the Kemper, then Stop.
+            Addresses are shown as five bytes and a 32-bit value — they are not truncated
+            to a 2-byte ID.
+          </p>
+
+          <div class="research-lab-wizard-actions">
+            <button
+              type="button"
+              class="bidirectional-analyzer-button"
+              data-ext-capture-start
+            >
+              Start Extended Parameter Capture
+            </button>
+            <button
+              type="button"
+              class="bidirectional-analyzer-button"
+              data-ext-capture-stop
+              disabled
+            >
+              Stop
+            </button>
+            <button
+              type="button"
+              class="bidirectional-analyzer-button"
+              data-ext-capture-clear
+            >
+              Clear Results
+            </button>
+          </div>
+
+          <p class="effect-types-progress" data-ext-capture-progress>
+            Ready — connect Kemper MIDI, then Start Extended Parameter Capture.
+          </p>
+          <p class="research-lab-muted" data-ext-capture-stats></p>
+          <p class="perf-read-summary" data-ext-capture-summary hidden></p>
+
+          <div
+            class="bidirectional-analyzer-scroll companion-scroll perf-read-results perf-capture-feed"
+            data-ext-capture-feed
+          ></div>
+        </section>
+
+        <section
+          class="bidirectional-state-panel research-lab-panel"
+          data-research-lab
+          aria-labelledby="protocolResearchLabTitle"
+        >
+          <div class="bidirectional-state-panel-header">
+            <div>
+              <h3 id="protocolResearchLabTitle" class="bidirectional-state-panel-title">
+                Protocol Research Lab
+              </h3>
+              <p class="bidirectional-state-panel-copy">
+                Parameter Census, Learning Wizard, Capability Scanner, Protocol Explorer —
+                (<span data-research-capability-count>0</span> known capabilities)
+              </p>
+            </div>
+          </div>
+
+          <div class="research-lab-census" data-research-census>
+            <h4 class="research-lab-section-title">Parameter Census</h4>
+            <p class="research-lab-muted">
+              Registry of readable parameters discovered so far. Use the Learning Wizard below to map functions via before/after snapshots of this set.
+            </p>
+
+            <dl class="research-lab-census-stats" data-census-stats>
+              <div><dt>Readable</dt><dd data-census-stat="readable">0</dd></div>
+              <div><dt>Strings</dt><dd data-census-stat="strings">0</dd></div>
+              <div><dt>Booleans</dt><dd data-census-stat="booleans">0</dd></div>
+              <div><dt>Continuous</dt><dd data-census-stat="continuous">0</dd></div>
+              <div><dt>Enums</dt><dd data-census-stat="enums">0</dd></div>
+              <div><dt>Binary</dt><dd data-census-stat="binary">0</dd></div>
+              <div><dt>IDs tested</dt><dd data-census-stat="idsTested">0</dd></div>
+            </dl>
+
+            <div class="research-lab-census-filters" data-census-filters>
+              <button type="button" class="research-lab-filter-chip" data-census-filter="all" aria-pressed="true">All</button>
+              <button type="button" class="research-lab-filter-chip" data-census-filter="boolean" aria-pressed="false">Boolean</button>
+              <button type="button" class="research-lab-filter-chip" data-census-filter="continuous" aria-pressed="false">Continuous</button>
+              <button type="button" class="research-lab-filter-chip" data-census-filter="enum" aria-pressed="false">Enum</button>
+              <button type="button" class="research-lab-filter-chip" data-census-filter="string" aria-pressed="false">String</button>
+              <button type="button" class="research-lab-filter-chip" data-census-filter="binary" aria-pressed="false">Binary</button>
+            </div>
+
+            <div class="research-lab-wizard-actions">
+              <button
+                type="button"
+                class="bidirectional-analyzer-button"
+                data-census-action="export"
+              >
+                Export Census JSON
+              </button>
+            </div>
+
+            <div class="bidirectional-analyzer-scroll companion-scroll research-lab-census-scroll">
+              <table class="bidirectional-analyzer-table">
+                <thead>
+                  <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Raw</th>
+                    <th scope="col">Len</th>
+                    <th scope="col">First Seen</th>
+                  </tr>
+                </thead>
+                <tbody data-census-body>
+                  <tr class="bidirectional-analyzer-empty-row">
+                    <td colspan="5">No readable parameters discovered yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <details class="research-lab-census-scan-details">
+              <summary>Census scan (paused)</summary>
+              <p class="research-lab-muted">
+                Full address-space probing is on hold. Resume only if you intentionally want to continue the long scan.
+              </p>
+              <div class="research-lab-census-fields">
+                <label class="research-lab-wizard-label">
+                  Start ID
+                  <input
+                    class="research-lab-write-input"
+                    type="text"
+                    value="0x0000"
+                    spellcheck="false"
+                    data-census-start
+                  />
+                </label>
+                <label class="research-lab-wizard-label">
+                  End ID
+                  <input
+                    class="research-lab-write-input"
+                    type="text"
+                    value="0x7F7F"
+                    spellcheck="false"
+                    data-census-end
+                  />
+                </label>
+                <label class="research-lab-wizard-label">
+                  Delay (ms)
+                  <input
+                    class="research-lab-write-input"
+                    type="number"
+                    min="0"
+                    max="2000"
+                    value="5"
+                    data-census-delay
+                  />
+                </label>
+                <label class="research-lab-wizard-label">
+                  Timeout (ms)
+                  <input
+                    class="research-lab-write-input"
+                    type="number"
+                    min="20"
+                    max="2000"
+                    value="80"
+                    data-census-timeout
+                  />
+                </label>
+              </div>
+              <div class="research-lab-wizard-actions">
+                <button
+                  type="button"
+                  class="bidirectional-analyzer-button"
+                  data-census-action="resume"
+                >
+                  Resume Census Scan
+                </button>
+                <button
+                  type="button"
+                  class="bidirectional-analyzer-button"
+                  data-census-action="pause"
+                  hidden
+                >
+                  Pause
+                </button>
+                <button
+                  type="button"
+                  class="bidirectional-analyzer-button"
+                  data-census-action="start"
+                >
+                  Restart Census
+                </button>
+              </div>
+              <p class="effect-types-progress" data-census-status>
+                Census scan paused — use the Learning Wizard on discovered IDs.
+              </p>
+            </details>
+          </div>
+
+          <div class="research-lab-scan">
+            <h4 class="research-lab-section-title">Capability Scanner</h4>
+            <p class="research-lab-muted">
+              Automatically probes Read (0x41) and same-value Write (0x01). Push is learned from unsolicited traffic.
+            </p>
+            <div class="research-lab-write-row">
+              <button
+                type="button"
+                class="bidirectional-analyzer-button bidirectional-analyzer-button--learn"
+                data-research-scan-selected
+              >
+                Scan Selected
+              </button>
+              <button
+                type="button"
+                class="bidirectional-analyzer-button"
+                data-research-scan-all
+              >
+                Scan All Observed
+              </button>
+              <button
+                type="button"
+                class="bidirectional-analyzer-button"
+                data-research-scan-stop
+                hidden
+              >
+                Stop
+              </button>
+              <button
+                type="button"
+                class="bidirectional-analyzer-button"
+                data-research-scan-export
+              >
+                Export JSON
+              </button>
+            </div>
+            <p class="effect-types-progress" data-research-scan-progress>
+              Select a parameter with Lab, then scan — or scan every observed parameter.
+            </p>
+            <div data-research-capability-selected></div>
+            <div class="bidirectional-analyzer-scroll companion-scroll">
+              <table class="bidirectional-analyzer-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Parameter</th>
+                    <th scope="col">Read</th>
+                    <th scope="col">Write</th>
+                    <th scope="col">Push</th>
+                    <th scope="col">Scale</th>
+                  </tr>
+                </thead>
+                <tbody data-research-capabilities>
+                  <tr class="bidirectional-analyzer-empty-row">
+                    <td colspan="5">No capability data yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="research-lab-wizard" data-research-wizard>
+            <h4 class="research-lab-section-title">Learning Wizard</h4>
+            <p class="research-lab-muted">
+              Snapshot every census Read parameter, perform one Kemper action, then snapshot again. Only changed IDs are shown — with before / after / Δ / %.
+            </p>
+
+            <label class="research-lab-wizard-label" for="learningWizardFunction">
+              What function are you about to change?
+            </label>
+            <input
+              id="learningWizardFunction"
+              class="research-lab-write-input"
+              type="text"
+              list="learningWizardSuggestions"
+              placeholder="e.g. Master Volume, Bass, Delay Mix…"
+              autocomplete="off"
+              data-wizard-function
+            />
+            <datalist id="learningWizardSuggestions">
+              <option value="Gain"></option>
+              <option value="Master Volume"></option>
+              <option value="Rig Volume"></option>
+              <option value="Bass"></option>
+              <option value="Middle"></option>
+              <option value="Treble"></option>
+              <option value="Presence"></option>
+              <option value="Definition"></option>
+              <option value="Noise Gate"></option>
+              <option value="Delay Mix"></option>
+            </datalist>
+
+            <div class="research-lab-wizard-actions">
+              <button
+                type="button"
+                class="bidirectional-analyzer-button bidirectional-analyzer-button--learn"
+                data-wizard-action="start"
+              >
+                Snapshot A
+              </button>
+              <button
+                type="button"
+                class="bidirectional-analyzer-button bidirectional-analyzer-button--learn"
+                data-wizard-action="stop"
+                hidden
+              >
+                Snapshot B
+              </button>
+              <button
+                type="button"
+                class="bidirectional-analyzer-button"
+                data-wizard-action="add-snapshot"
+                hidden
+              >
+                Add Snapshot
+              </button>
+              <button
+                type="button"
+                class="bidirectional-analyzer-button"
+                data-wizard-action="reset"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                class="bidirectional-analyzer-button"
+                data-wizard-action="export"
+              >
+                Export Learned
+              </button>
+            </div>
+
+            <p class="effect-types-progress" data-wizard-status>
+              Enter a function name, then take Snapshot A of all readable parameters.
+            </p>
+            <p class="research-lab-muted" data-wizard-progress hidden></p>
+
+            <div class="research-lab-wizard-changed" data-wizard-results hidden>
+              <h4 class="research-lab-section-title">Changed Parameters</h4>
+              <div class="bidirectional-analyzer-scroll companion-scroll research-lab-wizard-scroll">
+                <table class="bidirectional-analyzer-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Parameter</th>
+                      <th scope="col">Before</th>
+                      <th scope="col">After</th>
+                      <th scope="col">Δ</th>
+                      <th scope="col">%</th>
+                      <th scope="col">Steps</th>
+                    </tr>
+                  </thead>
+                  <tbody data-wizard-changed>
+                    <tr class="bidirectional-analyzer-empty-row">
+                      <td colspan="6">No changes yet.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="research-lab-wizard-verify" data-wizard-verify hidden>
+                <h4 class="research-lab-section-title">Confirm Assignment</h4>
+                <p class="research-lab-muted" data-wizard-candidate>—</p>
+                <ul class="research-lab-capability-flags" data-wizard-verify-flags>
+                  <li>Read ?</li>
+                  <li>Write ?</li>
+                  <li>Push ?</li>
+                </ul>
+                <p class="research-lab-muted" data-wizard-assign-prompt hidden></p>
+                <div class="research-lab-wizard-actions">
+                  <button
+                    type="button"
+                    class="bidirectional-analyzer-button bidirectional-analyzer-button--learn"
+                    data-wizard-action="confirm"
+                  >
+                    Confirm
+                  </button>
+                  <button type="button" class="bidirectional-analyzer-button" data-wizard-action="reject">
+                    Reject
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="research-lab-wizard-history">
+              <h4 class="research-lab-section-title">
+                Learning History
+                (<span data-wizard-history-count>0</span>)
+              </h4>
+              <div class="bidirectional-analyzer-scroll companion-scroll research-lab-wizard-scroll">
+                <table class="bidirectional-analyzer-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Function</th>
+                      <th scope="col">Parameter</th>
+                      <th scope="col">Verified</th>
+                      <th scope="col">R / W / P</th>
+                      <th scope="col">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody data-wizard-history>
+                    <tr class="bidirectional-analyzer-empty-row">
+                      <td colspan="5">No learning sessions yet.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="research-lab-explorer" data-research-explorer>
+            <h4 class="research-lab-section-title">Protocol Explorer</h4>
+            <p class="research-lab-muted">
+              Interactive discovery for one parameter — step values, learn enums, auto restore original.
+            </p>
+            <p class="research-lab-empty" data-research-explorer-empty>
+              Select a parameter with <strong>Lab</strong> to start exploring.
+            </p>
+            <div data-research-explorer-active hidden>
+              <dl class="research-lab-current">
+                <div>
+                  <dt>Parameter ID</dt>
+                  <dd><code data-explorer-id>—</code></dd>
+                </div>
+                <div>
+                  <dt>Name</dt>
+                  <dd data-explorer-name>—</dd>
+                </div>
+                <div>
+                  <dt>Current Raw</dt>
+                  <dd data-explorer-raw>—</dd>
+                </div>
+                <div>
+                  <dt>Decoded</dt>
+                  <dd data-explorer-decoded>—</dd>
+                </div>
+                <div>
+                  <dt>Label</dt>
+                  <dd data-explorer-label>—</dd>
+                </div>
+                <div>
+                  <dt>Original</dt>
+                  <dd data-explorer-original>—</dd>
+                </div>
+              </dl>
+              <ul class="research-lab-capability-flags" data-explorer-caps>
+                <li>Read ?</li>
+                <li>Write ?</li>
+                <li>Push ?</li>
+              </ul>
+              <div class="research-lab-explorer-actions">
+                <button type="button" class="bidirectional-analyzer-button" data-explorer-action="read">Read</button>
+                <button type="button" class="bidirectional-analyzer-button" data-explorer-action="refresh">Refresh</button>
+                <button type="button" class="bidirectional-analyzer-button" data-explorer-action="step" data-explorer-delta="-1">-1</button>
+                <button type="button" class="bidirectional-analyzer-button" data-explorer-action="step" data-explorer-delta="1">+1</button>
+                <button type="button" class="bidirectional-analyzer-button" data-explorer-action="step" data-explorer-delta="-10">-10</button>
+                <button type="button" class="bidirectional-analyzer-button" data-explorer-action="step" data-explorer-delta="10">+10</button>
+                <button type="button" class="bidirectional-analyzer-button" data-explorer-action="step" data-explorer-delta="-100">-100</button>
+                <button type="button" class="bidirectional-analyzer-button" data-explorer-action="step" data-explorer-delta="100">+100</button>
+                <button type="button" class="bidirectional-analyzer-button" data-explorer-action="step" data-explorer-delta="-1000">-1000</button>
+                <button type="button" class="bidirectional-analyzer-button" data-explorer-action="step" data-explorer-delta="1000">+1000</button>
+                <button type="button" class="bidirectional-analyzer-button bidirectional-analyzer-button--learn" data-explorer-action="restore">Restore Original</button>
+              </div>
+              <p class="effect-types-progress" data-explorer-status>Ready.</p>
+              <div class="research-lab-explorer-columns">
+                <div>
+                  <h4 class="research-lab-section-title">Learned Enum</h4>
+                  <div class="bidirectional-analyzer-scroll companion-scroll research-lab-explorer-scroll">
+                    <table class="bidirectional-analyzer-table">
+                      <thead>
+                        <tr>
+                          <th scope="col">Value</th>
+                          <th scope="col">Label</th>
+                        </tr>
+                      </thead>
+                      <tbody data-explorer-enums>
+                        <tr class="bidirectional-analyzer-empty-row">
+                          <td colspan="2">No enum labels learned yet.</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div>
+                  <h4 class="research-lab-section-title">Exploration History</h4>
+                  <div class="bidirectional-analyzer-scroll companion-scroll research-lab-explorer-scroll">
+                    <table class="bidirectional-analyzer-table">
+                      <thead>
+                        <tr>
+                          <th scope="col">Action</th>
+                          <th scope="col">Raw</th>
+                          <th scope="col">Decoded / Label</th>
+                        </tr>
+                      </thead>
+                      <tbody data-explorer-history>
+                        <tr class="bidirectional-analyzer-empty-row">
+                          <td colspan="3">No exploration steps yet.</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="research-lab-empty" data-research-empty>
+            Select a decoded parameter with <strong>Lab</strong> in the list above for manual tests.
+          </p>
+
+          <div class="research-lab-selected" data-research-selected hidden>
+            <h4 class="research-lab-section-title">Current Parameter</h4>
+            <dl class="research-lab-current">
+              <div>
+                <dt>Parameter</dt>
+                <dd><code data-research-param-id>—</code></dd>
+              </div>
+              <div>
+                <dt>Name</dt>
+                <dd data-research-param-name>—</dd>
+              </div>
+              <div>
+                <dt>Current Raw Value</dt>
+                <dd data-research-param-raw>—</dd>
+              </div>
+              <div>
+                <dt>Current Decoded Value</dt>
+                <dd data-research-param-decoded>—</dd>
+              </div>
+            </dl>
+
+            <div class="research-lab-write" data-research-write hidden>
+              <h4 class="research-lab-section-title">Write Test</h4>
+              <label class="research-lab-write-label" for="protocolResearchWriteInput">
+                Write Raw Value
+              </label>
+              <div class="research-lab-write-row">
+                <input
+                  id="protocolResearchWriteInput"
+                  class="research-lab-write-input"
+                  data-research-write-input
+                  type="number"
+                  inputmode="numeric"
+                  min="0"
+                  max="16383"
+                  step="1"
+                  placeholder="0–16383"
+                />
+                <button
+                  type="button"
+                  class="bidirectional-analyzer-button research-lab-send-button"
+                  data-research-write-send
+                >
+                  Send
+                </button>
+              </div>
+              <p class="research-lab-write-hint" data-research-write-hint hidden></p>
+            </div>
+
+            <div class="research-lab-read" data-research-read hidden>
+              <h4 class="research-lab-section-title">Read Parameter</h4>
+              <p class="research-lab-muted">
+                Temporary research action — sends Request Single Parameter (0x41) and waits for the response.
+              </p>
+              <div class="research-lab-write-row">
+                <button
+                  type="button"
+                  class="bidirectional-analyzer-button research-lab-send-button"
+                  data-research-read-send
+                >
+                  Read
+                </button>
+              </div>
+              <dl class="research-lab-current research-lab-read-result" data-research-read-result hidden>
+                <div>
+                  <dt>Requested</dt>
+                  <dd><code data-research-read-id>—</code></dd>
+                </div>
+                <div>
+                  <dt>Returned Raw</dt>
+                  <dd data-research-read-raw>—</dd>
+                </div>
+                <div>
+                  <dt>Decoded</dt>
+                  <dd data-research-read-decoded>—</dd>
+                </div>
+                <div>
+                  <dt>Status</dt>
+                  <dd data-research-read-status data-status="idle">—</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div class="research-lab-observe" data-research-observe aria-live="polite"></div>
+
+            <div class="research-lab-compare" data-research-compare hidden>
+              <h4 class="research-lab-section-title">Response Comparison</h4>
+              <dl class="research-lab-compare-grid">
+                <div>
+                  <dt>Previous</dt>
+                  <dd data-research-compare-prev>—</dd>
+                </div>
+                <div>
+                  <dt>Sent</dt>
+                  <dd data-research-compare-sent>—</dd>
+                </div>
+                <div>
+                  <dt>Received</dt>
+                  <dd data-research-compare-recv>—</dd>
+                </div>
+                <div>
+                  <dt>Status</dt>
+                  <dd data-research-compare-status data-status="idle">—</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+
+          <div class="research-lab-log">
+            <h4 class="research-lab-section-title">Experiment Log</h4>
+            <div class="bidirectional-analyzer-scroll companion-scroll">
+              <table class="bidirectional-analyzer-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Time</th>
+                    <th scope="col">Parameter</th>
+                    <th scope="col">Old</th>
+                    <th scope="col">Sent</th>
+                    <th scope="col">Received</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody data-research-log>
+                  <tr class="bidirectional-analyzer-empty-row">
+                    <td colspan="6">No write experiments yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="bidirectional-state-panel" aria-labelledby="bidiChangeLogTitle">
+          <div class="bidirectional-state-panel-header">
+            <div>
+              <h3 id="bidiChangeLogTitle" class="bidirectional-state-panel-title">
+                Change Log
+              </h3>
+              <p class="bidirectional-state-panel-copy">
+                Only real value changes
+              </p>
+            </div>
+          </div>
+          <div class="bidirectional-analyzer-scroll companion-scroll">
+            <table class="bidirectional-analyzer-table">
+              <thead>
+                <tr>
+                  <th scope="col">Time</th>
+                  <th scope="col">Parameter</th>
+                  <th scope="col">Change</th>
+                </tr>
+              </thead>
+              <tbody data-bidi-change-log>
+                <tr class="bidirectional-analyzer-empty-row">
+                  <td colspan="3">No value changes yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
       </section>
       </div>
       </div>
@@ -476,24 +1626,30 @@
       <section class="gear-library-panel">
         <header class="gear-library-header">
           <div class="gear-library-heading">
-            <span class="gear-library-eyebrow">Gear Library</span>
-            <h2 id="gearLibraryTitle" class="gear-library-title">Amp Browser</h2>
+            <span class="gear-library-eyebrow">Gear Atlas</span>
+            <h2 id="gearLibraryTitle" class="gear-library-title">Amp Collection</h2>
+            <p
+              id="gearLibraryCollectionMeta"
+              class="gear-library-collection-meta"
+              hidden
+            ></p>
           </div>
-          <div class="gear-library-header-actions">
-            <label id="gearDesignPreview" class="gear-design-preview" hidden>
-              <span class="gear-design-preview-caption">Design Preview</span>
-              <select
-                id="gearDesignPreviewSelect"
-                class="gear-design-preview-select"
-                aria-label="Gear Library design preview"
-              ></select>
-            </label>
-            <nav
-              id="gearCategoryNav"
-              class="gear-category-nav"
-              aria-label="Gear categories"
-            ></nav>
-          </div>
+          <img
+            class="gear-atlas-signet"
+            src="/images/gear-atlas.png"
+            alt=""
+            width="2063"
+            height="661"
+            decoding="async"
+            draggable="false"
+            aria-hidden="true"
+          />
+          <nav
+            id="gearCategoryNav"
+            class="gear-category-nav"
+            aria-label="Gear categories"
+            hidden
+          ></nav>
         </header>
 
         <div class="gear-library-layout">
@@ -503,61 +1659,102 @@
             data-active-category="amps"
           >
             <div class="gear-library-toolbar">
-              <div id="gearLibraryStats" class="gear-library-stats"></div>
-              <div class="gear-library-controls">
-                <label class="gear-library-search-label" for="gearLibrarySearch">
-                  <span class="visually-hidden">Search gear library</span>
-                  <input
-                    id="gearLibrarySearch"
-                    class="gear-library-search"
-                    type="search"
-                    placeholder="Search manufacturer, model, alias…"
-                    autocomplete="off"
-                    spellcheck="false"
-                  />
-                </label>
-                <div
-                  id="gearAmpImageFilterWrap"
-                  class="gear-library-image-filter-wrap"
-                  role="group"
-                  aria-label="Amp image filter"
-                >
-                  <span class="gear-library-image-filter-caption">Images</span>
-                  <div id="gearAmpImageFilter" class="gear-library-image-filter">
-                    <button
-                      type="button"
-                      class="gear-library-image-filter-option is-active"
-                      data-image-filter="all"
-                      aria-pressed="true"
+              <div id="gearLibraryStats" class="gear-library-stats" hidden></div>
+              <div class="gear-library-toolbar-row">
+                <div class="gear-library-controls" aria-label="Library filters">
+                  <label
+                    class="gear-library-search-label gear-library-toolbar-field"
+                    for="gearLibrarySearch"
+                  >
+                    <span class="gear-library-toolbar-caption">Search</span>
+                    <input
+                      id="gearLibrarySearch"
+                      class="gear-library-search"
+                      type="search"
+                      placeholder="Search..."
+                      autocomplete="off"
+                      spellcheck="false"
+                      aria-label="Search the amp collection"
+                    />
+                  </label>
+                  <label
+                    id="gearLibraryViewWrap"
+                    class="gear-library-toolbar-field gear-library-view-label"
+                    for="gearAmpViewSelect"
+                  >
+                    <span class="gear-library-toolbar-caption">View</span>
+                    <select
+                      id="gearAmpViewSelect"
+                      class="gear-library-toolbar-select gear-library-view-select"
+                      aria-label="Amp collection view"
+                    ></select>
+                  </label>
+                  <label
+                    id="gearDesignPreview"
+                    class="gear-library-toolbar-field gear-design-preview"
+                    for="gearDesignPreviewSelect"
+                    hidden
+                  >
+                    <span class="gear-library-toolbar-caption">Design Preview</span>
+                    <select
+                      id="gearDesignPreviewSelect"
+                      class="gear-library-toolbar-select gear-design-preview-select"
+                      aria-label="Gear Library design preview"
+                    ></select>
+                  </label>
+                  <label
+                    id="gearLibraryChapterWrap"
+                    class="gear-library-toolbar-field gear-library-chapter-label"
+                    for="gearLibraryChapterSelect"
+                  >
+                    <span class="gear-library-toolbar-caption">Chapter</span>
+                    <select
+                      id="gearLibraryChapterSelect"
+                      class="gear-library-toolbar-select gear-library-chapter-select"
+                      aria-label="Manufacturer chapter"
+                    ></select>
+                  </label>
+                  <label
+                    class="gear-library-toolbar-field gear-color-theme-field"
+                    for="gearColorThemeSelect"
+                  >
+                    <span class="gear-library-toolbar-caption">Theme</span>
+                    <select
+                      id="gearColorThemeSelect"
+                      class="gear-library-toolbar-select gear-color-theme-select"
+                      aria-label="Gear Library color theme"
                     >
-                      <span class="gear-library-image-filter-marker" aria-hidden="true"></span>
-                      All Amps
-                    </button>
-                    <button
-                      type="button"
-                      class="gear-library-image-filter-option"
-                      data-image-filter="available"
-                      aria-pressed="false"
-                    >
-                      <span class="gear-library-image-filter-marker" aria-hidden="true"></span>
-                      Image Available
-                    </button>
-                  </div>
+                      <option value="museum-dark">Museum Dark</option>
+                      <option value="museum-light">Museum Light</option>
+                    </select>
+                  </label>
                 </div>
-                <label
-                  id="gearLibraryViewWrap"
-                  class="gear-library-view-label"
-                  for="gearAmpViewSelect"
-                >
-                  <span class="gear-library-view-caption">View</span>
-                  <select
-                    id="gearAmpViewSelect"
-                    class="gear-library-view-select"
-                    aria-label="Amp browser view"
-                  ></select>
-                </label>
+
+                <div class="gear-presentation-action">
+                  <button
+                    type="button"
+                    id="gearPresentationButton"
+                    class="gear-presentation-button"
+                    aria-label="Presentation"
+                    aria-pressed="false"
+                  >
+                    <span id="gearPresentationButtonLabel" class="gear-presentation-button-label">Presentation</span>
+                  </button>
+                </div>
               </div>
             </div>
+
+            <nav
+              id="museumModelNav"
+              class="museum-model-nav"
+              aria-label="Models in this exhibition"
+              hidden
+            >
+              <div
+                id="museumModelNavTrack"
+                class="museum-model-nav-track companion-scroll"
+              ></div>
+            </nav>
 
             <div
               id="gearAmpBrowserStage"
@@ -603,6 +1800,7 @@
             class="gear-discover-column"
             aria-label="Discover"
           >
+            <h2 class="gear-discover-heading">Discover</h2>
             <div id="gearDiscoverBoard" class="gear-discover-board">
               <article
                 class="gear-discover-entry"
@@ -612,7 +1810,6 @@
                 <span class="gear-discover-category"></span>
                 <h3 class="gear-discover-title"></h3>
                 <p class="gear-discover-text"></p>
-                <button class="gear-discover-amp-link" type="button" hidden></button>
               </article>
               <article
                 class="gear-discover-entry"
@@ -622,7 +1819,6 @@
                 <span class="gear-discover-category"></span>
                 <h3 class="gear-discover-title"></h3>
                 <p class="gear-discover-text"></p>
-                <button class="gear-discover-amp-link" type="button" hidden></button>
               </article>
               <article
                 class="gear-discover-entry"
@@ -632,13 +1828,23 @@
                 <span class="gear-discover-category"></span>
                 <h3 class="gear-discover-title"></h3>
                 <p class="gear-discover-text"></p>
-                <button class="gear-discover-amp-link" type="button" hidden></button>
               </article>
             </div>
           </aside>
         </div>
       </section>
       </div>
+
+      <button
+        type="button"
+        id="gearPresentationExit"
+        class="gear-presentation-exit"
+        hidden
+        aria-hidden="true"
+        aria-label="Exit presentation"
+      >
+        ×
+      </button>
     </div>
 
     <div id="audioToolsView" class="app-view-root" aria-hidden="true">
@@ -1000,6 +2206,75 @@
     </div>
 
     <div
+      id="gearArchiveAmpDetailOverlay"
+      class="gear-archive-detail-overlay"
+      data-open="false"
+      aria-hidden="true"
+    >
+      <div
+        id="gearArchiveAmpDetailBackdrop"
+        class="gear-archive-detail-backdrop"
+        aria-hidden="true"
+      ></div>
+      <div
+        class="gear-archive-detail-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="gearArchiveAmpDetailModel"
+      >
+        <button
+          id="gearArchiveAmpDetailClose"
+          class="gear-archive-detail-close"
+          type="button"
+          aria-label="Close amp detail"
+        >
+          ×
+        </button>
+        <div class="gear-archive-detail-scene">
+          <div class="gear-archive-detail-layout">
+            <div class="gear-archive-detail-content">
+              <div class="gear-archive-detail-header">
+                <h3 id="gearArchiveAmpDetailModel" class="gear-archive-detail-model"></h3>
+                <button
+                  type="button"
+                  id="gearArchiveAmpDetailManufacturer"
+                  class="gear-archive-detail-manufacturer"
+                ></button>
+                <div id="gearArchiveAmpDetailSpecs" class="gear-archive-detail-specs" hidden></div>
+              </div>
+              <div class="gear-archive-detail-narrative">
+                <section class="gear-archive-detail-section">
+                  <h4 class="gear-archive-detail-section-title">Description</h4>
+                  <p id="gearArchiveAmpDetailDescription" class="gear-archive-detail-section-text"></p>
+                </section>
+                <section class="gear-archive-detail-section">
+                  <h4 class="gear-archive-detail-section-title">History</h4>
+                  <p id="gearArchiveAmpDetailHistory" class="gear-archive-detail-section-text"></p>
+                </section>
+                <section id="gearArchiveAmpDetailValveSection" class="gear-archive-detail-section" hidden>
+                  <h4 class="gear-archive-detail-section-title">Valve Configuration</h4>
+                  <div id="gearArchiveAmpDetailValveList" class="gear-archive-detail-valve-list"></div>
+                </section>
+                <section id="gearArchiveAmpDetailPlayedBySection" class="gear-archive-detail-section" hidden>
+                  <h4 class="gear-archive-detail-section-title">Artists</h4>
+                  <div id="gearArchiveAmpDetailPlayedByList" class="gear-archive-detail-played-by-list" role="list"></div>
+                </section>
+              </div>
+            </div>
+            <div class="gear-archive-detail-hero">
+              <img
+                id="gearArchiveAmpDetailImage"
+                class="gear-archive-detail-image"
+                alt=""
+                title="Double-click to view fullscreen"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
       id="gearAmpDetailOverlay"
       class="gear-amp-detail-overlay"
       data-open="false"
@@ -1027,31 +2302,51 @@
         <div class="gear-amp-detail-scene">
           <div class="gear-amp-detail-layout">
             <div class="gear-amp-detail-content">
-              <div class="gear-amp-detail-header">
+              <header class="gear-amp-detail-header">
                 <button
                   type="button"
                   id="gearAmpDetailManufacturer"
                   class="gear-manufacturer-link gear-amp-detail-manufacturer"
                 ></button>
                 <h3 id="gearAmpDetailModel" class="gear-amp-detail-model"></h3>
-              </div>
-              <div id="gearAmpDetailSpecs" class="gear-amp-detail-specs" hidden></div>
+                <p id="gearAmpDetailMeta" class="gear-amp-detail-meta" hidden></p>
+              </header>
               <div class="gear-amp-detail-narrative">
-                <section class="gear-amp-detail-section">
-                  <h4 class="gear-amp-detail-section-title">Beschreibung</h4>
+                <section
+                  id="gearAmpDetailDescriptionSection"
+                  class="gear-amp-detail-section gear-amp-detail-section--editorial"
+                  hidden
+                >
+                  <h4 class="gear-amp-detail-section-title">Description</h4>
                   <p id="gearAmpDetailDescription" class="gear-amp-detail-section-text"></p>
                 </section>
-                <section class="gear-amp-detail-section">
-                  <h4 class="gear-amp-detail-section-title">Geschichte</h4>
+                <section
+                  id="gearAmpDetailHistorySection"
+                  class="gear-amp-detail-section gear-amp-detail-section--editorial"
+                  hidden
+                >
+                  <h4 class="gear-amp-detail-section-title">History</h4>
                   <p id="gearAmpDetailHistory" class="gear-amp-detail-section-text"></p>
                 </section>
-                <section id="gearAmpDetailValveSection" class="gear-amp-detail-section" hidden>
-                  <h4 class="gear-amp-detail-section-title">Valve Configuration</h4>
-                  <div id="gearAmpDetailValveList" class="gear-amp-detail-valve-list"></div>
+                <section
+                  id="gearAmpDetailPlayedBySection"
+                  class="gear-amp-detail-section"
+                  hidden
+                >
+                  <h4 class="gear-amp-detail-section-title">Artists</h4>
+                  <div
+                    id="gearAmpDetailPlayedByList"
+                    class="gear-amp-detail-played-by-list"
+                    role="list"
+                  ></div>
                 </section>
-                <section id="gearAmpDetailPlayedBySection" class="gear-amp-detail-section" hidden>
-                  <h4 class="gear-amp-detail-section-title">Played By</h4>
-                  <ul id="gearAmpDetailPlayedByList" class="gear-amp-detail-played-by-list"></ul>
+                <section
+                  id="gearAmpDetailTechSection"
+                  class="gear-amp-detail-section gear-amp-detail-section--tech"
+                  hidden
+                >
+                  <h4 class="gear-amp-detail-section-title">Technical Specifications</h4>
+                  <div id="gearAmpDetailTechList" class="gear-amp-detail-tech-list"></div>
                 </section>
               </div>
             </div>
@@ -1061,116 +2356,45 @@
                 <div class="gear-amp-detail-hero-scene-glow gear-amp-detail-hero-scene-glow--accent"></div>
                 <div class="gear-amp-detail-hero-scene-glow gear-amp-detail-hero-scene-glow--depth"></div>
               </div>
-              <button
-                id="gearAmpDetailExpandImage"
-                class="gear-amp-detail-image-expand"
-                type="button"
-                aria-label="Enlarge amp image"
-                aria-controls="gearAmpImageLargeOverlay"
-              >
-                <svg
-                  class="gear-amp-detail-image-expand-icon"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  focusable="false"
-                >
-                  <path
-                    d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4M10 14v4h4v-4h-4z"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
               <div class="gear-amp-detail-hero-frame">
-                <img id="gearAmpDetailImage" class="gear-amp-detail-image" alt="" />
+                <img
+                  id="gearAmpDetailImage"
+                  class="gear-amp-detail-image"
+                  alt=""
+                  title="Double-click to view fullscreen"
+                />
               </div>
             </div>
           </div>
         </div>
       </div>
-      <div
-        id="gearAmpImageLargeOverlay"
-        class="gear-amp-image-large-overlay"
-        data-open="false"
-        aria-hidden="true"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Amp image enlarged"
-      >
-        <div
-          id="gearAmpImageLargeBackdrop"
-          class="gear-amp-image-large-backdrop"
-          aria-hidden="true"
-        ></div>
-        <button
-          id="gearAmpImageLargeClose"
-          class="gear-amp-image-large-close"
-          type="button"
-          aria-label="Close enlarged image"
-        >
-          ×
-        </button>
-        <button
-          id="gearAmpImageLargeFocus"
-          class="gear-amp-image-large-focus"
-          type="button"
-          aria-label="Open focus view"
-          aria-controls="gearAmpImageFocusOverlay"
-        >
-          <svg
-            class="gear-amp-image-large-focus-icon"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path
-              d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4M10 14v4h4v-4h-4z"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          Focus View
-        </button>
-        <figure class="gear-amp-image-large-stage">
-          <img id="gearAmpImageLargeImage" class="gear-amp-image-large-image" alt="" draggable="false" />
-        </figure>
-      </div>
-      <div
-        id="gearAmpImageFocusOverlay"
-        class="gear-amp-image-focus-overlay"
-        data-open="false"
-        aria-hidden="true"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Amp image focus view"
-      >
-        <div
-          id="gearAmpImageFocusBackdrop"
-          class="gear-amp-image-focus-backdrop"
-          aria-hidden="true"
-        ></div>
-        <button
-          id="gearAmpImageFocusClose"
-          class="gear-amp-image-focus-close"
-          type="button"
-          aria-label="Close focus view"
-        >
-          ×
-        </button>
-        <div id="gearAmpImageFocusViewport" class="gear-amp-image-focus-viewport">
-          <img id="gearAmpImageFocusImage" class="gear-amp-image-focus-image" alt="" draggable="false" />
-        </div>
-      </div>
     </div>
 
-    <div id="ampZoomOverlay" class="amp-zoom-overlay" data-open="false" aria-hidden="true">
-      <img id="ampZoomImage" class="amp-zoom-image" alt="" />
+    <div
+      id="gearAmpImageFocusOverlay"
+      class="gear-amp-image-focus-overlay"
+      data-open="false"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Amp fullscreen view"
+    >
+      <div
+        id="gearAmpImageFocusBackdrop"
+        class="gear-amp-image-focus-backdrop"
+        aria-hidden="true"
+      ></div>
+      <button
+        id="gearAmpImageFocusClose"
+        class="gear-amp-image-focus-close"
+        type="button"
+        aria-label="Close fullscreen view"
+      >
+        ×
+      </button>
+      <div id="gearAmpImageFocusViewport" class="gear-amp-image-focus-viewport">
+        <img id="gearAmpImageFocusImage" class="gear-amp-image-focus-image" alt="" draggable="false" />
+      </div>
     </div>
 
     <div id="libraryConfirmDialog" class="library-confirm-dialog" data-open="false" aria-hidden="true">
@@ -1182,6 +2406,36 @@
         <div class="library-confirm-actions">
           <button id="cancelLibraryScanButton" class="secondary-button" type="button">Cancel</button>
           <button id="startLibraryScanButton" type="button">Start Scan</button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="protocolResearchConfirmDialog"
+      class="library-confirm-dialog research-lab-confirm-dialog"
+      data-open="false"
+      aria-hidden="true"
+    >
+      <div
+        class="library-confirm-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="protocolResearchConfirmTitle"
+      >
+        <h2 id="protocolResearchConfirmTitle">Confirm Parameter Write</h2>
+        <p data-research-confirm-message>Send parameter write?</p>
+        <p class="research-lab-confirm-note">
+          Research only — this uses bidirectional SysEx, not Live Companion CC controls.
+        </p>
+        <div class="library-confirm-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            data-research-confirm-cancel
+          >
+            Cancel
+          </button>
+          <button type="button" data-research-confirm-send>Send</button>
         </div>
       </div>
     </div>

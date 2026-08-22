@@ -8,11 +8,13 @@ export const hiwattAmps = [
   manufacturer: "Hiwatt",
   model: "Custom 100 DR103",
   aliases: [
-    "high watt",
+    "high watt dr103",
     "hiwatt custom 100",
-    "custom 100",
     "dr103",
-    "custom 100 dr103"
+    "custom 100 dr103",
+    "high watt customer hundred",
+    "hiwatt dr103",
+    "hiwatt custom 100 dr103"
   ],
   image: "hiwatt custom 100.png",
   description:
@@ -55,9 +57,10 @@ export const hiwattAmps = [
   aliases: [
     "custom 50",
     "dr504",
-    "custom 50 dr504"
+    "custom 50 dr504",
+    "dr504"
   ],
-  image: null,
+  image: "custom-50-dr504.png",
   description:
     "The Custom 50 delivers the unmistakable Hiwatt sound with slightly earlier breakup than the DR103 while preserving the company's legendary clarity and dynamic response.",
   history:
@@ -96,7 +99,7 @@ export const hiwattAmps = [
     "dr201",
     "custom 200 dr201"
   ],
-  image: null,
+  image: "custom-200-dr201.png",
   description:
     "The Custom 200 offers extraordinary clean headroom and authority, making it one of the most powerful guitar amplifiers ever produced by Hiwatt.",
   history:
@@ -133,7 +136,7 @@ export const hiwattAmps = [
   aliases: [
     "lead 50"
   ],
-  image: null,
+  image: "lead50.png",
   description:
     "The Lead 50 was voiced for greater overdrive while retaining Hiwatt's characteristic clarity and punch.",
   history:
@@ -166,7 +169,7 @@ export const hiwattAmps = [
   aliases: [
     "lead 30"
   ],
-  image: null,
+  image: "lead30.png",
   description:
     "The Lead 30 delivered classic British crunch in a more compact format, making it suitable for clubs, rehearsals and studio work.",
   history:
@@ -202,7 +205,7 @@ export const hiwattAmps = [
     "custom 20",
     "hiwatt custom 20"
   ],
-  image: null,
+  image: "custom20.png",
   description:
     "The Custom 20 delivers the unmistakable Hiwatt character in a compact format, offering exceptional clarity, dynamic response and generous clean headroom for its power rating.",
   history:
@@ -238,7 +241,7 @@ export const hiwattAmps = [
     "bulldog",
     "bulldog 30"
   ],
-  image: null,
+  image: "bulldog30.png",
   description:
     "The Bulldog 30 combines classic British clean tones with smooth overdrive in a compact amplifier designed for rehearsal, studio work and smaller stages.",
   history:
@@ -275,7 +278,7 @@ export const hiwattAmps = [
     "studio stage",
     "studio stage 112"
   ],
-  image: null,
+  image: "sa112.png",
   description:
     "The SA112 was designed to deliver classic Hiwatt tone in a studio-friendly format, combining clean headroom with smooth breakup at practical volumes.",
   history:
@@ -312,7 +315,7 @@ export const hiwattAmps = [
     "t20/10",
     "t20 10"
   ],
-  image: null,
+  image: "t20-10.png",
   description:
     "The T20/10 is a compact practice and recording amplifier that captures the clean articulation and dynamic response associated with the Hiwatt name.",
   history:

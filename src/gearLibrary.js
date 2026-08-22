@@ -9,9 +9,11 @@ import {
   buildAmpTimelineSections,
   createDiscoverRotationController,
   getAmpBrowseEntries,
+  getAmpById,
   getAmpDetailView,
   getAmpLibraryStats,
   getManufacturerBrowseEntries,
+  getManufacturerById,
   getManufacturerDetailView,
   getManufacturerLibraryStats,
   isAmpBrowserView
@@ -20,18 +22,66 @@ import { GEAR_CATEGORY, gearLibraryCategories, getGearCategory } from "./gearLib
 import { applyAmpThemeToElement, serializeAmpThemeStyle } from "./theme/ampTheme.js";
 import {
   closeGearAmpImageFocus,
-  closeGearAmpImageLarge,
   closeGearAmpImageViews,
   initializeGearAmpImageFocus,
   isGearAmpImageFocusOpen,
-  isGearAmpImageLargeOpen
+  openGearAmpImageFocus
 } from "./gearAmpImageFocus.js";
-import { initializeGearDesignPreview } from "./gearLibraryDesignPreview.js";
+import {
+  applyGearDesignPreview,
+  GEAR_DESIGN_MODE,
+  getActiveGearDesignMode,
+  initializeGearDesignPreview,
+  isCollectionsDesignMode,
+  isMuseumDesignMode
+} from "./gearLibraryDesignPreview.js";
+import {
+  buildChapterOptions,
+  jumpToManufacturerChapter,
+  syncChapterSelect
+} from "./gearLibraryChapters.js";
+import {
+  getMuseumExhibitEntry,
+  renderMuseumExhibition,
+  renderMuseumModelNav,
+  resolveMuseumAmpId,
+  resolveMuseumSection
+} from "./museum/museumView.js";
+import { bindMuseumOpticalAlign } from "./museum/museumOpticalAlign.js";
+import { renderCollectionsCatalog } from "./collections/collectionsView.js";
+import { bindAmpDetailsOverlay } from "./modules/ampDetails/AmpDetailsOverlay.js";
+import { initializeGearColorTheme } from "./gearLibraryTheme.js";
+import {
+  exitPresentationMode,
+  getPresentationVariant,
+  initializePresentationMode,
+  isPresentationModeActive,
+  PRESENTATION_SCOPE,
+  resumePresentationMode,
+  suspendPresentationMode
+} from "./presentation/presentationMode.js";
+import { getPresentationVariantConfig } from "./presentation/presentationVariants.js";
+import {
+  buildPlaylistByStrategy,
+  classifyPowerClass,
+  decadeFromYear
+} from "./presentation/presentationPlaylist.js";
+import {
+  bindPresentationFit,
+  stopPresentationFit
+} from "./presentation/presentationFit.js";
 
 const APP_VIEW = {
   LIVE: "live",
-  GEAR: "gear"
+  GEAR: "gear",
+  AUDIO: "audio"
 };
+
+const VIEW_SCROLL_SELECTORS = Object.freeze({
+  [APP_VIEW.LIVE]: "#liveView .shell--live, #liveView .shell",
+  [APP_VIEW.GEAR]: "#gearLibraryView .gear-library-scroll",
+  [APP_VIEW.AUDIO]: "#audioToolsView .shell--audio"
+});
 
 const ALL_MANUFACTURERS = "all";
 
@@ -59,8 +109,21 @@ let manufacturerLibraryStatsData = { manufacturerCount: 0 };
 
 let liveViewRoot = null;
 let gearLibraryViewRoot = null;
+let audioToolsViewRoot = null;
 let appRoot = null;
+let appModuleLauncher = null;
+let appModuleLauncherButton = null;
+let appModuleMenu = null;
+/** @type {HTMLElement[]} */
+let appModuleMenuItems = [];
+/** @type {Record<string, number>} */
+const savedScrollByView = {
+  [APP_VIEW.LIVE]: 0,
+  [APP_VIEW.GEAR]: 0,
+  [APP_VIEW.AUDIO]: 0
+};
 let gearLibraryTitle = null;
+let gearLibraryCollectionMeta = null;
 let gearCategoryShell = null;
 let gearLibraryScroll = null;
 let gearLibrarySearch = null;
@@ -76,22 +139,56 @@ let timelineRailBound = false;
 let gearAmpImageFilter = null;
 let manufacturerBrowserGrid = null;
 let ampBrowserGrid = null;
+let gearLibraryChapterWrap = null;
+let gearLibraryChapterSelect = null;
+let museumModelNav = null;
+let museumModelNavTrack = null;
+/** @type {(() => void) | null} */
+let stopMuseumOpticalAlign = null;
+/** @type {{ manufacturerId: string | null, ampId: string | null }} */
+const museumState = {
+  manufacturerId: null,
+  ampId: null
+};
+/** Full library catalog used by Presentation Mode slideshow. */
+let presentationCatalogEntries = [];
+let gearPresentationButton = null;
+let gearPresentationButtonLabel = null;
+let gearPresentationExit = null;
+let gearDiscoverColumn = null;
 let gearLibraryStatsEl = null;
 let gearLibraryEmptyState = null;
 let gearCategoryNav = null;
+/** Kempanion (live) technical detail card */
 let gearAmpDetailOverlay = null;
 let gearAmpDetailBackdrop = null;
 let gearAmpDetailClose = null;
 let gearAmpDetailImage = null;
 let gearAmpDetailManufacturer = null;
 let gearAmpDetailModel = null;
-let gearAmpDetailSpecs = null;
+let gearAmpDetailMeta = null;
+let gearAmpDetailDescriptionSection = null;
 let gearAmpDetailDescription = null;
+let gearAmpDetailTechSection = null;
+let gearAmpDetailTechList = null;
+let gearAmpDetailHistorySection = null;
 let gearAmpDetailHistory = null;
-let gearAmpDetailValveSection = null;
-let gearAmpDetailValveList = null;
 let gearAmpDetailPlayedBySection = null;
 let gearAmpDetailPlayedByList = null;
+/** Gear Library boutique / archive detail card */
+let gearArchiveAmpDetailOverlay = null;
+let gearArchiveAmpDetailBackdrop = null;
+let gearArchiveAmpDetailClose = null;
+let gearArchiveAmpDetailImage = null;
+let gearArchiveAmpDetailManufacturer = null;
+let gearArchiveAmpDetailModel = null;
+let gearArchiveAmpDetailSpecs = null;
+let gearArchiveAmpDetailDescription = null;
+let gearArchiveAmpDetailHistory = null;
+let gearArchiveAmpDetailValveSection = null;
+let gearArchiveAmpDetailValveList = null;
+let gearArchiveAmpDetailPlayedBySection = null;
+let gearArchiveAmpDetailPlayedByList = null;
 let gearManufacturerDetailOverlay = null;
 let gearManufacturerDetailBackdrop = null;
 let gearManufacturerDetailClose = null;
@@ -107,14 +204,49 @@ let discoverBoardState = null;
 let discoverRotationController = null;
 /** @type {Map<string, ReturnType<typeof setTimeout>>} */
 const discoverFadeTimers = new Map();
-let primaryNavButtons = [];
-
 export function registerViewChangeHandler(handler) {
   onViewChange = handler;
 }
 
 export function getActiveAppView() {
   return activeView;
+}
+
+function isAppView(view) {
+  return (
+    view === APP_VIEW.LIVE || view === APP_VIEW.GEAR || view === APP_VIEW.AUDIO
+  );
+}
+
+/**
+ * @param {string} view
+ * @returns {HTMLElement | null}
+ */
+function getViewScrollElement(view) {
+  const selector = VIEW_SCROLL_SELECTORS[view];
+  if (!selector) return null;
+  const element = document.querySelector(selector);
+  return element instanceof HTMLElement ? element : null;
+}
+
+/**
+ * @param {string} view
+ */
+function captureViewScroll(view) {
+  const element = getViewScrollElement(view);
+  if (element) savedScrollByView[view] = element.scrollTop;
+}
+
+/**
+ * @param {string} view
+ */
+function restoreViewScroll(view) {
+  const element = getViewScrollElement(view);
+  if (!element) return;
+  const top = savedScrollByView[view] || 0;
+  window.requestAnimationFrame(() => {
+    element.scrollTop = top;
+  });
 }
 
 function setViewRootVisibility(view) {
@@ -129,10 +261,49 @@ function setViewRootVisibility(view) {
     const showGear = view === APP_VIEW.GEAR;
     gearLibraryViewRoot.setAttribute("aria-hidden", showGear ? "false" : "true");
   }
+
+  if (audioToolsViewRoot) {
+    const showAudio = view === APP_VIEW.AUDIO;
+    audioToolsViewRoot.setAttribute("aria-hidden", showAudio ? "false" : "true");
+  }
+}
+
+function syncModuleMenuActiveState(view) {
+  appModuleMenuItems.forEach((item) => {
+    const isActive = item.dataset.view === view;
+    item.classList.toggle("is-active", isActive);
+    item.setAttribute("aria-current", isActive ? "page" : "false");
+  });
+}
+
+function closeModuleMenu() {
+  if (!appModuleLauncher || !appModuleLauncherButton || !appModuleMenu) return;
+  appModuleLauncher.dataset.open = "false";
+  appModuleLauncherButton.setAttribute("aria-expanded", "false");
+  appModuleMenu.hidden = true;
+}
+
+function openModuleMenu() {
+  if (!appModuleLauncher || !appModuleLauncherButton || !appModuleMenu) return;
+  appModuleLauncher.dataset.open = "true";
+  appModuleLauncherButton.setAttribute("aria-expanded", "true");
+  appModuleMenu.hidden = false;
+}
+
+function toggleModuleMenu() {
+  if (appModuleLauncher?.dataset.open === "true") {
+    closeModuleMenu();
+  } else {
+    openModuleMenu();
+  }
 }
 
 function isAmpDetailOpen() {
   return gearAmpDetailOverlay?.dataset.open === "true";
+}
+
+function isArchiveAmpDetailOpen() {
+  return gearArchiveAmpDetailOverlay?.dataset.open === "true";
 }
 
 function isManufacturerDetailOpen() {
@@ -141,15 +312,20 @@ function isManufacturerDetailOpen() {
 
 function updateGearOverlayLock() {
   const ampOpen = isAmpDetailOpen();
+  const archiveOpen = isArchiveAmpDetailOpen();
   const manufacturerOpen = isManufacturerDetailOpen();
-  const anyOpen = ampOpen || manufacturerOpen;
+  const imageFocusOpen = isGearAmpImageFocusOpen();
+  const anyOpen = ampOpen || archiveOpen || manufacturerOpen || imageFocusOpen;
 
-  document.body.dataset.gearDetailOpen = ampOpen ? "true" : "false";
+  document.body.dataset.gearDetailOpen =
+    ampOpen || archiveOpen ? "true" : "false";
   document.body.dataset.gearManufacturerOpen = manufacturerOpen ? "true" : "false";
+  document.body.dataset.gearImageFocusOpen = imageFocusOpen ? "true" : "false";
   document.body.dataset.gearOverlayOpen = anyOpen ? "true" : "false";
 
   if (gearLibraryViewRoot) {
-    gearLibraryViewRoot.dataset.detailOpen = anyOpen ? "true" : "false";
+    gearLibraryViewRoot.dataset.detailOpen =
+      ampOpen || archiveOpen || manufacturerOpen ? "true" : "false";
   }
 
   if (appRoot) {
@@ -164,36 +340,44 @@ function updateGearOverlayLock() {
 function closeAllGearOverlays() {
   closeGearAmpImageViews();
   closeManufacturerDetail();
+  closeArchiveAmpDetail();
   closeAmpDetail();
 }
 
 export function setAppView(view) {
-  if (view !== APP_VIEW.LIVE && view !== APP_VIEW.GEAR) return;
-  if (activeView === view) return;
+  if (!isAppView(view)) return;
+  if (activeView === view) {
+    closeModuleMenu();
+    return;
+  }
+
+  captureViewScroll(activeView);
+
+  if (activeView === APP_VIEW.GEAR && isPresentationModeActive()) {
+    // Keep playlist/selection armed; release slideshow while another module is open.
+    suspendPresentationMode();
+  }
+
+  if (view !== APP_VIEW.GEAR) {
+    stopDiscoverRotation();
+  }
 
   activeView = view;
   setViewRootVisibility(view);
-
-  primaryNavButtons.forEach((button) => {
-    const isActive = button.dataset.view === view;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-current", isActive ? "page" : "false");
-  });
-
-  if (view !== APP_VIEW.GEAR) {
-    closeAllGearOverlays();
-    stopDiscoverRotation();
-  }
+  syncModuleMenuActiveState(view);
+  closeModuleMenu();
 
   onViewChange?.(view);
 
   if (view === APP_VIEW.GEAR) {
-    resetAmpBrowserViewToDefault();
-    renderActiveGearCategory();
-    if (discoverBoardState) {
+    if (isPresentationModeActive()) {
+      resumePresentationMode();
+    } else if (discoverBoardState) {
       startDiscoverRotation();
     }
   }
+
+  restoreViewScroll(view);
 }
 
 function resetAmpBrowserViewToDefault() {
@@ -220,8 +404,17 @@ function updateGearCategoryPanels() {
   }
 
   if (gearLibraryViewWrap) {
-    gearLibraryViewWrap.classList.toggle("is-inactive", isManufacturers);
-    gearLibraryViewWrap.setAttribute("aria-hidden", isManufacturers ? "true" : "false");
+    const hideView = isManufacturers;
+    gearLibraryViewWrap.classList.toggle("is-inactive", hideView);
+    gearLibraryViewWrap.setAttribute("aria-hidden", hideView ? "true" : "false");
+  }
+
+  if (gearLibraryChapterWrap) {
+    gearLibraryChapterWrap.classList.toggle("is-inactive", isManufacturers);
+    gearLibraryChapterWrap.setAttribute(
+      "aria-hidden",
+      isManufacturers ? "true" : "false"
+    );
   }
 
   if (gearAmpImageFilterWrap) {
@@ -229,12 +422,15 @@ function updateGearCategoryPanels() {
     gearAmpImageFilterWrap.setAttribute("aria-hidden", isManufacturers ? "true" : "false");
   }
 
+  syncMuseumModelNavVisibility(isMuseumDesignMode() && !isManufacturers);
+
   if (gearLibraryTitle) {
     const category = getGearCategory(activeGearCategory);
     gearLibraryTitle.textContent =
-      category?.id === GEAR_CATEGORY.MANUFACTURERS ? "Manufacturers" : "Amp Browser";
+      category?.id === GEAR_CATEGORY.MANUFACTURERS ? "Manufacturers" : "Amp Collection";
   }
 
+  syncGearLibraryCollectionMeta();
   syncGearLibrarySearchField();
 
   if (gearLibraryScroll) {
@@ -248,9 +444,7 @@ function syncGearLibrarySearchField() {
   gearLibrarySearch.value = isManufacturersCategory()
     ? manufacturerBrowserState.searchQuery
     : ampBrowserState.searchQuery;
-  gearLibrarySearch.placeholder = isManufacturersCategory()
-    ? "Search manufacturer, country…"
-    : "Search manufacturer, model, alias…";
+  gearLibrarySearch.placeholder = "Search...";
 }
 
 function updateGearLibraryEmptyState(isEmpty, message) {
@@ -379,14 +573,54 @@ function renderManufacturerLibraryStats(filteredCount) {
   `;
 }
 
-function renderManufacturerMetaLine({ founded, country }) {
+function renderManufacturerMetaLine({ founded, country, ampCount = null }) {
   /** @type {string[]} */
   const parts = [];
 
-  if (founded) parts.push(founded);
   if (country) parts.push(country);
+  if (founded) parts.push(`Founded ${founded}`);
+  if (typeof ampCount === "number" && ampCount >= 0) {
+    parts.push(`${ampCount} ${ampCount === 1 ? "Amplifier" : "Amplifiers"}`);
+  }
 
-  return parts.join(" · ");
+  return parts.join(" • ");
+}
+
+/**
+ * @param {string} manufacturerId
+ * @param {number} [ampCount]
+ */
+function renderManufacturerChapterMeta(manufacturerId, ampCount) {
+  const record = getManufacturerById(manufacturerId);
+  if (!record && typeof ampCount !== "number") return "";
+
+  const country = String(record?.country ?? "").trim();
+  const founded = String(record?.founded ?? "").trim();
+
+  return renderManufacturerMetaLine({
+    country: country || null,
+    founded: founded || null,
+    ampCount: typeof ampCount === "number" ? ampCount : null
+  });
+}
+
+function syncGearLibraryCollectionMeta() {
+  if (!gearLibraryCollectionMeta) return;
+
+  if (!isAmpsCategory()) {
+    gearLibraryCollectionMeta.hidden = true;
+    gearLibraryCollectionMeta.textContent = "";
+    return;
+  }
+
+  const ampCount = ampLibraryStatsData?.ampCount ?? 0;
+  const manufacturerCount = ampLibraryStatsData?.manufacturerCount ?? 0;
+  const ampLabel = ampCount === 1 ? "Amplifier" : "Amplifiers";
+  const manufacturerLabel =
+    manufacturerCount === 1 ? "Manufacturer" : "Manufacturers";
+
+  gearLibraryCollectionMeta.textContent = `${ampCount} ${ampLabel} • ${manufacturerCount} ${manufacturerLabel}`;
+  gearLibraryCollectionMeta.hidden = false;
 }
 
 function renderManufacturerBrowserCard(entry) {
@@ -466,19 +700,231 @@ function handleManufacturerBrowserKeydown(event) {
   openManufacturerDetail(card.dataset.manufacturerId);
 }
 
+function normalizeGearSearchKey(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function clearGearLibrarySearchField({ blur = true } = {}) {
+  if (isManufacturersCategory()) {
+    manufacturerBrowserState.searchQuery = "";
+  } else {
+    ampBrowserState.searchQuery = "";
+  }
+
+  if (gearLibrarySearch) {
+    gearLibrarySearch.value = "";
+    if (blur) gearLibrarySearch.blur();
+  }
+}
+
+/**
+ * @param {string} query
+ * @returns {{ type: "amp", ampId: string, manufacturerId: string } | { type: "manufacturer", manufacturerId: string } | null}
+ */
+function resolveAmpSearchNavigationTarget(query) {
+  const normalized = normalizeGearSearchKey(query);
+  if (normalized.length < 2) return null;
+
+  const entries = loadAmpBrowseEntries();
+  if (!entries.length) return null;
+
+  const exactModel = entries.filter(
+    (entry) => normalizeGearSearchKey(entry.model) === normalized
+  );
+  if (exactModel.length === 1) {
+    return {
+      type: "amp",
+      ampId: exactModel[0].id,
+      manufacturerId: exactModel[0].manufacturerId
+    };
+  }
+
+  const exactFull = entries.filter(
+    (entry) =>
+      normalizeGearSearchKey(`${entry.manufacturer} ${entry.model}`) === normalized
+  );
+  if (exactFull.length === 1) {
+    return {
+      type: "amp",
+      ampId: exactFull[0].id,
+      manufacturerId: exactFull[0].manufacturerId
+    };
+  }
+
+  /** @type {Map<string, string>} */
+  const manufacturers = new Map();
+  for (const entry of entries) {
+    manufacturers.set(entry.manufacturerId, entry.manufacturer);
+  }
+
+  const exactManufacturer = [...manufacturers.entries()].filter(
+    ([, name]) => normalizeGearSearchKey(name) === normalized
+  );
+  if (exactManufacturer.length === 1) {
+    return {
+      type: "manufacturer",
+      manufacturerId: exactManufacturer[0][0]
+    };
+  }
+
+  // Unique residual match only after a slightly longer query — avoids early jumps
+  if (entries.length === 1 && normalized.length >= 3) {
+    return {
+      type: "amp",
+      ampId: entries[0].id,
+      manufacturerId: entries[0].manufacturerId
+    };
+  }
+
+  return null;
+}
+
+/**
+ * @param {string} query
+ * @returns {{ type: "manufacturer", manufacturerId: string } | null}
+ */
+function resolveManufacturerSearchNavigationTarget(query) {
+  const normalized = normalizeGearSearchKey(query);
+  if (normalized.length < 2) return null;
+
+  const entries = getManufacturerBrowseEntries({ query });
+  if (!entries.length) return null;
+
+  const exact = entries.filter(
+    (entry) => normalizeGearSearchKey(entry.name) === normalized
+  );
+  if (exact.length === 1) {
+    return { type: "manufacturer", manufacturerId: exact[0].id };
+  }
+
+  if (entries.length === 1 && normalized.length >= 3) {
+    return { type: "manufacturer", manufacturerId: entries[0].id };
+  }
+
+  return null;
+}
+
+/**
+ * @param {{ type: "amp", ampId: string, manufacturerId: string } | { type: "manufacturer", manufacturerId: string }} target
+ */
+function navigateGearLibrarySearchTarget(target) {
+  closeAllGearOverlays();
+
+  if (isManufacturersCategory() && target.type === "manufacturer") {
+    clearGearLibrarySearchField({ blur: true });
+    renderManufacturerBrowser();
+    requestAnimationFrame(() => {
+      const card = manufacturerBrowserGrid?.querySelector(
+        `.manufacturer-browser-card[data-manufacturer-id="${CSS.escape(target.manufacturerId)}"]`
+      );
+      card?.scrollIntoView({ behavior: "smooth", block: "center" });
+      selectedManufacturerId = target.manufacturerId;
+      updateManufacturerCardSelection();
+    });
+    return;
+  }
+
+  clearGearLibrarySearchField({ blur: true });
+
+  if (isMuseumDesignMode()) {
+    museumState.manufacturerId = target.manufacturerId;
+    museumState.ampId = target.type === "amp" ? target.ampId : null;
+    setChapterSelectManufacturer(target.manufacturerId);
+    renderAmpBrowser();
+    return;
+  }
+
+  renderAmpBrowser();
+
+  requestAnimationFrame(() => {
+    jumpToManufacturerChapter({
+      manufacturerId: target.manufacturerId,
+      root: ampBrowserGrid,
+      scrollRoot: gearLibraryScroll,
+      topPadding: 16
+    });
+
+    if (target.type === "amp") {
+      const card = ampBrowserGrid?.querySelector(
+        `.amp-browser-card[data-amp-id="${CSS.escape(target.ampId)}"]`
+      );
+      if (card) {
+        selectedAmpId = target.ampId;
+        updateAmpCardSelection();
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    } else {
+      setChapterSelectManufacturer(target.manufacturerId);
+    }
+  });
+}
+
 function handleGearLibrarySearchInput() {
   const query = gearLibrarySearch?.value || "";
 
   if (isManufacturersCategory()) {
     manufacturerBrowserState.searchQuery = query;
     closeAllGearOverlays();
+
+    const target = resolveManufacturerSearchNavigationTarget(query);
+    if (target) {
+      navigateGearLibrarySearchTarget(target);
+      return;
+    }
+
     renderManufacturerBrowser();
     return;
   }
 
   ampBrowserState.searchQuery = query;
   closeAllGearOverlays();
+
+  const target = resolveAmpSearchNavigationTarget(query);
+  if (target) {
+    navigateGearLibrarySearchTarget(target);
+    return;
+  }
+
   renderAmpBrowser();
+}
+
+function handleGearLibrarySearchKeydown(event) {
+  if (event.key !== "Enter") return;
+
+  const query = gearLibrarySearch?.value || "";
+  if (!normalizeGearSearchKey(query)) return;
+
+  event.preventDefault();
+
+  if (isManufacturersCategory()) {
+    manufacturerBrowserState.searchQuery = query;
+    const target = resolveManufacturerSearchNavigationTarget(query);
+    if (target) {
+      navigateGearLibrarySearchTarget(target);
+      return;
+    }
+    renderManufacturerBrowser();
+    return;
+  }
+
+  ampBrowserState.searchQuery = query;
+  const target = resolveAmpSearchNavigationTarget(query);
+  if (target) {
+    navigateGearLibrarySearchTarget(target);
+    return;
+  }
+
+  const entries = loadAmpBrowseEntries();
+  if (entries.length > 0) {
+    navigateGearLibrarySearchTarget({
+      type: "amp",
+      ampId: entries[0].id,
+      manufacturerId: entries[0].manufacturerId
+    });
+  }
 }
 
 function handleGearCategoryNavClick(event) {
@@ -488,30 +934,38 @@ function handleGearCategoryNavClick(event) {
   setGearCategory(button.dataset.category);
 }
 
-function renderLibraryStats(filteredCount) {
-  if (!gearLibraryStatsEl || !isAmpsCategory()) return;
+function renderLibraryStats(_filteredCount) {
+  // Release presentation: collection stats live in the page header and footnote.
+  if (gearLibraryStatsEl) {
+    gearLibraryStatsEl.innerHTML = "";
+    gearLibraryStatsEl.hidden = true;
+  }
+
+  syncGearLibraryCollectionMeta();
+}
+
+function renderCollectionStatsFootnote(entryCount) {
+  if (!isAmpsCategory()) return "";
 
   const isFiltered = isAmpBrowserFiltered();
+  const ampLabel = entryCount === 1 ? "amp" : "amps";
 
-  gearLibraryStatsEl.innerHTML = `
-    <span class="gear-library-stat">
-      ${filteredCount} ${filteredCount === 1 ? "amp" : "amps"}
-    </span>
-    ${
-      isFiltered
-        ? `
-          <span class="gear-library-stat-separator" aria-hidden="true">·</span>
-          <span class="gear-library-stat gear-library-stat-muted">
-            ${ampLibraryStatsData.ampCount} in collection
-          </span>
-        `
-        : `
-          <span class="gear-library-stat-separator" aria-hidden="true">·</span>
-          <span class="gear-library-stat gear-library-stat-muted">
-            ${ampLibraryStatsData.manufacturerCount} manufacturers
-          </span>
-        `
-    }
+  if (isFiltered) {
+    return `
+      <footer class="gear-collection-footnote" aria-label="Collection statistics">
+        <span>${entryCount} ${ampLabel}</span>
+        <span class="gear-collection-footnote-separator" aria-hidden="true">·</span>
+        <span>${ampLibraryStatsData.ampCount} in collection</span>
+      </footer>
+    `;
+  }
+
+  return `
+    <footer class="gear-collection-footnote" aria-label="Collection statistics">
+      <span>${entryCount} ${ampLabel}</span>
+      <span class="gear-collection-footnote-separator" aria-hidden="true">·</span>
+      <span>${ampLibraryStatsData.manufacturerCount} manufacturers</span>
+    </footer>
   `;
 }
 
@@ -532,7 +986,14 @@ function renderViewOptions() {
  */
 function renderAmpBrowserCard(entry, options = {}) {
   const { showManufacturer = false } = options;
-  const { model, manufacturer, id: ampId, imageSrc, theme } = entry;
+  const {
+    model,
+    manufacturer,
+    manufacturerId,
+    id: ampId,
+    imageSrc,
+    theme
+  } = entry;
   const isSelected = selectedAmpId === ampId;
   const themeStyle = serializeAmpThemeStyle(theme);
   const ariaLabel = showManufacturer ? `${manufacturer} ${model}` : model;
@@ -544,6 +1005,7 @@ function renderAmpBrowserCard(entry, options = {}) {
       tabindex="0"
       aria-label="${escapeHtml(ariaLabel)}"
       data-amp-id="${escapeHtml(ampId)}"
+      data-manufacturer-id="${escapeHtml(manufacturerId)}"
       data-selected="${isSelected ? "true" : "false"}"
       style="${escapeHtml(themeStyle)}"
     >
@@ -579,17 +1041,34 @@ function renderAmpBrowserGroup(
   sectionIndex = 0
 ) {
   const groupId = `amp-group-${manufacturerGroupId(manufacturerId)}-${sectionIndex}`;
+  const chapterMeta = renderManufacturerChapterMeta(
+    manufacturerId,
+    entries.length
+  );
 
   return `
-    <section class="amp-browser-group" aria-labelledby="${groupId}">
-      <button
-        type="button"
-        class="gear-manufacturer-link amp-browser-group-title"
-        id="${groupId}"
-        data-manufacturer-id="${escapeHtml(manufacturerId)}"
-      >
-        ${escapeHtml(manufacturer)}
-      </button>
+    <section
+      class="amp-browser-group"
+      id="${groupId}"
+      data-manufacturer-id="${escapeHtml(manufacturerId)}"
+      aria-labelledby="${groupId}-title"
+    >
+      <header class="amp-browser-group-header">
+        <button
+          type="button"
+          class="gear-manufacturer-link amp-browser-group-title"
+          id="${groupId}-title"
+          data-manufacturer-id="${escapeHtml(manufacturerId)}"
+        >
+          ${escapeHtml(manufacturer)}
+        </button>
+        <div class="amp-browser-group-rule" aria-hidden="true"></div>
+        ${
+          chapterMeta
+            ? `<p class="amp-browser-group-meta">${escapeHtml(chapterMeta)}</p>`
+            : ""
+        }
+      </header>
       <div class="amp-browser-group-grid" role="group" aria-label="${escapeHtml(manufacturer)} amps">
         ${entries.map((entry) => renderAmpBrowserCard(entry)).join("")}
       </div>
@@ -635,20 +1114,192 @@ function renderAmpTimelineView(entries) {
   return sections.map((section) => renderAmpTimelineYearSection(section)).join("");
 }
 
+/**
+ * @param {string | null | undefined} manufacturerId
+ */
+function setChapterSelectManufacturer(manufacturerId) {
+  if (!gearLibraryChapterSelect || !manufacturerId) return;
+  if (gearLibraryChapterSelect.value === manufacturerId) return;
+
+  const hasOption = [...gearLibraryChapterSelect.options].some(
+    (option) => option.value === manufacturerId
+  );
+  if (!hasOption) return;
+
+  gearLibraryChapterSelect.value = manufacturerId;
+}
+
+function teardownMuseumOpticalAlign() {
+  if (stopMuseumOpticalAlign) {
+    stopMuseumOpticalAlign();
+    stopMuseumOpticalAlign = null;
+  }
+}
+
+function syncMuseumModelNavVisibility(museumMode = isMuseumDesignMode()) {
+  if (!museumModelNav) return;
+
+  const show =
+    Boolean(museumMode) && isAmpsCategory() && !isPresentationModeActive();
+  museumModelNav.hidden = !show;
+  museumModelNav.setAttribute("aria-hidden", show ? "false" : "true");
+
+  if (!show && museumModelNavTrack) {
+    museumModelNavTrack.innerHTML = "";
+  }
+
+  if (!show) teardownMuseumOpticalAlign();
+}
+
+/**
+ * @param {import("./library/ampLibrary.js").AmpBrowseEntry[]} entries
+ * @param {string | null | undefined} activeAmpId
+ */
+function renderMuseumModelNavigation(entries, activeAmpId) {
+  if (!museumModelNavTrack) return;
+
+  museumModelNavTrack.innerHTML = renderMuseumModelNav(entries, activeAmpId);
+
+  const activeButton = museumModelNavTrack.querySelector(
+    '.museum-model-nav-item[data-active="true"]'
+  );
+  activeButton?.scrollIntoView({
+    block: "nearest",
+    inline: "center",
+    behavior: "smooth"
+  });
+}
+
+/**
+ * @param {import("./library/ampLibrary.js").AmpBrowseEntry[]} entries
+ */
+function renderMuseumBrowser(entries) {
+  const sections = buildAmpManufacturerViewSections(entries);
+  const preferredManufacturerId =
+    museumState.manufacturerId ||
+    gearLibraryChapterSelect?.value ||
+    null;
+  const section = resolveMuseumSection(sections, preferredManufacturerId);
+
+  if (!section) {
+    ampBrowserGrid.innerHTML = "";
+    syncMuseumModelNavVisibility(true);
+    if (museumModelNavTrack) museumModelNavTrack.innerHTML = "";
+    return;
+  }
+
+  const ampId = resolveMuseumAmpId(section, museumState.ampId);
+  museumState.manufacturerId = section.manufacturerId;
+  museumState.ampId = ampId;
+
+  setChapterSelectManufacturer(section.manufacturerId);
+  syncMuseumModelNavVisibility(true);
+  renderMuseumModelNavigation(section.entries, ampId);
+
+  const exhibit = getMuseumExhibitEntry(ampId);
+  teardownMuseumOpticalAlign();
+  ampBrowserGrid.innerHTML = renderMuseumExhibition({
+    manufacturer: section.manufacturer,
+    manufacturerId: section.manufacturerId,
+    exhibit
+  });
+
+  if (gearLibraryScroll) gearLibraryScroll.scrollTop = 0;
+  stopMuseumOpticalAlign = bindMuseumOpticalAlign(ampBrowserGrid);
+}
+
+function syncChapterNavigation(entries = ampCatalogEntries) {
+  const activeId = isMuseumDesignMode()
+    ? museumState.manufacturerId || gearLibraryChapterSelect?.value || null
+    : gearLibraryChapterSelect?.value || null;
+
+  syncChapterSelect(gearLibraryChapterSelect, buildChapterOptions(entries), {
+    selectedId: activeId
+  });
+}
+
+function handleChapterSelectChange() {
+  const manufacturerId = gearLibraryChapterSelect?.value;
+  if (!manufacturerId) return;
+
+  if (isMuseumDesignMode()) {
+    museumState.manufacturerId = manufacturerId;
+    museumState.ampId = null;
+    renderAmpBrowser();
+    return;
+  }
+
+  jumpToManufacturerChapter({
+    manufacturerId,
+    root: ampBrowserGrid,
+    scrollRoot: gearLibraryScroll,
+    topPadding: 16
+  });
+}
+
+function handleMuseumModelNavClick(event) {
+  if (!isMuseumDesignMode()) return;
+
+  const button = event.target.closest(".museum-model-nav-item");
+  if (!button || !museumModelNavTrack?.contains(button)) return;
+
+  const ampId = button.dataset.ampId;
+  const manufacturerId = button.dataset.manufacturerId;
+  if (!ampId) return;
+
+  if (
+    museumState.ampId === ampId &&
+    museumState.manufacturerId === manufacturerId
+  ) {
+    return;
+  }
+
+  museumState.manufacturerId = manufacturerId || museumState.manufacturerId;
+  museumState.ampId = ampId;
+  renderAmpBrowser();
+}
+
 function syncAmpBrowserPresentation() {
   const view = ampBrowserState.view;
+  const designMode = getActiveGearDesignMode();
+  const museumMode = isMuseumDesignMode(designMode);
+  const collectionsMode = isCollectionsDesignMode(designMode);
 
   if (gearAmpBrowserStage) {
     gearAmpBrowserStage.dataset.ampView = view;
+    gearAmpBrowserStage.dataset.gearDesign = designMode;
   }
 
   if (ampBrowserGrid) {
-    ampBrowserGrid.dataset.ampPresentation = view;
+    ampBrowserGrid.dataset.ampPresentation = museumMode
+      ? "museum"
+      : collectionsMode
+        ? "collections"
+        : view;
+    ampBrowserGrid.dataset.gearDesign = designMode;
+  }
+
+  if (gearLibraryViewWrap) {
+    const hideView = isManufacturersCategory();
+    gearLibraryViewWrap.classList.toggle("is-inactive", hideView);
+    gearLibraryViewWrap.setAttribute("aria-hidden", hideView ? "true" : "false");
+  }
+
+  if (gearLibraryChapterWrap) {
+    const hideChapters = isManufacturersCategory();
+    gearLibraryChapterWrap.classList.toggle("is-inactive", hideChapters);
+    gearLibraryChapterWrap.setAttribute(
+      "aria-hidden",
+      hideChapters ? "true" : "false"
+    );
   }
 
   if (gearAmpTimelineRail) {
-    gearAmpTimelineRail.hidden = view !== AMP_BROWSER_VIEW.TIMELINE;
+    gearAmpTimelineRail.hidden =
+      museumMode || collectionsMode || view !== AMP_BROWSER_VIEW.TIMELINE;
   }
+
+  syncMuseumModelNavVisibility(museumMode);
 }
 
 function disconnectTimelineYearObserver() {
@@ -835,66 +1486,152 @@ function applyAmpDetailHeroTheme(hero, theme) {
   });
 }
 
-function renderAmpDetailPanel(ampId) {
-  if (!gearAmpDetailOverlay) return;
+/**
+ * @param {import("./library/ampLibrary.js").AmpDetailView} detail
+ * @param {{
+ *   image: HTMLImageElement | null,
+ *   heroSelector: string,
+ *   applyTheme: boolean,
+ *   manufacturer: HTMLElement | null,
+ *   model: HTMLElement | null,
+ *   specs: HTMLElement | null,
+ *   description: HTMLElement | null,
+ *   history: HTMLElement | null,
+ *   powerSection?: HTMLElement | null,
+ *   power?: HTMLElement | null,
+ *   valveSection: HTMLElement | null,
+ *   valveList: HTMLElement | null,
+ *   playedBySection: HTMLElement | null,
+ *   playedByList: HTMLElement | null,
+ *   playedByAsChips?: boolean,
+ *   classNames: {
+ *     section: string,
+ *     spec: string,
+ *     valveRow: string,
+ *     valveLabel: string,
+ *     valveValue: string,
+ *     artistChip?: string
+ *   }
+ * }} target
+ */
 
-  const detail = getAmpDetailView(ampId);
-  if (!detail) return;
+/**
+ * @param {import("./library/ampLibrary.js").AmpDetailView} detail
+ * @returns {string}
+ */
+function buildKempanionDetailMetaLine(detail) {
+  /** @type {Record<string, string>} */
+  const byLabel = Object.fromEntries(
+    detail.specs.map((spec) => [spec.label, spec.value])
+  );
+  return [byLabel.Country, byLabel.Year, byLabel.Type]
+    .filter((value) => Boolean(String(value || "").trim()))
+    .join(" • ");
+}
 
-  if (gearAmpDetailImage) {
-    const hero = gearAmpDetailImage.closest(".gear-amp-detail-hero");
+/**
+ * Compact catalog facts only — Country/Year/Type already live in the hero meta.
+ * @param {import("./library/ampLibrary.js").AmpDetailView} detail
+ * @returns {{ label: string, value: string }[]}
+ */
+function buildKempanionTechRows(detail) {
+  /** @type {{ label: string, value: string }[]} */
+  const rows = [];
 
-    gearAmpDetailImage.src = detail.imageSrc;
-    gearAmpDetailImage.alt = `${detail.manufacturer} ${detail.model}`;
-    gearAmpDetailImage.hidden = false;
+  if (detail.power) rows.push({ label: "Power", value: detail.power });
+
+  for (const line of detail.valveConfiguration || []) {
+    const label =
+      line.label === "Preamp"
+        ? "Preamp Tubes"
+        : line.label === "Power"
+          ? "Power Tubes"
+          : line.label;
+    rows.push({ label, value: line.value });
+  }
+
+  return rows;
+}
+
+function populateAmpDetailContent(detail, target) {
+  if (target.image) {
+    const hero = target.image.closest(target.heroSelector);
+
+    target.image.src = detail.imageSrc;
+    target.image.alt = `${detail.manufacturer} ${detail.model}`;
+    target.image.hidden = false;
     if (hero) {
-      hero.dataset.hasImage = "true";
-      applyAmpDetailHeroTheme(hero, detail.theme);
+      hero.dataset.hasImage = detail.imageSrc ? "true" : "false";
+      if (target.applyTheme) {
+        applyAmpDetailHeroTheme(hero, detail.theme);
+      }
     }
   }
 
-  if (gearAmpDetailManufacturer) {
-    gearAmpDetailManufacturer.textContent = detail.manufacturer;
-    gearAmpDetailManufacturer.dataset.manufacturerId = detail.manufacturerId;
+  if (target.manufacturer) {
+    target.manufacturer.textContent = detail.manufacturer;
+    target.manufacturer.dataset.manufacturerId = detail.manufacturerId;
   }
 
-  if (gearAmpDetailModel) {
-    gearAmpDetailModel.textContent = detail.model;
+  if (target.model) {
+    target.model.textContent = detail.model;
   }
 
-  if (gearAmpDetailSpecs) {
-    const hasSpecs = detail.specs.length > 0;
-    gearAmpDetailSpecs.hidden = !hasSpecs;
-    gearAmpDetailSpecs.innerHTML = hasSpecs
-      ? detail.specs
-          .map(
-            (spec) =>
-              `<span class="gear-amp-detail-spec">${escapeHtml(spec)}</span>`
-          )
+  if (target.specs) {
+    const specs =
+      target.powerSection
+        ? detail.specs.filter((spec) => spec.label !== "Power")
+        : detail.specs;
+    const hasSpecs = specs.length > 0;
+    const specLabelClass = target.classNames.specLabel;
+    const specValueClass = target.classNames.specValue;
+    target.specs.hidden = !hasSpecs;
+    target.specs.innerHTML = hasSpecs
+      ? specs
+          .map((spec) => {
+            if (specLabelClass && specValueClass) {
+              return `<div class="${target.classNames.spec}"><span class="${specLabelClass}">${escapeHtml(spec.label)}</span><span class="${specValueClass}">${escapeHtml(spec.value)}</span></div>`;
+            }
+            return `<span class="${target.classNames.spec}">${escapeHtml(spec.value)}</span>`;
+          })
           .join("")
       : "";
   }
 
-  if (gearAmpDetailDescription) {
-    gearAmpDetailDescription.textContent = detail.description;
+  if (target.description) {
+    const descriptionSection = target.description.closest(
+      `.${target.classNames.section}`
+    );
+    const hasDescription = Boolean(detail.description?.trim());
+    target.description.textContent = hasDescription ? detail.description : "";
+    if (descriptionSection) descriptionSection.hidden = !hasDescription;
   }
 
-  if (gearAmpDetailHistory) {
-    gearAmpDetailHistory.textContent = detail.history;
+  if (target.powerSection && target.power) {
+    const hasPower = Boolean(detail.power?.trim());
+    target.powerSection.hidden = !hasPower;
+    target.power.textContent = hasPower ? detail.power : "";
   }
 
-  if (gearAmpDetailValveSection && gearAmpDetailValveList) {
+  if (target.history) {
+    const historySection = target.history.closest(`.${target.classNames.section}`);
+    const hasHistory = Boolean(detail.history?.trim());
+    target.history.textContent = hasHistory ? detail.history : "";
+    if (historySection) historySection.hidden = !hasHistory;
+  }
+
+  if (target.valveSection && target.valveList) {
     const valveConfiguration = detail.valveConfiguration;
     const hasValveConfiguration = Boolean(valveConfiguration?.length);
 
-    gearAmpDetailValveSection.hidden = !hasValveConfiguration;
-    gearAmpDetailValveList.innerHTML = hasValveConfiguration
+    target.valveSection.hidden = !hasValveConfiguration;
+    target.valveList.innerHTML = hasValveConfiguration
       ? valveConfiguration
           .map(
             ({ label, value }) => `
-              <div class="gear-amp-detail-valve-row">
-                <p class="gear-amp-detail-valve-label">${escapeHtml(label)}</p>
-                <p class="gear-amp-detail-valve-value">${escapeHtml(value)}</p>
+              <div class="${target.classNames.valveRow}">
+                <p class="${target.classNames.valveLabel}">${escapeHtml(label)}</p>
+                <p class="${target.classNames.valveValue}">${escapeHtml(value)}</p>
               </div>
             `
           )
@@ -902,16 +1639,126 @@ function renderAmpDetailPanel(ampId) {
       : "";
   }
 
-  if (gearAmpDetailPlayedBySection && gearAmpDetailPlayedByList) {
-    const hasPlayedBy = detail.playedBy.length > 0;
+  if (target.playedBySection && target.playedByList) {
+    const playedBy = detail.playedBy.filter((name) =>
+      Boolean(String(name).trim())
+    );
+    const hasPlayedBy = playedBy.length > 0;
+    const chipClass =
+      target.classNames.artistChip || "gear-archive-detail-artist-chip";
 
-    gearAmpDetailPlayedBySection.hidden = !hasPlayedBy;
-    gearAmpDetailPlayedByList.innerHTML = hasPlayedBy
-      ? detail.playedBy
-          .map((name) => `<li>${escapeHtml(name)}</li>`)
+    target.playedBySection.hidden = !hasPlayedBy;
+    target.playedByList.innerHTML = hasPlayedBy
+      ? target.playedByAsChips
+        ? playedBy
+            .map(
+              (name) =>
+                `<span class="${chipClass}" role="listitem">${escapeHtml(name)}</span>`
+            )
+            .join("")
+        : playedBy.map((name) => `<li>${escapeHtml(name)}</li>`).join("")
+      : "";
+  }
+}
+
+function renderAmpDetailPanel(ampId) {
+  if (!gearAmpDetailOverlay) return;
+
+  const detail = getAmpDetailView(ampId);
+  if (!detail) return;
+
+  populateAmpDetailContent(detail, {
+    image: gearAmpDetailImage,
+    heroSelector: ".gear-amp-detail-hero",
+    applyTheme: true,
+    manufacturer: gearAmpDetailManufacturer,
+    model: gearAmpDetailModel,
+    description: gearAmpDetailDescription,
+    history: gearAmpDetailHistory,
+    playedBySection: gearAmpDetailPlayedBySection,
+    playedByList: gearAmpDetailPlayedByList,
+    playedByAsChips: true,
+    classNames: {
+      section: "gear-amp-detail-section",
+      spec: "gear-amp-detail-spec",
+      valveRow: "gear-amp-detail-valve-row",
+      valveLabel: "gear-amp-detail-valve-label",
+      valveValue: "gear-amp-detail-valve-value",
+      artistChip: "gear-amp-detail-artist-chip"
+    }
+  });
+
+  if (gearAmpDetailDescriptionSection) {
+    const description = String(detail.description || "").trim();
+    const hasDescription =
+      Boolean(description) && description.toLowerCase() !== "coming soon...";
+    gearAmpDetailDescriptionSection.hidden = !hasDescription;
+  }
+
+  if (gearAmpDetailHistorySection) {
+    const history = String(detail.history || "").trim();
+    const hasHistory =
+      Boolean(history) && history.toLowerCase() !== "coming soon...";
+    gearAmpDetailHistorySection.hidden = !hasHistory;
+  }
+
+  if (gearAmpDetailMeta) {
+    const metaLine = buildKempanionDetailMetaLine(detail);
+    gearAmpDetailMeta.hidden = !metaLine;
+    gearAmpDetailMeta.textContent = metaLine;
+  }
+
+  if (gearAmpDetailTechSection && gearAmpDetailTechList) {
+    const rows = buildKempanionTechRows(detail);
+    const hasRows = rows.length > 0;
+
+    gearAmpDetailTechSection.hidden = !hasRows;
+    gearAmpDetailTechList.innerHTML = hasRows
+      ? rows
+          .map(
+            (row) => `
+              <div class="gear-amp-detail-tech-fact">
+                <span class="gear-amp-detail-tech-label">${escapeHtml(row.label)}</span>
+                <span class="gear-amp-detail-tech-value">${escapeHtml(row.value)}</span>
+              </div>
+            `
+          )
           .join("")
       : "";
   }
+}
+
+function renderArchiveAmpDetailPanel(ampId) {
+  if (!gearArchiveAmpDetailOverlay) return;
+
+  const detail = getAmpDetailView(ampId);
+  if (!detail) return;
+
+  populateAmpDetailContent(detail, {
+    image: gearArchiveAmpDetailImage,
+    heroSelector: ".gear-archive-detail-hero",
+    applyTheme: false,
+    manufacturer: gearArchiveAmpDetailManufacturer,
+    model: gearArchiveAmpDetailModel,
+    specs: gearArchiveAmpDetailSpecs,
+    description: gearArchiveAmpDetailDescription,
+    history: gearArchiveAmpDetailHistory,
+    valveSection: gearArchiveAmpDetailValveSection,
+    valveList: gearArchiveAmpDetailValveList,
+    playedBySection: gearArchiveAmpDetailPlayedBySection,
+    playedByList: gearArchiveAmpDetailPlayedByList,
+    playedByAsChips: true,
+    classNames: {
+      section: "gear-archive-detail-section",
+      spec: "gear-archive-detail-spec",
+      specLabel: "gear-archive-detail-spec-label",
+      specValue: "gear-archive-detail-spec-value",
+      valveRow: "gear-archive-detail-valve-row",
+      valveLabel: "gear-archive-detail-valve-label",
+      valveValue: "gear-archive-detail-valve-value",
+      artistChip: "gear-archive-detail-artist-chip"
+    }
+  });
 }
 
 function renderManufacturerDetailPanel(manufacturerId) {
@@ -978,6 +1825,22 @@ function setAmpDetailOpen(isOpen) {
   }
 }
 
+function setArchiveAmpDetailOpen(isOpen) {
+  if (gearArchiveAmpDetailOverlay) {
+    gearArchiveAmpDetailOverlay.dataset.open = isOpen ? "true" : "false";
+    gearArchiveAmpDetailOverlay.setAttribute(
+      "aria-hidden",
+      isOpen ? "false" : "true"
+    );
+  }
+
+  updateGearOverlayLock();
+
+  if (isOpen && gearArchiveAmpDetailClose) {
+    gearArchiveAmpDetailClose.focus();
+  }
+}
+
 function setManufacturerDetailOpen(isOpen) {
   if (gearManufacturerDetailOverlay) {
     gearManufacturerDetailOverlay.dataset.open = isOpen ? "true" : "false";
@@ -993,23 +1856,23 @@ function setManufacturerDetailOpen(isOpen) {
 
 function handleGearOverlayKeydown(event) {
   if (event.key !== "Escape") return;
+  if (isPresentationModeActive()) return;
 
   if (isGearAmpImageFocusOpen()) {
     event.preventDefault();
     closeGearAmpImageFocus();
-    document.querySelector("#gearAmpImageLargeFocus")?.focus();
-    return;
-  }
-
-  if (isGearAmpImageLargeOpen()) {
-    event.preventDefault();
-    closeGearAmpImageLarge();
     return;
   }
 
   if (isManufacturerDetailOpen()) {
     event.preventDefault();
     closeManufacturerDetail();
+    return;
+  }
+
+  if (isArchiveAmpDetailOpen()) {
+    event.preventDefault();
+    closeArchiveAmpDetail();
     return;
   }
 
@@ -1031,6 +1894,7 @@ function openManufacturerDetail(manufacturerId) {
   if (!getManufacturerDetailView(manufacturerId)) return;
 
   closeAmpDetail();
+  closeArchiveAmpDetail();
   selectedManufacturerId = manufacturerId;
   renderManufacturerDetailPanel(manufacturerId);
   setManufacturerDetailOpen(true);
@@ -1046,19 +1910,48 @@ function closeManufacturerDetail() {
 function updateAmpCardSelection() {
   if (!ampBrowserGrid) return;
 
-  ampBrowserGrid.querySelectorAll(".amp-browser-card").forEach((card) => {
-    card.dataset.selected = card.dataset.ampId === selectedAmpId ? "true" : "false";
-  });
+  ampBrowserGrid
+    .querySelectorAll(".amp-browser-card, .collections-thumb")
+    .forEach((card) => {
+      card.dataset.selected =
+        card.dataset.ampId === selectedAmpId ? "true" : "false";
+    });
 }
 
+/**
+ * Host for AmpDetailsOverlay — Kempanion technical detail card.
+ *
+ * @param {string} ampId
+ * @returns {boolean}
+ */
 function openAmpDetail(ampId) {
-  if (!ampId || !getAmpDetailView(ampId)) return;
+  if (!ampId || !getAmpDetailView(ampId)) return false;
 
   closeManufacturerDetail();
+  closeArchiveAmpDetail();
   selectedAmpId = ampId;
   renderAmpDetailPanel(ampId);
   setAmpDetailOpen(true);
   updateAmpCardSelection();
+  return true;
+}
+
+/**
+ * Gear Library boutique / archive detail card.
+ *
+ * @param {string} ampId
+ * @returns {boolean}
+ */
+function openArchiveAmpDetail(ampId) {
+  if (!ampId || !getAmpDetailView(ampId)) return false;
+
+  closeManufacturerDetail();
+  closeAmpDetail();
+  selectedAmpId = ampId;
+  renderArchiveAmpDetailPanel(ampId);
+  setArchiveAmpDetailOpen(true);
+  updateAmpCardSelection();
+  return true;
 }
 
 function renderDiscoverEntry(article, view) {
@@ -1067,14 +1960,17 @@ function renderDiscoverEntry(article, view) {
   const textEl = article.querySelector(".gear-discover-text");
   const ampLinkEl = article.querySelector(".gear-discover-amp-link");
 
+  // Release: Discover is read-only — never surface amp links.
+  if (ampLinkEl) {
+    ampLinkEl.hidden = true;
+    ampLinkEl.dataset.ampId = "";
+    ampLinkEl.textContent = "";
+    ampLinkEl.removeAttribute("aria-label");
+  }
+
   if (!view) {
     article.hidden = true;
     article.dataset.discoverId = "";
-    if (ampLinkEl) {
-      ampLinkEl.hidden = true;
-      ampLinkEl.dataset.ampId = "";
-      ampLinkEl.textContent = "";
-    }
     return;
   }
 
@@ -1084,18 +1980,6 @@ function renderDiscoverEntry(article, view) {
   if (categoryEl) categoryEl.textContent = view.categoryLabel;
   if (titleEl) titleEl.textContent = view.title;
   if (textEl) textEl.textContent = view.text;
-
-  if (ampLinkEl) {
-    if (view.ampLink) {
-      ampLinkEl.hidden = false;
-      ampLinkEl.dataset.ampId = view.ampLink.ampId;
-      ampLinkEl.textContent = view.ampLink.label;
-    } else {
-      ampLinkEl.hidden = true;
-      ampLinkEl.dataset.ampId = "";
-      ampLinkEl.textContent = "";
-    }
-  }
 }
 
 function clearDiscoverFadeTimers() {
@@ -1191,38 +2075,349 @@ function initializeDiscoverColumn() {
   });
 
   startDiscoverRotation();
-
-  gearDiscoverBoard.addEventListener("click", (event) => {
-    const ampLink = event.target.closest(".gear-discover-amp-link");
-    if (!ampLink || !gearDiscoverBoard.contains(ampLink)) return;
-
-    const ampId = ampLink.dataset.ampId;
-    if (ampId) openAmpDetail(ampId);
-  });
 }
 
 function closeAmpDetail() {
-  closeGearAmpImageViews();
-  selectedAmpId = null;
+  if (isAmpDetailOpen()) {
+    closeGearAmpImageViews();
+  }
+  if (!isArchiveAmpDetailOpen()) {
+    selectedAmpId = null;
+  }
   setAmpDetailOpen(false);
   updateAmpCardSelection();
 }
 
+function closeArchiveAmpDetail() {
+  if (isArchiveAmpDetailOpen()) {
+    closeGearAmpImageViews();
+  }
+  if (!isAmpDetailOpen()) {
+    selectedAmpId = null;
+  }
+  setArchiveAmpDetailOpen(false);
+  updateAmpCardSelection();
+}
+
+function setDesignPreviewSelectValue(designId) {
+  const select = document.querySelector("#gearDesignPreviewSelect");
+  if (select && designId) select.value = designId;
+}
+
+function capturePresentationRestoreState() {
+  return {
+    designMode: getActiveGearDesignMode(),
+    activeGearCategory,
+    ampBrowserState: { ...ampBrowserState },
+    museumState: { ...museumState },
+    searchValue: gearLibrarySearch?.value ?? "",
+    chapterValue: gearLibraryChapterSelect?.value ?? "",
+    scrollTop: gearLibraryScroll?.scrollTop ?? 0,
+    selectedAmpId,
+    selectedManufacturerId
+  };
+}
+
+/**
+ * @param {ReturnType<typeof capturePresentationRestoreState> | null | undefined} snapshot
+ */
+function restorePresentationState(snapshot) {
+  if (!snapshot) {
+    renderAmpBrowser();
+    return;
+  }
+
+  activeGearCategory = snapshot.activeGearCategory || GEAR_CATEGORY.AMPS;
+  Object.assign(ampBrowserState, snapshot.ampBrowserState || {});
+  museumState.manufacturerId = snapshot.museumState?.manufacturerId ?? null;
+  museumState.ampId = snapshot.museumState?.ampId ?? null;
+  selectedAmpId = snapshot.selectedAmpId ?? null;
+  selectedManufacturerId = snapshot.selectedManufacturerId ?? null;
+
+  if (gearLibrarySearch) {
+    gearLibrarySearch.value = snapshot.searchValue ?? "";
+  }
+
+  applyGearDesignPreview(snapshot.designMode || GEAR_DESIGN_MODE.DEFAULT, {
+    rootElements: [
+      document.querySelector("#gearCategoryShell"),
+      document.querySelector("#gearAmpBrowserStage"),
+      document.querySelector("#ampBrowserGrid")
+    ]
+  });
+  setDesignPreviewSelectValue(getActiveGearDesignMode());
+
+  updateGearCategoryPanels();
+  syncGearLibrarySearchField();
+  if (gearAmpViewSelect) gearAmpViewSelect.value = ampBrowserState.view;
+  syncAmpImageFilterUi();
+  renderAmpBrowser();
+
+  if (gearLibraryChapterSelect && snapshot.chapterValue) {
+    setChapterSelectManufacturer(snapshot.chapterValue);
+  }
+
+  if (gearLibraryScroll) {
+    gearLibraryScroll.scrollTop = snapshot.scrollTop ?? 0;
+  }
+}
+
+function enterPresentationMuseumLayout() {
+  closeAllGearOverlays();
+
+  if (!isAmpsCategory()) {
+    activeGearCategory = GEAR_CATEGORY.AMPS;
+    updateGearCategoryPanels();
+  }
+
+  applyGearDesignPreview(GEAR_DESIGN_MODE.MUSEUM, {
+    rootElements: [
+      document.querySelector("#gearCategoryShell"),
+      document.querySelector("#gearAmpBrowserStage"),
+      document.querySelector("#ampBrowserGrid")
+    ]
+  });
+  setDesignPreviewSelectValue(GEAR_DESIGN_MODE.MUSEUM);
+  syncAmpBrowserPresentation();
+}
+
+/**
+ * @param {string} variantId
+ */
+function applyPresentationVariantLayout(variantId) {
+  const config = getPresentationVariantConfig(variantId);
+  document.body.dataset.presentationVariant = variantId;
+
+  if (gearLibraryViewRoot) {
+    gearLibraryViewRoot.dataset.presentationVariant = variantId;
+  }
+
+  if (!config) return;
+
+  if (config.showsDiscover) {
+    if (!discoverRotationController?.isRunning() && !config.drivesDiscoverRotation) {
+      startDiscoverRotation();
+    }
+    if (config.drivesDiscoverRotation) {
+      stopDiscoverRotation();
+      if (discoverRotationController) {
+        discoverBoardState = discoverRotationController.rotateAll({
+          emit: false
+        });
+        renderDiscoverBoard(discoverBoardState);
+      }
+    }
+  } else {
+    stopDiscoverRotation();
+  }
+
+  if (gearDiscoverColumn) {
+    gearDiscoverColumn.hidden = !config.showsDiscover;
+    gearDiscoverColumn.setAttribute(
+      "aria-hidden",
+      config.showsDiscover ? "false" : "true"
+    );
+  }
+
+  if (gearCategoryShell) {
+    gearCategoryShell.hidden = !config.showsAmp;
+    gearCategoryShell.setAttribute(
+      "aria-hidden",
+      config.showsAmp ? "false" : "true"
+    );
+  }
+
+  schedulePresentationFit();
+}
+
+function clearPresentationVariantLayout() {
+  stopPresentationFit();
+  delete document.body.dataset.presentationVariant;
+  if (gearLibraryViewRoot) {
+    delete gearLibraryViewRoot.dataset.presentationVariant;
+  }
+
+  if (gearDiscoverColumn) {
+    gearDiscoverColumn.hidden = false;
+    gearDiscoverColumn.setAttribute("aria-hidden", "false");
+  }
+
+  if (gearCategoryShell) {
+    gearCategoryShell.hidden = false;
+    gearCategoryShell.setAttribute("aria-hidden", "false");
+  }
+
+  if (activeView === APP_VIEW.GEAR && !discoverRotationController?.isRunning()) {
+    startDiscoverRotation();
+  }
+}
+
+function schedulePresentationFit() {
+  if (!isPresentationModeActive()) return;
+  bindPresentationFit(gearLibraryViewRoot || document.querySelector("#gearLibraryView"));
+}
+
+function rotatePresentationDiscoverBoard() {
+  if (!discoverRotationController) return;
+
+  // Keep the interval engine stopped in Discover Only; presentation timer owns ticks.
+  discoverRotationController.stop();
+  discoverBoardState = discoverRotationController.rotateAll({ emit: false });
+  renderDiscoverBoard(discoverBoardState);
+  schedulePresentationFit();
+}
+
+/**
+ * @param {string} scope
+ * @param {{
+ *   manufacturerId?: string | null,
+ *   strategy?: string | null,
+ *   modeId?: string | null
+ * }} [context]
+ */
+function buildPresentationPlaylist(scope, context = {}) {
+  presentationCatalogEntries = getAmpBrowseEntries({
+    query: "",
+    manufacturer: "",
+    sort: AMP_BROWSER_VIEW.MANUFACTURER,
+    imageFilter: AMP_IMAGE_FILTER.ALL
+  });
+
+  /** @type {import("./presentation/presentationPlaylist.js").PresentationPlaylistItem[]} */
+  let items = presentationCatalogEntries.map((entry) => {
+    const amp = getAmpById(entry.id);
+    const sortYear = entry.sortYear ?? null;
+    return {
+      ampId: entry.id,
+      manufacturerId: entry.manufacturerId,
+      manufacturer: entry.manufacturer,
+      sortYear,
+      ampType: amp?.ampType ? String(amp.ampType) : null,
+      power: amp?.power ? String(amp.power) : null,
+      decade: decadeFromYear(sortYear),
+      powerClass: classifyPowerClass(amp?.power),
+      chapterId: entry.manufacturerId || entry.manufacturer || null
+    };
+  });
+
+  if (scope === PRESENTATION_SCOPE.MANUFACTURER) {
+    const manufacturerId = String(
+      context.manufacturerId || museumState.manufacturerId || ""
+    ).trim();
+    if (manufacturerId) {
+      items = items.filter((item) => item.manufacturerId === manufacturerId);
+    }
+  }
+
+  const strategy = context.strategy || "bag";
+  const ordered = buildPlaylistByStrategy(items, strategy);
+
+  return ordered.map((item) => ({
+    ampId: item.ampId,
+    manufacturerId: item.manufacturerId,
+    manufacturer: item.manufacturer
+  }));
+}
+
+/**
+ * @param {{ ampId: string, manufacturerId: string }} slide
+ */
+function showPresentationSlide(slide) {
+  museumState.manufacturerId = slide.manufacturerId;
+  museumState.ampId = slide.ampId;
+  setChapterSelectManufacturer(slide.manufacturerId);
+  renderMuseumBrowser(presentationCatalogEntries);
+  schedulePresentationFit();
+}
+
+function getPresentationFadeTarget() {
+  const variant = getPresentationVariant();
+  const config = getPresentationVariantConfig(variant);
+
+  if (config && !config.showsAmp) {
+    return gearDiscoverColumn || gearDiscoverBoard;
+  }
+
+  return (
+    ampBrowserGrid?.querySelector(".museum-catalog") ||
+    ampBrowserGrid?.querySelector(".museum-stage") ||
+    ampBrowserGrid
+  );
+}
+
+function setupPresentationMode() {
+  initializePresentationMode({
+    modeButton: gearPresentationButton,
+    modeButtonLabel: gearPresentationButtonLabel,
+    exitButton: gearPresentationExit,
+    host: {
+      captureState: capturePresentationRestoreState,
+      restoreState: (snapshot) => {
+        clearPresentationVariantLayout();
+        restorePresentationState(snapshot);
+      },
+      enterMuseumLayout: enterPresentationMuseumLayout,
+      applyPresentationVariant: applyPresentationVariantLayout,
+      clearPresentationVariant: clearPresentationVariantLayout,
+      buildPlaylist: buildPresentationPlaylist,
+      showSlide: showPresentationSlide,
+      rotateDiscoverBoard: rotatePresentationDiscoverBoard,
+      getFadeTarget: getPresentationFadeTarget,
+      getEnterOptions: () => ({
+        startAmpId: museumState.ampId || selectedAmpId,
+        manufacturerId:
+          museumState.manufacturerId ||
+          selectedManufacturerId ||
+          gearLibraryChapterSelect?.value ||
+          null
+      }),
+      handleEscape: () => {
+        if (isGearAmpImageFocusOpen()) {
+          closeGearAmpImageFocus();
+          return true;
+        }
+        return false;
+      },
+      onActiveChange: (active) => {
+        if (active) closeModuleMenu();
+        syncMuseumModelNavVisibility(isMuseumDesignMode());
+      },
+      onCompositionReady: () => {
+        schedulePresentationFit();
+      }
+    }
+  });
+}
+
 function renderAmpBrowser() {
   if (!ampBrowserGrid) return;
+  if (isPresentationModeActive()) return;
 
   ampCatalogEntries = loadAmpBrowseEntries();
   const view = isAmpBrowserView(ampBrowserState.view)
     ? ampBrowserState.view
     : AMP_BROWSER_VIEW_DEFAULT;
   ampBrowserState.view = view;
+  const designMode = getActiveGearDesignMode();
+  const museumMode = isMuseumDesignMode(designMode);
+  const collectionsMode = isCollectionsDesignMode(designMode);
 
   if (selectedAmpId && !findAmpEntry(selectedAmpId)) {
     closeAmpDetail();
   }
 
+  if (museumMode && isAmpDetailOpen()) {
+    closeAmpDetail();
+  }
+
+  if (!museumMode) {
+    teardownMuseumOpticalAlign();
+    syncMuseumModelNavVisibility(false);
+  }
+
   renderLibraryStats(ampCatalogEntries.length);
   syncAmpBrowserPresentation();
+  syncChapterNavigation(ampCatalogEntries);
 
   const isEmpty = ampCatalogEntries.length === 0;
   ampBrowserGrid.hidden = isEmpty;
@@ -1233,16 +2428,34 @@ function renderAmpBrowser() {
   if (isEmpty) {
     ampBrowserGrid.innerHTML = "";
     if (gearAmpTimelineTrack) gearAmpTimelineTrack.innerHTML = "";
+    if (museumMode && museumModelNavTrack) museumModelNavTrack.innerHTML = "";
+    return;
+  }
+
+  const footnote = renderCollectionStatsFootnote(ampCatalogEntries.length);
+
+  if (museumMode) {
+    if (gearAmpTimelineTrack) gearAmpTimelineTrack.innerHTML = "";
+    renderMuseumBrowser(ampCatalogEntries);
+    return;
+  }
+
+  if (collectionsMode) {
+    if (gearAmpTimelineTrack) gearAmpTimelineTrack.innerHTML = "";
+    const sections = buildAmpManufacturerViewSections(ampCatalogEntries);
+    ampBrowserGrid.innerHTML = `${renderCollectionsCatalog(sections)}${footnote}`;
+    if (gearLibraryScroll) gearLibraryScroll.scrollTop = 0;
+    updateAmpCardSelection();
     return;
   }
 
   if (view === AMP_BROWSER_VIEW.MODEL) {
-    ampBrowserGrid.innerHTML = renderAmpModelView(ampCatalogEntries);
+    ampBrowserGrid.innerHTML = `${renderAmpModelView(ampCatalogEntries)}${footnote}`;
     return;
   }
 
   if (view === AMP_BROWSER_VIEW.TIMELINE) {
-    ampBrowserGrid.innerHTML = renderAmpTimelineView(ampCatalogEntries);
+    ampBrowserGrid.innerHTML = `${renderAmpTimelineView(ampCatalogEntries)}${footnote}`;
     renderTimelineRail(ampCatalogEntries);
     observeTimelineYears();
     if (gearLibraryScroll) {
@@ -1252,35 +2465,98 @@ function renderAmpBrowser() {
   }
 
   if (gearAmpTimelineTrack) gearAmpTimelineTrack.innerHTML = "";
-  ampBrowserGrid.innerHTML = buildAmpManufacturerViewSections(ampCatalogEntries)
+  ampBrowserGrid.innerHTML = `${buildAmpManufacturerViewSections(ampCatalogEntries)
     .map((section, sectionIndex) => renderAmpBrowserGroup(section, sectionIndex))
-    .join("");
+    .join("")}${footnote}`;
+}
+
+function handleGearDesignModeChange() {
+  closeAllGearOverlays();
+  renderAmpBrowser();
+}
+
+/** @type {ReturnType<typeof setTimeout> | null} */
+let pendingAmpCardClick = null;
+
+function clearPendingAmpCardClick() {
+  if (pendingAmpCardClick != null) {
+    clearTimeout(pendingAmpCardClick);
+    pendingAmpCardClick = null;
+  }
 }
 
 function handleAmpBrowserClick(event) {
+  if (isMuseumDesignMode()) {
+    // Museum exhibits are self-contained — no detail overlay.
+    return;
+  }
+
   const manufacturerLink = event.target.closest(".gear-manufacturer-link");
   if (
     manufacturerLink?.dataset?.manufacturerId &&
     ampBrowserGrid?.contains(manufacturerLink)
   ) {
+    clearPendingAmpCardClick();
     openManufacturerDetail(manufacturerLink.dataset.manufacturerId);
     return;
   }
 
-  const card = event.target.closest(".amp-browser-card");
+  const card = event.target.closest(
+    isCollectionsDesignMode() ? ".collections-thumb" : ".amp-browser-card"
+  );
   if (!card || !ampBrowserGrid?.contains(card)) return;
 
-  openAmpDetail(card.dataset.ampId);
+  // Delay detail open so double-click on the image can open fullscreen instead.
+  const ampId = card.dataset.ampId;
+  clearPendingAmpCardClick();
+  pendingAmpCardClick = setTimeout(() => {
+    pendingAmpCardClick = null;
+    openArchiveAmpDetail(ampId);
+  }, 220);
+}
+
+function handleAmpBrowserDblClick(event) {
+  if (isMuseumDesignMode()) {
+    const museumImage = event.target.closest(".museum-exhibit-image");
+    if (museumImage && ampBrowserGrid?.contains(museumImage)) {
+      event.preventDefault();
+      event.stopPropagation();
+      openGearAmpImageFocus(museumImage);
+    }
+    return;
+  }
+
+  if (isCollectionsDesignMode()) {
+    const thumbImage = event.target.closest(".collections-thumb-image");
+    if (thumbImage && ampBrowserGrid?.contains(thumbImage)) {
+      clearPendingAmpCardClick();
+      event.preventDefault();
+      event.stopPropagation();
+      openGearAmpImageFocus(thumbImage);
+    }
+    return;
+  }
+
+  const image = event.target.closest(".amp-browser-card-image");
+  if (!image || !ampBrowserGrid?.contains(image)) return;
+
+  clearPendingAmpCardClick();
+  event.preventDefault();
+  event.stopPropagation();
+  openGearAmpImageFocus(image);
 }
 
 function handleAmpBrowserKeydown(event) {
+  if (isMuseumDesignMode()) return;
   if (event.key !== "Enter" && event.key !== " ") return;
 
-  const card = event.target.closest(".amp-browser-card");
+  const card = event.target.closest(
+    isCollectionsDesignMode() ? ".collections-thumb" : ".amp-browser-card"
+  );
   if (!card || !ampBrowserGrid?.contains(card)) return;
 
   event.preventDefault();
-  openAmpDetail(card.dataset.ampId);
+  openArchiveAmpDetail(card.dataset.ampId);
 }
 
 function handleAmpViewChange() {
@@ -1321,6 +2597,7 @@ function setupGearLibraryControls() {
 
   if (gearLibrarySearch) {
     gearLibrarySearch.addEventListener("input", handleGearLibrarySearchInput);
+    gearLibrarySearch.addEventListener("keydown", handleGearLibrarySearchKeydown);
   }
 
   if (manufacturerBrowserGrid) {
@@ -1332,13 +2609,38 @@ function setupGearLibraryControls() {
     gearAmpViewSelect.addEventListener("change", handleAmpViewChange);
   }
 
+  if (gearLibraryChapterSelect) {
+    gearLibraryChapterSelect.addEventListener("change", handleChapterSelectChange);
+  }
+
+  if (museumModelNavTrack) {
+    museumModelNavTrack.addEventListener("click", handleMuseumModelNavClick);
+  }
+
   if (gearAmpImageFilter) {
     gearAmpImageFilter.addEventListener("click", handleAmpImageFilterClick);
   }
 
   if (ampBrowserGrid) {
     ampBrowserGrid.addEventListener("click", handleAmpBrowserClick);
+    ampBrowserGrid.addEventListener("dblclick", handleAmpBrowserDblClick);
     ampBrowserGrid.addEventListener("keydown", handleAmpBrowserKeydown);
+  }
+
+  if (gearAmpDetailImage) {
+    gearAmpDetailImage.addEventListener("dblclick", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openGearAmpImageFocus(gearAmpDetailImage);
+    });
+  }
+
+  if (gearArchiveAmpDetailImage) {
+    gearArchiveAmpDetailImage.addEventListener("dblclick", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openGearAmpImageFocus(gearArchiveAmpDetailImage);
+    });
   }
 
   if (gearAmpDetailClose) {
@@ -1349,8 +2651,23 @@ function setupGearLibraryControls() {
     gearAmpDetailBackdrop.addEventListener("click", closeAmpDetail);
   }
 
+  if (gearArchiveAmpDetailClose) {
+    gearArchiveAmpDetailClose.addEventListener("click", closeArchiveAmpDetail);
+  }
+
+  if (gearArchiveAmpDetailBackdrop) {
+    gearArchiveAmpDetailBackdrop.addEventListener("click", closeArchiveAmpDetail);
+  }
+
   if (gearAmpDetailManufacturer) {
     gearAmpDetailManufacturer.addEventListener("click", handleManufacturerLinkClick);
+  }
+
+  if (gearArchiveAmpDetailManufacturer) {
+    gearArchiveAmpDetailManufacturer.addEventListener(
+      "click",
+      handleManufacturerLinkClick
+    );
   }
 
   if (gearManufacturerDetailClose) {
@@ -1363,7 +2680,9 @@ function setupGearLibraryControls() {
 
   initializeGearAmpImageFocus({
     sourceImage: gearAmpDetailImage,
-    expandButton: document.querySelector("#gearAmpDetailExpandImage")
+    onOpenChange: () => {
+      updateGearOverlayLock();
+    }
   });
 
   document.addEventListener("keydown", handleGearOverlayKeydown);
@@ -1374,11 +2693,20 @@ function bindGearLibraryDom() {
   liveViewRoot = document.querySelector("#liveView");
   gearLibraryViewRoot = document.querySelector("#gearLibraryView");
   gearLibraryTitle = document.querySelector("#gearLibraryTitle");
+  gearLibraryCollectionMeta = document.querySelector("#gearLibraryCollectionMeta");
   gearCategoryShell = document.querySelector("#gearCategoryShell");
   gearLibraryScroll = document.querySelector("#gearLibraryScroll");
   gearLibrarySearch = document.querySelector("#gearLibrarySearch");
   gearLibraryViewWrap = document.querySelector("#gearLibraryViewWrap");
   gearAmpViewSelect = document.querySelector("#gearAmpViewSelect");
+  gearLibraryChapterWrap = document.querySelector("#gearLibraryChapterWrap");
+  gearLibraryChapterSelect = document.querySelector("#gearLibraryChapterSelect");
+  museumModelNav = document.querySelector("#museumModelNav");
+  museumModelNavTrack = document.querySelector("#museumModelNavTrack");
+  gearPresentationButton = document.querySelector("#gearPresentationButton");
+  gearPresentationButtonLabel = document.querySelector("#gearPresentationButtonLabel");
+  gearPresentationExit = document.querySelector("#gearPresentationExit");
+  gearDiscoverColumn = document.querySelector("#gearDiscoverColumn");
   gearAmpBrowserStage = document.querySelector("#gearAmpBrowserStage");
   gearAmpTimelineRail = document.querySelector("#gearAmpTimelineRail");
   gearAmpTimelineTrack = document.querySelector("#gearAmpTimelineTrack");
@@ -1395,13 +2723,44 @@ function bindGearLibraryDom() {
   gearAmpDetailImage = document.querySelector("#gearAmpDetailImage");
   gearAmpDetailManufacturer = document.querySelector("#gearAmpDetailManufacturer");
   gearAmpDetailModel = document.querySelector("#gearAmpDetailModel");
-  gearAmpDetailSpecs = document.querySelector("#gearAmpDetailSpecs");
+  gearAmpDetailMeta = document.querySelector("#gearAmpDetailMeta");
+  gearAmpDetailDescriptionSection = document.querySelector(
+    "#gearAmpDetailDescriptionSection"
+  );
   gearAmpDetailDescription = document.querySelector("#gearAmpDetailDescription");
+  gearAmpDetailTechSection = document.querySelector("#gearAmpDetailTechSection");
+  gearAmpDetailTechList = document.querySelector("#gearAmpDetailTechList");
+  gearAmpDetailHistorySection = document.querySelector("#gearAmpDetailHistorySection");
   gearAmpDetailHistory = document.querySelector("#gearAmpDetailHistory");
-  gearAmpDetailValveSection = document.querySelector("#gearAmpDetailValveSection");
-  gearAmpDetailValveList = document.querySelector("#gearAmpDetailValveList");
   gearAmpDetailPlayedBySection = document.querySelector("#gearAmpDetailPlayedBySection");
   gearAmpDetailPlayedByList = document.querySelector("#gearAmpDetailPlayedByList");
+  gearArchiveAmpDetailOverlay = document.querySelector("#gearArchiveAmpDetailOverlay");
+  gearArchiveAmpDetailBackdrop = document.querySelector(
+    "#gearArchiveAmpDetailBackdrop"
+  );
+  gearArchiveAmpDetailClose = document.querySelector("#gearArchiveAmpDetailClose");
+  gearArchiveAmpDetailImage = document.querySelector("#gearArchiveAmpDetailImage");
+  gearArchiveAmpDetailManufacturer = document.querySelector(
+    "#gearArchiveAmpDetailManufacturer"
+  );
+  gearArchiveAmpDetailModel = document.querySelector("#gearArchiveAmpDetailModel");
+  gearArchiveAmpDetailSpecs = document.querySelector("#gearArchiveAmpDetailSpecs");
+  gearArchiveAmpDetailDescription = document.querySelector(
+    "#gearArchiveAmpDetailDescription"
+  );
+  gearArchiveAmpDetailHistory = document.querySelector("#gearArchiveAmpDetailHistory");
+  gearArchiveAmpDetailValveSection = document.querySelector(
+    "#gearArchiveAmpDetailValveSection"
+  );
+  gearArchiveAmpDetailValveList = document.querySelector(
+    "#gearArchiveAmpDetailValveList"
+  );
+  gearArchiveAmpDetailPlayedBySection = document.querySelector(
+    "#gearArchiveAmpDetailPlayedBySection"
+  );
+  gearArchiveAmpDetailPlayedByList = document.querySelector(
+    "#gearArchiveAmpDetailPlayedByList"
+  );
   gearManufacturerDetailOverlay = document.querySelector("#gearManufacturerDetailOverlay");
   gearManufacturerDetailBackdrop = document.querySelector("#gearManufacturerDetailBackdrop");
   gearManufacturerDetailClose = document.querySelector("#gearManufacturerDetailClose");
@@ -1413,7 +2772,13 @@ function bindGearLibraryDom() {
   gearManufacturerDetailHistory = document.querySelector("#gearManufacturerDetailHistory");
   gearManufacturerDetailWebsite = document.querySelector("#gearManufacturerDetailWebsite");
   gearDiscoverBoard = document.querySelector("#gearDiscoverBoard");
-  primaryNavButtons = [...document.querySelectorAll(".primary-nav-button")];
+  audioToolsViewRoot = document.querySelector("#audioToolsView");
+  appModuleLauncher = document.querySelector(".app-module-launcher");
+  appModuleLauncherButton = document.querySelector("#appModuleLauncherButton");
+  appModuleMenu = document.querySelector("#appModuleMenu");
+  appModuleMenuItems = [
+    ...(appModuleMenu?.querySelectorAll(".app-module-menu-item") ?? [])
+  ];
 }
 
 function refreshGearLibraryCache() {
@@ -1422,18 +2787,52 @@ function refreshGearLibraryCache() {
 }
 
 function setupNavigation() {
-  primaryNavButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      setAppView(button.dataset.view);
+  appModuleLauncherButton?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleModuleMenu();
+  });
+
+  appModuleMenuItems.forEach((item) => {
+    item.addEventListener("click", () => {
+      setAppView(item.dataset.view);
     });
+  });
+
+  document.addEventListener("pointerdown", (event) => {
+    if (appModuleLauncher?.dataset.open !== "true") return;
+    if (!(event.target instanceof Node)) return;
+    if (appModuleLauncher.contains(event.target)) return;
+    closeModuleMenu();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && appModuleLauncher?.dataset.open === "true") {
+      event.preventDefault();
+      closeModuleMenu();
+      appModuleLauncherButton?.focus();
+    }
   });
 }
 
 export function initializeGearLibrary() {
   bindGearLibraryDom();
+  initializeGearColorTheme({
+    selectElement: document.querySelector("#gearColorThemeSelect")
+  });
+  bindAmpDetailsOverlay({
+    open: openAmpDetail,
+    close: closeAmpDetail,
+    isOpen: isAmpDetailOpen
+  });
   refreshGearLibraryCache();
   initializeGearDesignPreview({
-    rootElement: document.querySelector("#gearDesignPreview")
+    rootElement: document.querySelector("#gearDesignPreview"),
+    rootElements: [
+      document.querySelector("#gearCategoryShell"),
+      document.querySelector("#gearAmpBrowserStage"),
+      document.querySelector("#ampBrowserGrid")
+    ],
+    onChange: handleGearDesignModeChange
   });
 
   document.body.dataset.appView = APP_VIEW.LIVE;
@@ -1443,6 +2842,7 @@ export function initializeGearLibrary() {
   renderGearCategoryNav();
   updateGearCategoryPanels();
   setupGearLibraryControls();
+  setupPresentationMode();
   renderActiveGearCategory();
   initializeDiscoverColumn();
   setupNavigation();

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="3000" viewBox="0 0 2200 3000" fill="none" aria-hidden="true">
+  <defs>
+    <style>
+      .atlas-contour { stroke: #7a6652; stroke-opacity: 0.07; stroke-width: 1; fill: none; }
+      .atlas-contour-light { stroke: #7a6652; stroke-opacity: 0.055; stroke-width: 0.75; fill: none; }
+      .atlas-arc { stroke: #7a6652; stroke-opacity: 0.065; stroke-width: 0.85; fill: none; }
+    </style>
+  </defs>
+
+  <!-- Seamless tile: y=0..140 and y=2860..3000 kept open for repeat-y -->
+
+  <!-- Irregular topographic basin — upper left -->
+  <path class="atlas-contour" d="M -40 420 C 180 320, 420 540, 680 460 C 940 380, 820 720, 1080 640 C 1340 560, 1180 860, 920 780 C 660 700, 520 980, 280 860 C 40 740, 120 520, -40 420"/>
+
+  <!-- Diagonal ridge crossing center-left -->
+  <path class="atlas-contour" d="M 120 1180 C 360 980, 520 1280, 760 1080 C 980 900, 860 1380, 1120 1180 C 1360 1000, 1240 1520, 980 1320 C 720 1120, 560 1480, 320 1280 C 80 1080, 160 860, 120 1180"/>
+
+  <!-- Open contour fragment — upper right, clipped -->
+  <path class="atlas-contour-light" d="M 1480 280 C 1720 420, 1880 220, 2100 380 C 2280 520, 2060 680, 1840 560 C 1620 440, 1540 620, 1480 280"/>
+
+  <!-- Long meandering line — drifts down-right, not horizontal -->
+  <path class="atlas-contour" d="M 420 1560 C 620 1420, 780 1680, 980 1540 C 1180 1400, 1040 1780, 1260 1640 C 1480 1500, 1380 1880, 1580 1720 C 1780 1560, 1660 1960, 1860 1800 C 2060 1640, 1920 2040, 1720 1880"/>
+
+  <!-- Branching contour — lower center -->
+  <path class="atlas-contour-light" d="M 680 2100 C 860 1980, 940 2240, 1120 2120"/>
+  <path class="atlas-contour-light" d="M 1120 2120 C 1280 2020, 1360 2280, 1540 2140 C 1700 2020, 1620 2360, 1780 2220"/>
+  <path class="atlas-contour-light" d="M 940 2240 C 1020 2380, 880 2520, 1040 2440"/>
+
+  <!-- Large clipped circle — mid right -->
+  <path class="atlas-arc" d="M 1680 920 A 780 780 0 0 0 1680 1680"/>
+  <path class="atlas-arc" d="M 1520 800 A 620 620 0 0 1 1960 1240"/>
+
+  <!-- Concentric fragment — lower left -->
+  <path class="atlas-arc" d="M 180 2280 A 420 420 0 0 1 620 2680"/>
+  <path class="atlas-contour-light" d="M 280 2380 A 320 320 0 0 1 520 2620"/>
+
+  <!-- Irregular closed loop — sparse mid field -->
+  <path class="atlas-contour-light" d="M 1240 780 C 1420 680, 1580 880, 1460 1040 C 1340 1200, 1140 1080, 1240 780"/>
+
+  <!-- Vertical-leaning contour — breaks left-right rhythm -->
+  <path class="atlas-contour" d="M 540 640 C 480 880, 620 1040, 560 1280 C 500 1520, 680 1680, 620 1920 C 560 2160, 720 2320, 660 2560"/>
+
+  <!-- Wide arc clipped at top edge of tile body -->
+  <path class="atlas-arc" d="M 320 180 A 960 960 0 0 1 1420 180"/>
+
+  <!-- Angled technical contour — lower right -->
+  <path class="atlas-contour-light" d="M 1420 2480 C 1580 2360, 1740 2580, 1900 2460 C 2060 2340, 1980 2720, 2140 2580"/>
+
+  <!-- Small irregular polygonal contour -->
+  <path class="atlas-contour-light" d="M 860 1780 L 980 1680 L 1120 1760 L 1060 1900 L 900 1880 Z"/>
+
+  <!-- Isolated partial ring — upper center -->
+  <path class="atlas-arc" d="M 920 340 A 280 280 0 0 0 1180 600"/>
+  <path class="atlas-contour-light" d="M 960 380 A 200 200 0 0 1 1140 560"/>
+</svg>

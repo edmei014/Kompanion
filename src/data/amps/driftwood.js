@@ -10,9 +10,10 @@ export const driftwoodAmps = [
   aliases: [
     "purple nightmare",
     "nightmare",
-    "pn"
+    "pn",
+    "violet nightmare"
   ],
-  image: null,
+  image: "Purple_Nightmare.png",
   description:
     "The Purple Nightmare is Driftwood's flagship amplifier, combining exceptionally tight modern high-gain tones with outstanding clarity, dynamic response and impressive clean sounds.",
   history:
@@ -51,7 +52,7 @@ export const driftwoodAmps = [
     "mini nightmare",
     "mini"
   ],
-  image: null,
+  image: "mini-nightmare.png",
   description:
     "The Mini Nightmare delivers the signature Driftwood high-gain sound in a compact, lower-powered format without sacrificing articulation or punch.",
   history:
@@ -87,7 +88,7 @@ export const driftwoodAmps = [
     "darkest nightmare",
     "dn"
   ],
-  image: null,
+  image: "da100.png",
   description:
     "The Darkest Nightmare is voiced for extreme modern metal, featuring massive gain reserves, exceptional note separation and an incredibly tight low end.",
   history:
@@ -115,92 +116,21 @@ export const driftwoodAmps = [
   ]
 },
 {
-  id: "driftwood-violet-nightmare",
+  id: "driftwood-mini-nightmare-ir",
   manufacturerId: "driftwood",
   manufacturer: "Driftwood",
-  model: "Violet Nightmare",
+  model: "Mini Nightmare IR",
   aliases: [
-    "violet nightmare",
-    "vn"
+    "mini nightmare ir",
+    "mini ir",
+    "mn ir"
   ],
-  image: null,
+  image: "mini-nightmare-ir.png",
   description:
-    "The Violet Nightmare blends the articulation of the Purple Nightmare with a slightly smoother voicing suited to lead playing and classic high-gain tones.",
+    "The Mini Nightmare IR combines Driftwood's compact high-gain amplifier platform with an integrated impulse response loader, making it an ideal solution for silent recording, direct performance and modern studio workflows.",
   history:
-    "Introduced as an alternative voice within the Nightmare family, the Violet Nightmare expanded Driftwood's flagship lineup.",
-  introduced: 2022,
-  discontinued: null,
-  country: "Germany",
-  ampType: "Tube Head",
-  power: "100 W",
-  channels: 3,
-  tubes: {
-    preamp: ["5 × ECC83"],
-    power: ["4 × EL34"]
-  },
-  genres: [
-    "Metal",
-    "Hard Rock",
-    "Progressive Rock"
-  ],
-  notableUsers: [],
-  tags: [
-    "Boutique",
-    "German",
-    "High Gain"
-  ]
-},
-{
-  id: "driftwood-goldbrick",
-  manufacturerId: "driftwood",
-  manufacturer: "Driftwood",
-  model: "Goldbrick",
-  aliases: [
-    "goldbrick",
-    "gold brick"
-  ],
-  image: null,
-  description:
-    "The Goldbrick focuses on vintage-inspired British tones with exceptional touch sensitivity, rich harmonics and boutique craftsmanship.",
-  history:
-    "Created to complement Driftwood's modern high-gain lineup, the Goldbrick demonstrated the company's ability to build expressive vintage-style amplifiers.",
-  introduced: 2018,
-  discontinued: null,
-  country: "Germany",
-  ampType: "Tube Head",
-  power: "50 W",
-  channels: 2,
-  tubes: {
-    preamp: ["4 × ECC83"],
-    power: ["2 × EL34"]
-  },
-  genres: [
-    "Classic Rock",
-    "Blues",
-    "Rock"
-  ],
-  notableUsers: [],
-  tags: [
-    "Boutique",
-    "British Voicing",
-    "German"
-  ]
-},
-{
-  id: "driftwood-baby-hell",
-  manufacturerId: "driftwood",
-  manufacturer: "Driftwood",
-  model: "Baby Hell",
-  aliases: [
-    "baby hell",
-    "babyhell"
-  ],
-  image: null,
-  description:
-    "The Baby Hell delivers Driftwood's signature modern high-gain tone in a compact format, offering exceptional clarity, tight low end and impressive versatility for studio and live use.",
-  history:
-    "Developed as Driftwood's compact high-gain platform, the Baby Hell brought the company's boutique craftsmanship and modern voicing to players seeking a portable amplifier.",
-  introduced: 2020,
+    "Building on the success of the original Mini Nightmare, the IR version adds an onboard cabinet impulse response loader and modern direct-recording capabilities while preserving the amplifier's signature tight, articulate high-gain tone.",
+  introduced: 2023,
   discontinued: null,
   country: "Germany",
   ampType: "Tube Head",
@@ -218,46 +148,61 @@ export const driftwoodAmps = [
   notableUsers: [],
   tags: [
     "Boutique",
+    "High Gain",
+    "IR Loader",
     "Compact",
-    "German",
-    "High Gain"
+    "German"
   ]
 },
 {
-  id: "driftwood-da100",
+  id: "driftwood-atlas-180",
   manufacturerId: "driftwood",
   manufacturer: "Driftwood",
-  model: "DA100",
+  model: "Atlas 180",
   aliases: [
-    "da100",
-    "da 100"
+    "atlas 180",
+    "atlas",
+    "driftwood atlas"
   ],
-  image: null,
+  image: "atlas180.png",
   description:
-    "The DA100 was one of Driftwood's earliest flagship amplifiers, delivering powerful British-inspired high-gain tones with exceptional articulation and boutique build quality.",
+    "The Atlas 180 is Driftwood's flagship all-in-one guitar amplifier, combining the company's renowned high-gain tube preamp with an integrated 180-watt Class D power amplifier, impulse response loader, MIDI control and extensive modern connectivity.",
   history:
-    "Produced during Driftwood's early years, the DA100 helped establish the company within the boutique amplifier market before the Nightmare series became its defining product line.",
-  introduced: 2013,
+    "Introduced as Driftwood's most advanced amplifier platform, the Atlas 180 was designed to meet the demands of modern touring and studio musicians. Rather than following the traditional all-tube approach, it combines a tube-driven preamp with a lightweight Class D power section, onboard impulse responses, MIDI functionality and multiple routing options. The Atlas 180 represents Driftwood's evolution toward a fully integrated professional amplifier while preserving the articulate, aggressive high-gain character that established the brand's reputation.",
+
+  introduced: 2024,
   discontinued: null,
+
   country: "Germany",
-  ampType: "Tube Head",
-  power: "100 W",
+
+  ampType: "Hybrid Head",
+
+  power: "180 W",
+
   channels: 3,
+
   tubes: {
-    preamp: ["5 × ECC83"],
-    power: ["4 × EL34"]
+    preamp: ["3 × ECC83 / 12AX7"],
+    power: []
   },
+
   genres: [
-    "Rock",
+    "Modern Metal",
+    "Progressive Metal",
     "Hard Rock",
-    "Metal"
+    "Rock"
   ],
+
   notableUsers: [],
+
   tags: [
-    "Boutique",
-    "German",
+    "Hybrid",
     "High Gain",
-    "Early Model"
+    "IR Loader",
+    "MIDI",
+    "Class D",
+    "German",
+    "Boutique"
   ]
 }
 ]

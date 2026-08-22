@@ -272,7 +272,8 @@ export const egnaterAmps = [
   model: "MOD50",
   aliases: [
     "mod50",
-    "mod 50"
+    "mod 50",
+    "eggneta model 50"
   ],
   image: "mod50.png",
   description:

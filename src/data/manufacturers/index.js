@@ -86,7 +86,7 @@ export const manufacturerRecords = [
   founded: null,
   founder: null,
   country: null,
-  description: "Earforce amplifier entries in the Live Companion Gear Library.",
+  description: "Earforce amplifier entries in the Kompanion Gear Library.",
   history: null,
   website: null,
   logo: null,
@@ -312,6 +312,72 @@ export const manufacturerRecords = [
   website: "https://voxamps.com",
   logo: null,
   heroImage: null,
+  accentColor: null
+},
+{
+  id: "matchless",
+  name: "Matchless",
+
+  founded: 1989,
+  founder: "Mark Sampson, Rick Perrotta",
+
+  country: "United States",
+
+  description:
+    "Matchless is one of the world's most influential boutique amplifier manufacturers, renowned for handcrafted tube amplifiers that combine classic British-inspired tone with uncompromising build quality, exceptional dynamics and remarkable touch sensitivity. The company played a pivotal role in the boutique amplifier movement of the 1990s and remains a benchmark for premium hand-wired guitar amplifiers.",
+
+  history:
+    "Founded in Los Angeles in 1989 by Mark Sampson and Rick Perrotta, Matchless quickly established itself through meticulous point-to-point construction, premium components and innovative amplifier designs inspired by classic British circuits. The introduction of the legendary DC-30 helped redefine expectations for boutique amplifiers, offering greater reliability, headroom and harmonic complexity than many vintage designs. Throughout the 1990s and beyond, models such as the Clubman, Chieftain, Lightning, HC-30 and Independence further cemented Matchless' reputation among professional musicians worldwide. Despite changes in ownership over the years, Matchless continues to hand-build amplifiers in the United States while preserving the craftsmanship and sonic philosophy that made the brand one of the most respected names in boutique guitar amplification.",
+
+  website: "https://matchlessamplifiers.com",
+
+  logo: null,
+  heroImage: null,
+
+  accentColor: null
+},
+{
+  id: "victory",
+  name: "Victory",
+
+  founded: 2013,
+  founder: null,
+
+  country: "United Kingdom",
+
+  description:
+    "Victory Amplifiers is a British boutique amplifier manufacturer known for combining traditional hand-wired tube amplifier design with compact formats, modern versatility and carefully engineered high-performance circuits. The company builds its amplifiers in England and has become particularly well known for its lightweight lunchbox heads and distinctive British voicings ranging from vintage-inspired cleans to modern high-gain tones.",
+
+  history:
+    "Founded in 2013, Victory launched with three amplifiers: the V10 Baron, V50 Earl and V100 Duke. Under chief designer Martin Kidd, the company rapidly expanded its range with models such as the Silverback, Countess, Duchess, Kraken and Sheriff. Artist collaborations with Guthrie Govan, Rabea Massaad, Richie Kotzen and others helped establish Victory internationally. The company continued developing its core families with the Super Countess, Super Kraken, Super Duchess, Copper, Jack and updated Sheriff models, while also introducing the V4 preamp range and later the Deputy and MK Series. Victory's combination of hand-wired construction, compact dimensions and modern functionality has made it one of the most recognizable British boutique amplifier brands of the 2010s and 2020s.",
+
+  website: "https://www.victoryamps.com",
+
+  logo: null,
+  heroImage: null,
+
+  accentColor: null
+},
+{
+  id: "revv",
+  name: "Revv",
+
+  founded: 2014,
+  founder: "Dan & Tammy Revell",
+
+  country: "Canada",
+
+  description:
+    "Revv Amplification is a Canadian boutique amplifier manufacturer known for modern high-gain tube amplifiers that combine exceptionally tight, articulate distortion with advanced recording and performance features. The company is particularly recognized for its Generator and Dynamis amplifier families, as well as its compact lunchbox-style designs.",
+
+  history:
+    "Founded in 2014 in Winnipeg, Canada, Revv Amplification quickly established itself in the modern high-gain amplifier market with its Generator series. The company became known for its distinctive Blue, Green, Purple and Red channel voicings, combining traditional tube amplification with modern features such as MIDI control, reactive loads and integrated impulse responses. Models including the Generator 120, Generator 100P, Generator 100R, D20 and G20 helped establish Revv as a prominent name among modern metal, progressive rock and recording-focused guitarists. Revv continues to develop amplifiers in Canada with an emphasis on versatility, precision and direct-recording functionality.",
+
+  website: "https://revvamplification.com",
+
+  logo: null,
+  heroImage: null,
+
   accentColor: null
 }
 ];

@@ -52,7 +52,14 @@ export {
   resolveManufacturerIdFromAmpManufacturerName
 } from "./manufacturerLibrary.js";
 
-export { getAllCabinets } from "./cabinetLibrary.js";
+export {
+  getAllCabinets,
+  getCabinetById,
+  getCabinetDetailView,
+  getCabinetImage,
+  resolveCabinetRecordFromTextSources,
+  searchCabinets
+} from "./cabinetLibrary.js";
 export { getAllEffects } from "./effectLibrary.js";
 
 export {

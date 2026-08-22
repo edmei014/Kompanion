@@ -163,7 +163,11 @@ export const thirdPowerAmps = [
     "3rd power dream solo",
     "3rd power solo 4",
     "3rd powder dream solo",
-    "3rd powder plexi"
+    "3rd powder plexi",
+    "3rd powder solo 4",
+    "3rd powder plex",
+    "3p plexi",
+    "3p dw hot plexi"
   ],
   image: "dream-solo4.png",
   description:
@@ -190,6 +194,66 @@ export const thirdPowerAmps = [
     "Boutique",
     "Low Watt",
     "American"
+  ]
+},
+{
+  id: "3rd-power-drgn-100",
+  manufacturerId: "3rd-power",
+  manufacturer: "3rd Power",
+  model: "DRGN 100",
+  aliases: [
+    "drgn 100",
+    "dragon 100",
+    "drgn100",
+    "dragon100",
+    "3rd power dragon",
+    "3rd power drgn"
+  ],
+  image: "dragon100.png",
+  description:
+    "The DRGN 100 is a premium hand-wired 100-watt amplifier developed by 3rd Power in collaboration with Joe Satriani. Inspired by late-'60s Marshall Super Lead amplifiers, it combines authentic Plexi dynamics with modern high-gain versatility, advanced volume management and extensive tonal shaping.",
+  history:
+    "Introduced in 2023, the DRGN 100 was designed jointly by Joe Satriani and 3rd Power founder Dylana Scott to capture the feel and response of a legendary 1967/68 Plexi while adding modern performance features. The amplifier offers switchable Plexi and Cascaded High-Gain modes, patented HybridMASTER volume management, multiple voicing options and premium hand-wired construction. It has quickly become the company's flagship British-inspired amplifier and is used by Joe Satriani on stage and in the studio.",
+
+  introduced: 2023,
+  discontinued: null,
+
+  country: "United States",
+
+  ampType: "Tube Head",
+
+  power: "100 W",
+
+  channels: 2,
+
+  tubes: {
+    preamp: [
+      "3 × JJ ECC83S",
+      "1 × Sovtek 12AX7LPS"
+    ],
+    power: [
+      "4 × EL34"
+    ]
+  },
+
+  genres: [
+    "Rock",
+    "Hard Rock",
+    "Classic Rock",
+    "Progressive Rock"
+  ],
+
+  notableUsers: [
+    "Joe Satriani"
+  ],
+
+  tags: [
+    "Boutique",
+    "Handwired",
+    "British Voicing",
+    "Plexi",
+    "High Gain",
+    "HybridMASTER"
   ]
 },
 {

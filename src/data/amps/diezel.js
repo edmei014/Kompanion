@@ -360,7 +360,8 @@ export const diezelAmps = [
     "vh4 blue face",
     "blueface",
     "blue face",
-    "blueface vh4"
+    "blueface vh4",  
+    "tool vh4"
   ],
   image: "vh4-blueface.jpg",
   description:

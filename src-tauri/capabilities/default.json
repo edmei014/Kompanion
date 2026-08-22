@@ -3,5 +3,13 @@
   "identifier": "default",
   "description": "Default app permissions",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": [
+    "core:default",
+    "core:window:allow-set-fullscreen",
+    "core:window:allow-set-decorations",
+    "core:window:allow-unmaximize",
+    "core:window:allow-maximize",
+    "core:window:allow-set-position",
+    "core:window:allow-set-size"
+  ]
 }

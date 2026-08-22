@@ -1,61 +1,184 @@
 /*
- * Experimental Gear Library design previews.
- * Only active when body[data-gear-design] is set.
- * The default library (no attribute) is intentionally untouched.
+ * Gear Library design modes — four presentation identities.
+ * Active via body[data-gear-design="default|collections|editorial|museum"].
+ * Same amp library data; layout, type, and focus change only.
  */
 
 /* -------------------------------------------------------------------------- */
-/* Shared preview chrome                                                      */
+/* 1. Standard — daily working catalog (base styles live in styles.css)        */
 /* -------------------------------------------------------------------------- */
 
-.gear-design-preview {
-  display: grid;
-  gap: 8px;
-  justify-items: end;
+body[data-gear-design="default"] .amp-browser-group-grid,
+body[data-gear-design="default"] .amp-browser-flat-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 22px 18px;
 }
 
-.gear-design-preview[hidden] {
-  display: none !important;
+/* -------------------------------------------------------------------------- */
+/* 2. Collections — manufacturer collection boxes, dense palette overview       */
+/* -------------------------------------------------------------------------- */
+
+body[data-gear-design="collections"] .gear-library-panel {
+  gap: 32px;
+  padding: 36px 44px 56px;
 }
 
-.gear-design-preview-caption {
-  color: #768079;
-  font-size: 0.68rem;
-  font-weight: 850;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.gear-design-preview-select {
-  min-width: 168px;
-  min-height: 34px;
-  padding: 0 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  background: rgba(9, 10, 10, 0.42);
-  color: #d8ddd3;
-  font: inherit;
-  font-size: 0.8rem;
+body[data-gear-design="collections"] .gear-library-title {
+  font-size: clamp(1.65rem, 2.4vw, 2.1rem);
   font-weight: 650;
+  letter-spacing: 0.04em;
 }
 
-.gear-design-preview-select:focus {
-  outline: none;
-  border-color: rgba(164, 176, 139, 0.32);
-  box-shadow: 0 0 0 3px rgba(164, 176, 139, 0.1);
+body[data-gear-design="collections"] .gear-library-collection-meta {
+  letter-spacing: 0.08em;
+  color: rgba(176, 182, 172, 0.72);
 }
 
-.gear-library-header-actions {
+body[data-gear-design="collections"] .gear-library-scroll {
+  padding-bottom: 100px;
+}
+
+body[data-gear-design="collections"] .amp-browser-catalog[data-amp-presentation="collections"] {
+  width: 100%;
+  max-width: none;
+  padding-top: 8px;
+}
+
+body[data-gear-design="collections"] .collections-catalog {
   display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  justify-content: flex-end;
-  gap: 18px;
+  flex-direction: column;
+  gap: 28px;
+  width: 100%;
+}
+
+body[data-gear-design="collections"] .collections-box {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 28px 28px 26px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.022), transparent 42%),
+    rgba(12, 13, 13, 0.55);
+  box-shadow: none;
+  scroll-margin-top: 24px;
+}
+
+body[data-gear-design="collections"] .collections-box-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(210, 195, 165, 0.14);
+}
+
+body[data-gear-design="collections"] .collections-box-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2vw, 1.7rem);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: rgba(236, 232, 222, 0.96);
+}
+
+body[data-gear-design="collections"] .collections-box-meta {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+  color: rgba(168, 174, 164, 0.78);
+}
+
+body[data-gear-design="collections"] .collections-box-thumbs {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 14px 12px;
+  width: 100%;
+}
+
+body[data-gear-design="collections"] .collections-thumb {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  padding: 10px 6px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+body[data-gear-design="collections"] .collections-thumb:hover,
+body[data-gear-design="collections"] .collections-thumb:focus-visible,
+body[data-gear-design="collections"] .collections-thumb[data-selected="true"] {
+  border-color: rgba(210, 195, 165, 0.22);
+  background: rgba(255, 255, 255, 0.025);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+body[data-gear-design="collections"] .collections-thumb-media {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1 / 1.05;
+  min-height: 0;
+}
+
+body[data-gear-design="collections"] .collections-thumb-image {
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.35));
+  transition: filter 160ms ease;
+}
+
+body[data-gear-design="collections"] .collections-thumb:hover .collections-thumb-image,
+body[data-gear-design="collections"] .collections-thumb[data-selected="true"] .collections-thumb-image {
+  filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.42));
+}
+
+body[data-gear-design="collections"] .collections-thumb-media[data-has-image="false"] {
+  opacity: 0.55;
+}
+
+@media (max-width: 1280px) {
+  body[data-gear-design="collections"] .collections-box-thumbs {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  body[data-gear-design="collections"] .gear-library-panel {
+    padding: 28px 24px 44px;
+  }
+
+  body[data-gear-design="collections"] .collections-box {
+    padding: 22px 18px 20px;
+  }
+
+  body[data-gear-design="collections"] .collections-box-thumbs {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px 10px;
+  }
+}
+
+@media (max-width: 720px) {
+  body[data-gear-design="collections"] .collections-box-thumbs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 /* -------------------------------------------------------------------------- */
-/* Variant 1 — Editorial                                                      */
-/* Coffee-table book / magazine                                               */
+/* 3. Magazine — coffee-table layout, 3-up, more air                           */
 /* -------------------------------------------------------------------------- */
 
 body[data-gear-design="editorial"] .gear-library-panel {
@@ -69,7 +192,7 @@ body[data-gear-design="editorial"] .gear-library-eyebrow {
 }
 
 body[data-gear-design="editorial"] .gear-library-title {
-  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  font-family: var(--gear-font-serif);
   font-size: clamp(2.4rem, 4.5vw, 3.6rem);
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -77,49 +200,72 @@ body[data-gear-design="editorial"] .gear-library-title {
 }
 
 body[data-gear-design="editorial"] .gear-library-scroll {
-  padding-bottom: 120px;
-  scroll-padding-top: 64px;
+  padding-bottom: 140px;
 }
 
-body[data-gear-design="editorial"] .amp-browser-catalog {
-  padding-top: 40px;
-  max-width: 1180px;
+body[data-gear-design="editorial"] .gear-category-shell {
+  padding-right: clamp(12px, 1.6vw, 24px);
+}
+
+body[data-gear-design="editorial"] .amp-browser-catalog,
+body[data-gear-design="editorial"] .amp-browser-catalog[data-amp-presentation="manufacturer"],
+body[data-gear-design="editorial"] .amp-browser-catalog[data-amp-presentation="model"],
+body[data-gear-design="editorial"] .amp-browser-catalog[data-amp-presentation="timeline"] {
+  width: 100%;
+  max-width: none;
+  padding-top: 16px;
 }
 
 body[data-gear-design="editorial"] .amp-browser-group {
   gap: 88px;
-  padding: 168px 0 120px;
+  width: 100%;
+  padding: 150px 0 120px;
 }
 
 body[data-gear-design="editorial"] .amp-browser-group:first-child {
-  padding-top: 72px;
+  padding-top: 32px;
 }
 
-body[data-gear-design="editorial"] .amp-browser-group-title {
-  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
-  font-size: clamp(3.8rem, 8vw, 6.2rem);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  line-height: 0.92;
-  padding-bottom: 28px;
-  border-bottom-width: 1px;
-  text-transform: none;
+body[data-gear-design="editorial"] .amp-browser-group-header {
+  gap: 18px;
+  margin-bottom: 48px;
+  width: 100%;
 }
 
+body[data-gear-design="editorial"] .amp-browser-group-title,
 body[data-gear-design="editorial"] button.amp-browser-group-title.gear-manufacturer-link,
 body[data-gear-design="editorial"] .amp-browser-group-title.gear-manufacturer-link {
-  letter-spacing: 0.04em;
+  font-family: var(--gear-font-serif);
+  font-size: clamp(2.2rem, 3.6vw, 3rem);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.05;
   text-transform: none;
 }
 
-body[data-gear-design="editorial"] .amp-browser-group-grid {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
-  gap: 72px 56px;
+body[data-gear-design="editorial"] .amp-browser-group-rule {
+  width: 100%;
+  max-width: none;
+  background: rgba(200, 180, 140, 0.28);
+}
+
+body[data-gear-design="editorial"] .amp-browser-group-meta {
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+body[data-gear-design="editorial"] .amp-browser-group-grid,
+body[data-gear-design="editorial"] .amp-browser-flat-grid {
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(36px, 3.5vw, 56px) clamp(28px, 2.8vw, 40px);
 }
 
 body[data-gear-design="editorial"] .amp-browser-card {
-  gap: 28px;
-  padding: 18px 12px 10px;
+  gap: 22px;
+  width: 100%;
+  min-width: 0;
+  padding: 12px 8px 8px;
   border-color: transparent;
   border-radius: 0;
   background: transparent;
@@ -134,281 +280,417 @@ body[data-gear-design="editorial"] .amp-browser-card[data-selected="true"] {
 }
 
 body[data-gear-design="editorial"] .amp-browser-card-media {
-  min-height: 240px;
+  width: 100%;
+  min-height: clamp(280px, 28vw, 360px);
   padding: 0;
 }
 
 body[data-gear-design="editorial"] .amp-browser-card-image {
-  width: min(100%, 300px);
-  max-height: 230px;
-  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.35));
+  width: 100%;
+  max-width: none;
+  max-height: clamp(280px, 28vw, 360px);
+  filter: drop-shadow(0 22px 36px rgba(0, 0, 0, 0.4));
 }
 
 body[data-gear-design="editorial"] .amp-browser-card:hover .amp-browser-card-image {
   transform: none;
-  filter: drop-shadow(0 22px 34px rgba(0, 0, 0, 0.42));
+  filter: drop-shadow(0 26px 42px rgba(0, 0, 0, 0.48));
 }
 
 body[data-gear-design="editorial"] .amp-browser-card-model {
-  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
-  font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+  font-family: var(--gear-font-serif);
+  font-size: clamp(1.25rem, 1.8vw, 1.55rem);
   font-weight: 600;
   letter-spacing: 0.01em;
   text-align: left;
 }
 
-body[data-gear-design="editorial"] .gear-library-stats,
-body[data-gear-design="editorial"] .gear-library-image-filter-caption,
-body[data-gear-design="editorial"] .gear-library-sort-caption,
-body[data-gear-design="editorial"] .gear-library-view-caption {
+body[data-gear-design="editorial"] .amp-browser-card-meta {
+  justify-items: start;
+  width: 100%;
+  text-align: left;
+}
+
+body[data-gear-design="editorial"] .gear-library-toolbar-caption {
   letter-spacing: 0.12em;
 }
 
+@media (max-width: 1180px) {
+  body[data-gear-design="editorial"] .amp-browser-group-grid,
+  body[data-gear-design="editorial"] .amp-browser-flat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* -------------------------------------------------------------------------- */
-/* Variant 2 — Museum                                                         */
-/* Gallery / exhibition                                                       */
+/* 4. Museum — curated single-amplifier exhibition                             */
 /* -------------------------------------------------------------------------- */
 
 body[data-gear-design="museum"] .gear-library-panel {
-  gap: 48px;
-  padding: 48px 56px 72px;
+  gap: 10px;
+  padding: 24px 36px 36px;
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 18%, rgba(255, 248, 230, 0.04), transparent 58%),
+    radial-gradient(ellipse 70% 60% at 18% 88%, rgba(120, 90, 50, 0.08), transparent 55%),
+    rgba(14, 15, 15, 0.96);
+}
+
+body[data-gear-design="museum"] .gear-library-header {
+  width: 100%;
+  align-items: start;
+}
+
+body[data-gear-design="museum"] .gear-library-heading {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(210, 195, 165, 0.16);
 }
 
 body[data-gear-design="museum"] .gear-library-title {
-  font-size: clamp(1.2rem, 2vw, 1.55rem);
+  padding-bottom: 0;
+  border-bottom: 0;
+  font-size: clamp(1.35rem, 2.2vw, 1.7rem);
   font-weight: 650;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
 body[data-gear-design="museum"] .gear-library-eyebrow {
-  opacity: 0.72;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.2em;
+  opacity: 0.75;
+}
+
+body[data-gear-design="museum"] .gear-library-collection-meta {
+  margin-top: 2px;
+  letter-spacing: 0.05em;
+}
+
+body[data-gear-design="museum"] .gear-category-shell {
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 8px;
+  padding-right: clamp(12px, 1.6vw, 22px);
+}
+
+body[data-gear-design="museum"] .gear-library-toolbar {
+  width: 100%;
+  max-width: none;
+  gap: 0;
+  justify-items: stretch;
+}
+
+body[data-gear-design="museum"] .gear-library-controls {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  align-items: end;
+  column-gap: 14px;
+  row-gap: 0;
+  width: min(100%, 1280px);
+  max-width: 100%;
+}
+
+body[data-gear-design="museum"] .gear-library-search-label,
+body[data-gear-design="museum"] .gear-library-toolbar-field,
+body[data-gear-design="museum"] .gear-design-preview {
+  width: 100%;
+  flex: none;
+  min-width: 0;
+}
+
+body[data-gear-design="museum"] .gear-library-search,
+body[data-gear-design="museum"] .gear-library-toolbar-select {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  min-height: 40px;
+}
+
+/* Second toolbar: models of the active manufacturer */
+.museum-model-nav {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  padding: 2px 0 4px;
+  border-bottom: 1px solid var(--gear-divider, rgba(210, 195, 165, 0.12));
+}
+
+.museum-model-nav[hidden] {
+  display: none !important;
+}
+
+.museum-model-nav-track {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 2px 8px;
+  scrollbar-width: thin;
+}
+
+.museum-model-nav-item {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  max-width: 16rem;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--gear-text-secondary, rgba(176, 182, 172, 0.78));
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.museum-model-nav-item-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.museum-model-nav-item:hover {
+  color: var(--gear-text, #e8ebe3);
+  border-color: var(--gear-divider, rgba(210, 195, 165, 0.18));
+  background: var(--gear-accent-faint, rgba(255, 255, 255, 0.03));
+}
+
+.museum-model-nav-item[data-active="true"] {
+  color: var(--gear-text, #f4efe6);
+  border-color: var(--gear-border, rgba(210, 195, 165, 0.42));
+  background: var(--gear-accent-soft, rgba(210, 195, 165, 0.1));
+}
+
+/* Museum: one exhibit at a time, content-driven — never crop image or copy. */
+body[data-gear-design="museum"] .gear-amp-browser-stage {
+  min-height: 0;
+  overflow: hidden;
 }
 
 body[data-gear-design="museum"] .gear-library-scroll {
-  padding-bottom: 160px;
-  scroll-padding-top: 80px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  direction: ltr;
+  padding: 0 0 40px;
+  scroll-padding-top: 0;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
 }
 
-body[data-gear-design="museum"] .amp-browser-catalog {
-  padding-top: 56px;
-  max-width: 980px;
-  margin-inline: auto;
-}
-
-body[data-gear-design="museum"] .amp-browser-group {
-  gap: 96px;
-  padding: 180px 0 140px;
-  border-top-color: rgba(255, 255, 255, 0.035);
-}
-
-body[data-gear-design="museum"] .amp-browser-group:first-child {
-  padding-top: 64px;
-}
-
-body[data-gear-design="museum"] .amp-browser-group-title {
+body[data-gear-design="museum"] .amp-browser-catalog,
+body[data-gear-design="museum"] .amp-browser-catalog[data-amp-presentation="museum"] {
   width: 100%;
   max-width: none;
-  margin: 0 auto;
-  padding-bottom: 0;
-  border-bottom: none;
-  font-size: clamp(0.78rem, 1.2vw, 0.92rem);
-  font-weight: 750;
-  letter-spacing: 0.28em;
-  text-align: center;
-  line-height: 1.2;
+  height: auto;
+  min-height: 0;
+  padding-top: 0;
+  overflow: visible;
 }
 
-body[data-gear-design="museum"] button.amp-browser-group-title.gear-manufacturer-link,
-body[data-gear-design="museum"] .amp-browser-group-title.gear-manufacturer-link {
+body[data-gear-design="museum"] .gear-discover-column {
+  opacity: 0.82;
+}
+
+.museum-catalog {
+  display: grid;
+  align-content: start;
   width: 100%;
-  text-align: center;
-  transform-origin: center center;
+  min-width: 0;
+  padding: 8px 0 0;
 }
 
-body[data-gear-design="museum"] button.amp-browser-group-title.gear-manufacturer-link:hover,
-body[data-gear-design="museum"] .amp-browser-group-title.gear-manufacturer-link:hover {
-  transform: none;
-  opacity: 0.88;
+.museum-stage {
+  display: grid;
+  align-content: start;
+  width: 100%;
+  min-width: 0;
+  padding: clamp(16px, 2vw, 28px);
+  border: 1px solid var(--gear-divider, rgba(255, 255, 255, 0.05));
+  border-radius: var(--gear-radius-card, 22px);
+  background: var(--gear-museum-wall, var(--gear-bg, #141210));
 }
 
-body[data-gear-design="museum"] .amp-browser-group-grid {
-  grid-template-columns: 1fr;
-  gap: 96px;
-  justify-items: center;
+.museum-exhibit {
+  display: grid;
+  min-width: 0;
 }
 
-body[data-gear-design="museum"] .amp-browser-card {
-  width: min(100%, 560px);
-  gap: 36px;
-  padding: 48px 40px 40px;
-  border-color: rgba(255, 255, 255, 0.04);
-  border-radius: 8px;
-  background: rgba(8, 9, 9, 0.18);
-  box-shadow: none;
+/* Unified exhibition block: image + metadata share one content-sized layout. */
+.museum-exhibit-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
+  gap: clamp(28px, 3.2vw, 52px);
+  align-items: start;
+  width: 100%;
+  min-width: 0;
 }
 
-body[data-gear-design="museum"] .amp-browser-card:hover,
-body[data-gear-design="museum"] .amp-browser-card[data-selected="true"] {
-  border-color: rgba(255, 255, 255, 0.07);
-  box-shadow: 0 28px 64px rgba(0, 0, 0, 0.28);
-  transform: translateY(-4px);
+.museum-exhibit-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  padding: 4px 0;
+  overflow: visible;
+  background: transparent;
 }
 
-body[data-gear-design="museum"] .amp-browser-card-media {
-  min-height: 340px;
-  padding: 24px 16px;
+.museum-exhibit-image {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: min(58vh, 640px);
+  margin-top: 0;
+  object-fit: contain;
+  object-position: center top;
+  cursor: zoom-in;
+  filter: drop-shadow(0 28px 48px rgba(0, 0, 0, 0.55));
 }
 
-body[data-gear-design="museum"] .amp-browser-card-image {
-  width: min(100%, 420px);
-  max-height: 320px;
-  filter: drop-shadow(0 28px 48px rgba(0, 0, 0, 0.5));
+.museum-exhibit-panel {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  width: 100%;
+  min-width: 0;
+  padding-top: 2px;
+  background: transparent;
+  color: var(--gear-text, #f0eee7);
 }
 
-body[data-gear-design="museum"] .amp-browser-card:hover .amp-browser-card-image {
-  transform: scale(1.01);
-  filter: drop-shadow(0 34px 56px rgba(0, 0, 0, 0.56));
+.museum-exhibit-header {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--gear-divider, rgba(210, 195, 165, 0.16));
 }
 
-body[data-gear-design="museum"] .amp-browser-card-model {
-  font-size: clamp(0.92rem, 1.3vw, 1.08rem);
-  font-weight: 650;
+.museum-exhibit-kicker {
+  margin: 0;
+  color: var(--gear-label, rgba(176, 141, 87, 0.7));
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.museum-exhibit-title {
+  margin: 0;
+  color: var(--gear-text, #f0eee7);
+  font-family: var(--gear-font-serif);
+  font-size: clamp(1.9rem, 2.8vw, 2.55rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.12;
+}
+
+.museum-exhibit-facts {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+}
+
+.museum-exhibit-fact {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.museum-exhibit-fact dt {
+  color: var(--gear-label, rgba(176, 141, 87, 0.68));
+  font-family: var(--gear-font-sans, inherit);
+  font-size: 0.74rem;
+  font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-body[data-gear-design="museum"] .gear-library-toolbar {
-  opacity: 0.92;
+.museum-exhibit-fact dd {
+  margin: 0;
+  color: var(--gear-text, #eceae3);
+  font-size: clamp(1.02rem, 1.2vw, 1.16rem);
+  font-weight: 550;
+  line-height: 1.35;
 }
 
-/* -------------------------------------------------------------------------- */
-/* Variant 3 — Studio Collection                                              */
-/* High-end product / technical presentation                                  */
-/* -------------------------------------------------------------------------- */
-
-body[data-gear-design="studio"] .gear-library-panel {
-  gap: 28px;
-  padding: 28px 32px 40px;
+.museum-exhibit-fact-value--lines {
+  white-space: pre-line;
 }
 
-body[data-gear-design="studio"] .gear-library-title {
-  font-size: clamp(1.55rem, 2.4vw, 2rem);
-  font-weight: 850;
-  letter-spacing: 0.04em;
+.museum-exhibit-body {
+  display: grid;
+  gap: 18px;
+  margin-top: 2px;
 }
 
-body[data-gear-design="studio"] .gear-library-scroll {
-  padding-bottom: 88px;
-  scroll-padding-top: 40px;
+.museum-exhibit-section {
+  display: grid;
+  gap: 10px;
 }
 
-body[data-gear-design="studio"] .amp-browser-catalog {
-  padding-top: 20px;
+.museum-exhibit-section-title {
+  margin: 0;
+  color: var(--gear-label, rgba(176, 141, 87, 0.68));
+  font-family: var(--gear-font-sans, inherit);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
-body[data-gear-design="studio"] .amp-browser-group {
-  gap: 44px;
-  padding: 96px 0 72px;
-  border-top-color: rgba(255, 255, 255, 0.06);
+.museum-exhibit-section-text {
+  margin: 0;
+  color: var(--gear-text-secondary, #c2c8bf);
+  font-size: clamp(1rem, 1.1vw, 1.1rem);
+  font-weight: 500;
+  line-height: 1.72;
 }
 
-body[data-gear-design="studio"] .amp-browser-group:first-child {
-  padding-top: 40px;
+.museum-exhibit-artists {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--gear-text, #d8dcd3);
+  font-size: 1.02rem;
+  line-height: 1.5;
 }
 
-body[data-gear-design="studio"] .amp-browser-group-title {
-  font-size: clamp(1.05rem, 1.8vw, 1.35rem);
-  font-weight: 850;
-  letter-spacing: 0.22em;
-  padding-bottom: 16px;
-  border-bottom-color: rgba(255, 255, 255, 0.1);
+.museum-exhibit-empty {
+  margin: 0;
+  color: var(--gear-text-muted, #6f756e);
+  font-size: 0.95rem;
 }
 
-body[data-gear-design="studio"] .amp-browser-group-grid {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
-  gap: 28px 24px;
-}
-
-body[data-gear-design="studio"] .amp-browser-card {
-  gap: 22px;
-  padding: 28px 24px 24px;
-  border-color: rgba(255, 255, 255, 0.07);
-  border-radius: 22px;
-  background:
-    linear-gradient(165deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.01) 42%, rgba(0, 0, 0, 0.18) 100%),
-    rgba(10, 11, 11, 0.88);
-  box-shadow:
-    0 18px 40px rgba(0, 0, 0, 0.32),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-body[data-gear-design="studio"] .amp-browser-card:hover,
-body[data-gear-design="studio"] .amp-browser-card[data-selected="true"] {
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow:
-    0 28px 56px rgba(0, 0, 0, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07);
-  transform: translateY(-4px) scale(1.01);
-}
-
-body[data-gear-design="studio"] .amp-browser-card-media {
-  min-height: 210px;
-  padding: 10px 6px 0;
-  border-radius: 14px;
-  background:
-    radial-gradient(ellipse 70% 55% at 50% 35%, rgba(255, 255, 255, 0.05), transparent 70%);
-}
-
-body[data-gear-design="studio"] .amp-browser-card-image {
-  width: min(100%, 240px);
-  max-height: 190px;
-  filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.55));
-}
-
-body[data-gear-design="studio"] .amp-browser-card:hover .amp-browser-card-image {
-  transform: scale(1.03);
-  filter: drop-shadow(0 22px 36px rgba(0, 0, 0, 0.62));
-}
-
-body[data-gear-design="studio"] .amp-browser-card-model {
-  font-size: clamp(0.95rem, 1.25vw, 1.12rem);
-  font-weight: 800;
-  letter-spacing: 0.02em;
-}
-
-body[data-gear-design="studio"] .gear-library-search,
-body[data-gear-design="studio"] .gear-library-sort,
-body[data-gear-design="studio"] .gear-library-view-select,
-body[data-gear-design="studio"] .gear-library-image-filter {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(6, 7, 7, 0.72);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-
-@media (max-width: 980px) {
-  body[data-gear-design="editorial"] .gear-library-panel,
-  body[data-gear-design="museum"] .gear-library-panel {
-    padding: 28px 20px 40px;
-  }
-
-  body[data-gear-design="editorial"] .amp-browser-group,
-  body[data-gear-design="museum"] .amp-browser-group {
-    padding: 96px 0 72px;
-  }
-
-  body[data-gear-design="museum"] .amp-browser-card {
+@media (max-width: 1100px) {
+  body[data-gear-design="museum"] .gear-library-controls {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
     width: 100%;
-    padding: 32px 20px 28px;
+    column-gap: 10px;
   }
 
-  body[data-gear-design="museum"] .amp-browser-card-media {
-    min-height: 260px;
+  .museum-exhibit-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
   }
 
-  body[data-gear-design="museum"] .amp-browser-card-image {
-    width: min(100%, 320px);
-    max-height: 240px;
+  .museum-exhibit-image {
+    max-height: min(48vh, 520px);
   }
 }

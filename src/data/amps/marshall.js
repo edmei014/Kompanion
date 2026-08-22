@@ -12,7 +12,10 @@ export const marshallAmps = [
     "jcm800 2203",
     "jcm 800",
     "cm800",
-    "cm 800"
+    "cm 800",
+    "cm eight hundred",
+    "twenty-two three",
+    "twenty-two zero-three"
   ],
   image: "marshall jcm800 2203.png",
   description:
@@ -137,6 +140,7 @@ export const marshallAmps = [
   aliases: [
     "2210",
     "jcm800 2210",
+    "jcm 800 2210",
     "jcm 2210"
   ],
   image: "jcm800-2210.png",
@@ -257,7 +261,10 @@ export const marshallAmps = [
     "1992",
     "super bass",
     "jcm800 super bass",
-    "1992 super bass"
+    "1992 super bass",
+    "sb hundred",
+    "sb 100",
+    "sb one hundred"
   ],
   image: "jcm800-1992.png",
   description:
@@ -531,6 +538,71 @@ export const marshallAmps = [
   ]
 },
 {
+  id: "marshall-yjm100",
+  manufacturerId: "marshall",
+  manufacturer: "Marshall",
+  model: "YJM100",
+  aliases: [
+    "yjm100",
+    "yjm 100",
+    "yngwie malmsteen",
+    "yngwie malmsteen signature",
+    "yngwie marshall",
+    "marshall yngwie",
+    "yjm",
+    "mars ym"
+  ],
+  image: "ym.png",
+  description:
+    "The YJM100 is Yngwie Malmsteen's signature Marshall amplifier, combining the classic circuit and tonal character of the 1959 Super Lead Plexi with a range of modern features designed for high-volume performance, recording and precise control over power-stage saturation.",
+  history:
+    "Introduced in 2011 as a limited-edition signature amplifier, the YJM100 was developed closely with Yngwie Malmsteen and is based on Marshall's legendary 1959 Super Lead. The front panel retains the classic four-input Plexi layout with separate High Treble and Normal volume controls, shared Bass, Middle, Treble and Presence controls, while the rear panel adds a footswitchable boost, noise gate, digital reverb, series effects loop and electronic power attenuation. The amplifier also features selectable 100/50-watt operation, self-biasing circuitry and valve-failure monitoring. Marshall produced the YJM100 as a limited run of approximately 1,500 units.",
+
+  introduced: 2011,
+  discontinued: 2011,
+
+  country: "United Kingdom",
+
+  ampType: "Tube Head",
+
+  power: "100 W / 50 W",
+
+  channels: 2,
+
+  tubes: {
+    preamp: [
+      "4 × ECC83 / 12AX7"
+    ],
+    power: [
+      "4 × EL34"
+    ]
+  },
+
+  genres: [
+    "Neoclassical Metal",
+    "Hard Rock",
+    "Heavy Metal",
+    "Rock"
+  ],
+
+  notableUsers: [
+    "Yngwie Malmsteen"
+  ],
+
+  tags: [
+    "Signature",
+    "Plexi",
+    "High Gain",
+    "EL34",
+    "100 W",
+    "50 W",
+    "Attenuator",
+    "Reverb",
+    "Noise Gate",
+    "Boost"
+  ]
+},
+{
   id: "marshall-jvm410h",
   manufacturerId: "marshall",
   manufacturer: "Marshall",
@@ -540,7 +612,8 @@ export const marshallAmps = [
     "jvm410",
     "jvm410h",
     "jvm 410",
-    "mars jvm"
+    "mars jvm",
+    "mars vm"
   ],
   image: "jvm_410h.png",
   description:
@@ -583,7 +656,8 @@ export const marshallAmps = [
     "silver jubilee",
     "2555 silver jubilee",
     "marshall jubilee",
-    "silver jubilee 2555"
+    "silver jubilee 2555",
+    "silvi jubi"
   ],
   image: "marshall jcm25 silver.png",
   description:
@@ -631,7 +705,8 @@ export const marshallAmps = [
     "dsl100",
     "dual super lead",
     "dsl",
-    "superb lead"
+    "sl 100",
+    "superlead"
   ],
   image: "jcm2000.png",
   description:
@@ -831,7 +906,11 @@ export const marshallAmps = [
     "1959 super lead",
     "jmp 1959",
     "plexi",
-    "super lead"
+    "plex",
+    "super lead",
+    "superb lead",
+    "super lead 1959",
+    "superb lead 100"
   ],
   image: "1959 jmp.png",
   description:
@@ -876,7 +955,11 @@ export const marshallAmps = [
     "1987",
     "1987 lead",
     "lead 50",
-    "jmp 1987"
+    "mars lead 50",
+    "jmp 1987",
+    "plexi 50",
+    "plex 50",
+    "50w jmp"
   ],
   image: "1987jmp.png",
   description:
@@ -999,7 +1082,8 @@ export const marshallAmps = [
     "1992",
     "super bass",
     "jmp super bass",
-    "1992 super bass"
+    "1992 super bass",
+    "superbass"
   ],
   image: "jmp1992.png",
   description:

@@ -13,7 +13,8 @@ export const evhAmps = [
     "5150-iii",
     "5150iii 100",
     "5150iii 100w",
-    "5150 iii"
+    "5150 iii",
+    "150 iii"
   ],
   image: "5150-iii-100w.png",
   description:

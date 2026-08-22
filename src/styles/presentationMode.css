@@ -1,0 +1,561 @@
+/*
+ * Presentation Mode — fixed exhibition compositions.
+ * Entire slide always visible: no internal scrolling, optically centered,
+ * image + text negotiate height via --pres-fit.
+ */
+
+.gear-presentation-exit {
+  position: fixed;
+  top: clamp(16px, 2vw, 28px);
+  right: clamp(16px, 2vw, 28px);
+  z-index: 820;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: rgba(236, 230, 216, 0.52);
+  font: inherit;
+  font-size: 1.65rem;
+  font-weight: 200;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 280ms ease,
+    color 180ms ease;
+}
+
+.gear-presentation-exit:hover,
+.gear-presentation-exit:focus-visible {
+  opacity: 1;
+  color: rgba(247, 242, 230, 0.92);
+  outline: none;
+}
+
+.gear-presentation-exit[hidden] {
+  display: none !important;
+}
+
+body[data-presentation-mode="true"][data-presentation-cursor="visible"] .gear-presentation-exit:not([hidden]) {
+  opacity: 0.7;
+  pointer-events: auto;
+}
+
+body[data-presentation-mode="true"][data-presentation-cursor="visible"] .gear-presentation-exit:hover,
+body[data-presentation-mode="true"][data-presentation-cursor="visible"] .gear-presentation-exit:focus-visible {
+  opacity: 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Shared exhibition shell                                                     */
+/* -------------------------------------------------------------------------- */
+
+html:has(body[data-presentation-mode="true"]),
+body[data-presentation-mode="true"] {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body[data-presentation-mode="true"] {
+  --pres-fit: 1;
+  --pres-pad-y: calc(clamp(20px, 2.4vw, 36px) * var(--pres-fit));
+  --pres-pad-x: calc(clamp(24px, 3vw, 48px) * var(--pres-fit));
+  --pres-gap: calc(clamp(28px, 3.2vw, 52px) * var(--pres-fit));
+  --pres-card-pad: calc(clamp(28px, 3.2vw, 48px) * var(--pres-fit));
+  --pres-image-max: calc(78vh * var(--pres-fit));
+  --pres-title: calc(clamp(2.2rem, 3.8vw, 3.5rem) * var(--pres-fit));
+  --pres-meta: calc(clamp(1.15rem, 1.55vw, 1.4rem) * var(--pres-fit));
+  --pres-body: calc(clamp(1.05rem, 1.35vw, 1.28rem) * var(--pres-fit));
+  --pres-kicker: calc(clamp(0.8rem, 1vw, 0.95rem) * var(--pres-fit));
+  --pres-discover-title: calc(clamp(1.9rem, 3.2vw, 3rem) * var(--pres-fit));
+  --pres-discover-body: calc(clamp(1.15rem, 1.55vw, 1.45rem) * var(--pres-fit));
+  --pres-discover-kicker: calc(clamp(0.9rem, 1.15vw, 1.1rem) * var(--pres-fit));
+}
+
+body[data-presentation-mode="true"] .gear-library-header,
+body[data-presentation-mode="true"] .gear-library-toolbar,
+body[data-presentation-mode="true"] .museum-model-nav,
+body[data-presentation-mode="true"] .gear-category-nav {
+  display: none !important;
+}
+
+body[data-presentation-mode="true"] .app-module-launcher {
+  display: none !important;
+}
+
+body[data-presentation-suspended="true"] .gear-presentation-exit {
+  display: none !important;
+}
+
+body[data-presentation-mode="true"] #gearLibraryView,
+body[data-presentation-mode="true"] #gearLibraryView .shell--gear {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  max-width: none;
+  overflow: hidden;
+}
+
+body[data-presentation-mode="true"] .shell--gear {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  overflow: hidden;
+}
+
+body[data-presentation-mode="true"] .gear-library-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  max-width: none;
+  gap: 0;
+  padding: var(--pres-pad-y) var(--pres-pad-x);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 12%, rgba(255, 248, 230, 0.045), transparent 58%),
+    radial-gradient(ellipse 70% 50% at 80% 90%, rgba(90, 70, 40, 0.08), transparent 55%),
+    rgba(10, 11, 11, 0.98);
+}
+
+body[data-presentation-mode="true"] .gear-library-layout {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  max-height: 100%;
+  column-gap: 0;
+  overflow: hidden;
+}
+
+body[data-presentation-mode="true"] .gear-category-shell,
+body[data-presentation-mode="true"] .gear-amp-browser-stage,
+body[data-presentation-mode="true"] .gear-library-scroll,
+body[data-presentation-mode="true"] .amp-browser-catalog,
+body[data-presentation-mode="true"] .museum-catalog,
+body[data-presentation-mode="true"] .museum-stage,
+body[data-presentation-mode="true"] .museum-exhibit {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  max-height: 100%;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+body[data-presentation-mode="true"] .gear-category-shell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
+  padding-right: 0;
+}
+
+body[data-presentation-mode="true"] .gear-library-scroll,
+body[data-presentation-mode="true"][data-gear-design="museum"] .gear-library-scroll {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
+  overscroll-behavior: none;
+}
+
+body[data-presentation-mode="true"] .gear-library-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+body[data-presentation-mode="true"] .museum-catalog,
+body[data-presentation-mode="true"] .museum-stage,
+body[data-presentation-mode="true"] .gear-discover-column {
+  will-change: opacity;
+}
+
+body[data-presentation-mode="true"] .gear-discover-board {
+  max-width: none !important;
+  overflow: hidden;
+}
+
+body[data-presentation-mode="true"] .museum-exhibit-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.9fr);
+  gap: var(--pres-gap);
+  align-items: center;
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  max-height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body[data-presentation-mode="true"] .museum-exhibit-hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  padding: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 58%, rgba(255, 255, 255, 0.035), transparent 70%);
+}
+
+body[data-presentation-mode="true"] .museum-exhibit-image {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: var(--pres-image-max);
+  object-fit: contain;
+  object-position: center;
+}
+
+body[data-presentation-mode="true"] .museum-exhibit-panel {
+  display: grid;
+  align-content: center;
+  gap: calc(18px * var(--pres-fit));
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
+body[data-presentation-mode="true"] .museum-exhibit-header {
+  gap: calc(8px * var(--pres-fit));
+  padding-bottom: calc(14px * var(--pres-fit));
+}
+
+body[data-presentation-mode="true"] .museum-exhibit-kicker {
+  font-size: var(--pres-kicker);
+  letter-spacing: 0.2em;
+}
+
+body[data-presentation-mode="true"] .museum-exhibit-title {
+  font-size: var(--pres-title);
+  line-height: 1.08;
+}
+
+body[data-presentation-mode="true"] .museum-exhibit-facts {
+  gap: calc(14px * var(--pres-fit));
+}
+
+body[data-presentation-mode="true"] .museum-exhibit-fact dt {
+  font-size: var(--pres-kicker);
+  letter-spacing: 0.14em;
+}
+
+body[data-presentation-mode="true"] .museum-exhibit-fact dd {
+  font-size: var(--pres-meta);
+  line-height: 1.35;
+}
+
+body[data-presentation-mode="true"] .museum-exhibit-body {
+  gap: calc(16px * var(--pres-fit));
+  min-height: 0;
+  overflow: hidden;
+}
+
+body[data-presentation-mode="true"] .museum-exhibit-section {
+  gap: calc(8px * var(--pres-fit));
+  min-height: 0;
+  overflow: hidden;
+}
+
+body[data-presentation-mode="true"] .museum-exhibit-section-title {
+  font-size: var(--pres-kicker);
+  letter-spacing: 0.14em;
+}
+
+body[data-presentation-mode="true"] .museum-exhibit-section-text,
+body[data-presentation-mode="true"] .museum-exhibit-artists,
+body[data-presentation-mode="true"] .museum-exhibit-empty {
+  font-size: var(--pres-body);
+  line-height: 1.65;
+  overflow: hidden;
+}
+
+body[data-presentation-cursor="hidden"],
+body[data-presentation-cursor="hidden"] * {
+  cursor: none !important;
+}
+
+body[data-presentation-suspended="true"] .gear-presentation-exit {
+  display: none !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Amp Only                                                                    */
+/* -------------------------------------------------------------------------- */
+
+body[data-presentation-variant="amp-only"] .gear-library-layout {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  height: auto;
+  max-height: 100%;
+  grid-template-columns: none;
+}
+
+body[data-presentation-variant="amp-only"] .gear-discover-column {
+  display: none !important;
+}
+
+body[data-presentation-variant="amp-only"] {
+  --pres-image-max: calc(82vh * var(--pres-fit));
+  --pres-title: calc(clamp(2.4rem, 4vw, 3.7rem) * var(--pres-fit));
+}
+
+body[data-presentation-variant="amp-only"] .museum-exhibit-layout {
+  grid-template-columns: minmax(0, 1.75fr) minmax(300px, 0.85fr);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Amp + Discover                                                              */
+/* -------------------------------------------------------------------------- */
+
+body[data-presentation-variant="amp-discover"] {
+  --pres-image-max: calc(52vh * var(--pres-fit));
+  --pres-title: calc(clamp(2rem, 3.2vw, 3rem) * var(--pres-fit));
+  --pres-discover-title: calc(clamp(1.2rem, 1.7vw, 1.55rem) * var(--pres-fit));
+  --pres-discover-body: calc(clamp(0.98rem, 1.2vw, 1.12rem) * var(--pres-fit));
+}
+
+body[data-presentation-variant="amp-discover"] .gear-library-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  row-gap: calc(clamp(20px, 2.4vw, 32px) * var(--pres-fit));
+  column-gap: 0;
+  align-content: center;
+  justify-items: stretch;
+  height: auto;
+  max-height: 100%;
+}
+
+body[data-presentation-variant="amp-discover"] .gear-category-shell {
+  order: 0;
+  display: flex;
+  justify-content: center;
+  min-height: 0;
+  max-height: none;
+  height: auto;
+}
+
+body[data-presentation-variant="amp-discover"] .gear-discover-column {
+  order: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-self: stretch;
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  opacity: 1;
+  overflow: hidden;
+}
+
+body[data-presentation-variant="amp-discover"] .gear-discover-heading {
+  display: none;
+}
+
+body[data-presentation-variant="amp-discover"] .gear-discover-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: calc(clamp(16px, 2vw, 28px) * var(--pres-fit));
+  width: 100%;
+  max-width: none !important;
+  min-height: 0;
+  height: auto;
+  overflow: hidden;
+}
+
+body[data-presentation-variant="amp-discover"] .gear-discover-entry,
+body[data-presentation-variant="amp-discover"] .gear-discover-entry + .gear-discover-entry {
+  display: grid;
+  align-content: start;
+  gap: calc(12px * var(--pres-fit));
+  margin: 0;
+  min-height: 0;
+  padding: calc(clamp(18px, 2vw, 26px) * var(--pres-fit));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 2px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 46%),
+    rgba(8, 9, 9, 0.5);
+  overflow: hidden;
+}
+
+body[data-presentation-variant="amp-discover"] .gear-discover-category {
+  font-size: var(--pres-kicker);
+  letter-spacing: 0.16em;
+}
+
+body[data-presentation-variant="amp-discover"] .gear-discover-title {
+  font-size: var(--pres-discover-title);
+  line-height: 1.15;
+  overflow: hidden;
+}
+
+body[data-presentation-variant="amp-discover"] .gear-discover-text {
+  font-size: var(--pres-discover-body);
+  line-height: 1.55;
+  overflow: hidden;
+}
+
+body[data-presentation-variant="amp-discover"] .museum-exhibit-layout {
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Discover Only                                                               */
+/* -------------------------------------------------------------------------- */
+
+body[data-presentation-variant="discover-only"] {
+  --pres-discover-title: calc(clamp(2rem, 3.4vw, 3.2rem) * var(--pres-fit));
+  --pres-discover-body: calc(clamp(1.2rem, 1.65vw, 1.5rem) * var(--pres-fit));
+  --pres-discover-kicker: calc(clamp(0.95rem, 1.2vw, 1.15rem) * var(--pres-fit));
+}
+
+body[data-presentation-variant="discover-only"] .gear-library-layout {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  height: auto;
+  max-height: 100%;
+  grid-template-columns: none;
+}
+
+body[data-presentation-variant="discover-only"] .gear-category-shell {
+  display: none !important;
+}
+
+body[data-presentation-variant="discover-only"] .gear-discover-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-self: center;
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  max-height: 100%;
+  height: auto;
+  padding: 0;
+  border: 0;
+  opacity: 1;
+  overflow: hidden;
+}
+
+body[data-presentation-variant="discover-only"] .gear-discover-heading {
+  flex: 0 0 auto;
+  margin: 0 0 calc(clamp(20px, 2.6vw, 36px) * var(--pres-fit));
+  color: rgba(210, 195, 165, 0.78);
+  font-size: var(--pres-discover-kicker);
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+body[data-presentation-variant="discover-only"] .gear-discover-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: calc(clamp(22px, 2.8vw, 40px) * var(--pres-fit));
+  width: 100%;
+  max-width: none !important;
+  min-height: 0;
+  height: auto;
+  max-height: calc(82vh * var(--pres-fit));
+  overflow: hidden;
+}
+
+body[data-presentation-variant="discover-only"] .gear-discover-entry,
+body[data-presentation-variant="discover-only"] .gear-discover-entry + .gear-discover-entry {
+  display: grid;
+  align-content: start;
+  gap: calc(clamp(16px, 2vw, 28px) * var(--pres-fit));
+  width: 100%;
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  padding: var(--pres-card-pad);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 42%),
+    rgba(8, 9, 9, 0.58);
+  overflow: hidden;
+}
+
+body[data-presentation-variant="discover-only"] .gear-discover-category {
+  font-size: var(--pres-discover-kicker);
+  letter-spacing: 0.2em;
+  line-height: 1.2;
+}
+
+body[data-presentation-variant="discover-only"] .gear-discover-title {
+  font-size: var(--pres-discover-title);
+  line-height: 1.12;
+  overflow: hidden;
+}
+
+body[data-presentation-variant="discover-only"] .gear-discover-text {
+  font-size: var(--pres-discover-body);
+  line-height: 1.7;
+  color: #d0d6cc;
+  overflow: hidden;
+}
+
+@media (max-width: 1200px) {
+  body[data-presentation-variant="amp-discover"] .gear-discover-board,
+  body[data-presentation-variant="discover-only"] .gear-discover-board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body[data-presentation-mode="true"] .museum-exhibit-layout {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  body[data-presentation-mode="true"] {
+    --pres-image-max: calc(42vh * var(--pres-fit));
+  }
+}

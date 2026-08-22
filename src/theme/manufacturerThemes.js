@@ -1,8 +1,9 @@
 /**
- * Subtle manufacturer lighting themes for Gear Library cards and detail heroes.
- * These act as soft ambient light — never as dominant card coloring.
+ * Manufacturer signature lighting for Gear Library cards and detail heroes.
+ * One palette per manufacturer — all amps of a brand share the same family look.
+ * Soft atmospheric wash only; never a bold color fill that competes with the amp image.
  *
- * Amp-level `theme` overrides still win when present.
+ * Marshall is the reference for intensity and warmth.
  *
  * @typedef {import("./ampTheme.js").AmpTheme} AmpTheme
  * @typedef {import("./ampTheme.js").AmpThemeInput} AmpThemeInput
@@ -12,87 +13,97 @@ import { DEFAULT_AMP_DETAIL_THEME, DEFAULT_AMP_THEME, resolveAmpTheme } from "./
 
 /**
  * Card themes: translucent surfaces + soft light.
- * Keep saturation extremely low.
+ * Keep saturation extremely low (Marshall gold wash ≈ reference intensity).
  *
  * @type {Record<string, AmpThemeInput>}
  */
 const MANUFACTURER_CARD_THEMES = {
   marshall: {
-    surface: "rgba(15, 14, 13, 0.82)",
-    gradientStart: "rgba(188, 156, 108, 0.05)",
+    /* Dark brass */
+    surface: "rgba(14, 13, 12, 0.9)",
+    gradientStart: "rgba(180, 148, 96, 0.08)",
     gradientEnd: "rgba(0, 0, 0, 0)",
-    glow: "rgba(120, 92, 52, 0.18)",
-    border: "rgba(56, 50, 42, 0.95)"
+    glow: "rgba(130, 100, 56, 0.15)",
+    border: "rgba(110, 90, 58, 0.48)"
   },
   "mesa-boogie": {
-    surface: "rgba(10, 9, 9, 0.86)",
-    gradientStart: "rgba(140, 72, 52, 0.045)",
+    /* Bronze */
+    surface: "rgba(14, 12, 11, 0.9)",
+    gradientStart: "rgba(160, 110, 72, 0.08)",
     gradientEnd: "rgba(0, 0, 0, 0)",
-    glow: "rgba(96, 42, 30, 0.16)",
-    border: "rgba(48, 36, 32, 0.95)"
+    glow: "rgba(120, 78, 48, 0.14)",
+    border: "rgba(100, 70, 48, 0.45)"
   },
   bogner: {
-    surface: "rgba(12, 13, 14, 0.84)",
-    gradientStart: "rgba(150, 168, 186, 0.04)",
+    /* Champagne */
+    surface: "rgba(14, 13, 12, 0.9)",
+    gradientStart: "rgba(210, 190, 150, 0.07)",
     gradientEnd: "rgba(0, 0, 0, 0)",
-    glow: "rgba(88, 100, 112, 0.14)",
-    border: "rgba(44, 48, 52, 0.95)"
+    glow: "rgba(170, 150, 110, 0.12)",
+    border: "rgba(120, 104, 72, 0.45)"
   },
   fender: {
-    surface: "rgba(11, 13, 16, 0.84)",
-    gradientStart: "rgba(120, 148, 186, 0.045)",
+    /* Warm tweed gold */
+    surface: "rgba(14, 13, 11, 0.9)",
+    gradientStart: "rgba(196, 168, 104, 0.08)",
     gradientEnd: "rgba(0, 0, 0, 0)",
-    glow: "rgba(92, 112, 138, 0.15)",
-    border: "rgba(46, 52, 60, 0.95)"
+    glow: "rgba(160, 128, 72, 0.14)",
+    border: "rgba(130, 104, 58, 0.45)"
   },
   vox: {
-    surface: "rgba(16, 13, 11, 0.84)",
-    gradientStart: "rgba(176, 136, 78, 0.05)",
+    /* Vintage gold */
+    surface: "rgba(14, 12, 10, 0.9)",
+    gradientStart: "rgba(190, 150, 78, 0.08)",
     gradientEnd: "rgba(0, 0, 0, 0)",
-    glow: "rgba(118, 84, 42, 0.17)",
-    border: "rgba(58, 46, 34, 0.95)"
+    glow: "rgba(140, 100, 44, 0.14)",
+    border: "rgba(120, 90, 48, 0.45)"
   },
   orange: {
-    surface: "rgba(10, 9, 8, 0.88)",
-    gradientStart: "rgba(176, 96, 42, 0.045)",
+    /* Burnt orange — whisper only */
+    surface: "rgba(14, 12, 11, 0.9)",
+    gradientStart: "rgba(188, 96, 42, 0.07)",
     gradientEnd: "rgba(0, 0, 0, 0)",
-    glow: "rgba(128, 64, 24, 0.15)",
-    border: "rgba(52, 38, 28, 0.95)"
+    glow: "rgba(150, 72, 28, 0.13)",
+    border: "rgba(120, 70, 36, 0.42)"
   },
   engl: {
-    surface: "rgba(12, 11, 11, 0.86)",
-    gradientStart: "rgba(168, 48, 48, 0.04)",
+    /* Dark red-brown */
+    surface: "rgba(14, 12, 12, 0.9)",
+    gradientStart: "rgba(150, 56, 48, 0.07)",
     gradientEnd: "rgba(0, 0, 0, 0)",
-    glow: "rgba(104, 36, 36, 0.14)",
-    border: "rgba(50, 36, 36, 0.95)"
+    glow: "rgba(110, 40, 36, 0.13)",
+    border: "rgba(90, 44, 40, 0.42)"
   },
   diezel: {
-    surface: "rgba(10, 10, 11, 0.88)",
-    gradientStart: "rgba(120, 128, 148, 0.035)",
+    /* Cool steel grey */
+    surface: "rgba(13, 13, 14, 0.9)",
+    gradientStart: "rgba(130, 140, 160, 0.07)",
     gradientEnd: "rgba(0, 0, 0, 0)",
-    glow: "rgba(72, 76, 92, 0.14)",
-    border: "rgba(42, 44, 50, 0.95)"
+    glow: "rgba(90, 96, 112, 0.13)",
+    border: "rgba(78, 84, 98, 0.42)"
   },
   friedman: {
-    surface: "rgba(14, 12, 11, 0.84)",
-    gradientStart: "rgba(168, 132, 84, 0.04)",
+    /* Amber */
+    surface: "rgba(14, 12, 11, 0.9)",
+    gradientStart: "rgba(188, 140, 72, 0.08)",
     gradientEnd: "rgba(0, 0, 0, 0)",
-    glow: "rgba(108, 80, 44, 0.15)",
-    border: "rgba(54, 44, 34, 0.95)"
+    glow: "rgba(140, 96, 44, 0.14)",
+    border: "rgba(120, 88, 48, 0.45)"
   },
   soldano: {
-    surface: "rgba(11, 11, 12, 0.86)",
-    gradientStart: "rgba(150, 150, 160, 0.04)",
+    /* Blue-grey */
+    surface: "rgba(13, 13, 14, 0.9)",
+    gradientStart: "rgba(120, 136, 156, 0.07)",
     gradientEnd: "rgba(0, 0, 0, 0)",
-    glow: "rgba(90, 90, 102, 0.14)",
-    border: "rgba(46, 46, 52, 0.95)"
+    glow: "rgba(80, 96, 118, 0.13)",
+    border: "rgba(70, 82, 98, 0.42)"
   },
   peavey: {
-    surface: "rgba(12, 12, 12, 0.84)",
-    gradientStart: "rgba(150, 150, 150, 0.035)",
+    surface: "rgba(11, 12, 13, 0.86)",
+    gradientStart: "rgba(128, 138, 148, 0.04)",
     gradientEnd: "rgba(0, 0, 0, 0)",
-    glow: "rgba(96, 96, 96, 0.12)",
-    border: "rgba(48, 48, 48, 0.95)"
+    glow: "rgba(72, 80, 90, 0.14)",
+    border: "rgba(44, 48, 52, 0.95)"
   },
   hiwatt: {
     surface: "rgba(12, 13, 14, 0.84)",
@@ -109,11 +120,11 @@ const MANUFACTURER_CARD_THEMES = {
     border: "rgba(42, 48, 56, 0.95)"
   },
   evh: {
-    surface: "rgba(14, 11, 10, 0.86)",
-    gradientStart: "rgba(170, 70, 48, 0.04)",
+    surface: "rgba(11, 10, 9, 0.88)",
+    gradientStart: "rgba(168, 140, 88, 0.045)",
     gradientEnd: "rgba(0, 0, 0, 0)",
-    glow: "rgba(120, 48, 32, 0.14)",
-    border: "rgba(54, 38, 32, 0.95)"
+    glow: "rgba(78, 70, 52, 0.16)",
+    border: "rgba(48, 44, 36, 0.95)"
   },
   "tone-king": {
     surface: "rgba(15, 13, 11, 0.84)",
@@ -179,11 +190,11 @@ const MANUFACTURER_DETAIL_THEMES = {
     border: "rgba(220, 200, 170, 0.045)"
   },
   "mesa-boogie": {
-    surface: "#0d0b0b",
-    gradientStart: "#3a241c",
-    gradientEnd: "#0d0b0b",
-    glow: "#1f1410",
-    border: "rgba(200, 150, 130, 0.04)"
+    surface: "#0e0c0b",
+    gradientStart: "#34241c",
+    gradientEnd: "#0e0c0b",
+    glow: "#1c1410",
+    border: "rgba(190, 145, 120, 0.04)"
   },
   bogner: {
     surface: "#101214",
@@ -242,11 +253,11 @@ const MANUFACTURER_DETAIL_THEMES = {
     border: "rgba(190, 190, 205, 0.04)"
   },
   peavey: {
-    surface: "#111111",
-    gradientStart: "#2c2c2c",
-    gradientEnd: "#111111",
-    glow: "#1a1a1a",
-    border: "rgba(200, 200, 200, 0.035)"
+    surface: "#101214",
+    gradientStart: "#2a3036",
+    gradientEnd: "#101214",
+    glow: "#181c20",
+    border: "rgba(170, 185, 200, 0.035)"
   },
   hiwatt: {
     surface: "#101214",
@@ -263,11 +274,11 @@ const MANUFACTURER_DETAIL_THEMES = {
     border: "rgba(170, 190, 215, 0.04)"
   },
   evh: {
-    surface: "#120e0c",
-    gradientStart: "#3a2218",
-    gradientEnd: "#120e0c",
-    glow: "#20150f",
-    border: "rgba(210, 140, 110, 0.04)"
+    surface: "#0f0e0c",
+    gradientStart: "#2e281c",
+    gradientEnd: "#0f0e0c",
+    glow: "#1a1812",
+    border: "rgba(200, 175, 120, 0.04)"
   },
   "tone-king": {
     surface: "#13110e",
@@ -339,15 +350,16 @@ export function getManufacturerDetailTheme(manufacturerId) {
 }
 
 /**
- * Resolves the effective theme for an amp: amp override → manufacturer → default.
- * @param {{ theme?: AmpThemeInput | null, manufacturerId?: string | null } | null | undefined} amp
+ * Resolves the manufacturer signature theme for an amp.
+ * Cards, manufacturer/model/timeline browse, and detail all use this path —
+ * brand family first, never a per-amp primary palette.
+ *
+ * @param {{ manufacturerId?: string | null } | null | undefined} amp
  * @param {{ detail?: boolean }} [options]
  * @returns {AmpTheme}
  */
 export function resolveThemeForAmp(amp, options = {}) {
-  const manufacturerDefaults = options.detail
+  return options.detail
     ? getManufacturerDetailTheme(amp?.manufacturerId)
     : getManufacturerCardTheme(amp?.manufacturerId);
-
-  return resolveAmpTheme(amp?.theme, manufacturerDefaults);
 }
