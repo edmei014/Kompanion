@@ -1,8 +1,10 @@
 import {
-  AMP_BROWSER_VIEW,
-  AMP_BROWSER_VIEW_DEFAULT,
-  AMP_BROWSER_VIEWS,
+  AMP_ATLAS_PRESENTATION,
+  AMP_ATLAS_PRESENTATION_DEFAULT,
   AMP_IMAGE_FILTER,
+  AMP_SORT,
+  AMP_SORT_DEFAULT,
+  AMP_SORT_OPTIONS,
   DISCOVER_BOARD_CATEGORIES,
   DISCOVER_ROTATION_FADE_MS,
   buildAmpManufacturerViewSections,
@@ -16,7 +18,10 @@ import {
   getManufacturerById,
   getManufacturerDetailView,
   getManufacturerLibraryStats,
-  isAmpBrowserView
+  isAmpSortOption,
+  isManufacturerSort,
+  normalizeAmpSort,
+  parseAmpSortSpec
 } from "./library/index.js";
 import { GEAR_CATEGORY, gearLibraryCategories, getGearCategory } from "./gearLibraryCatalog.js";
 import { applyAmpThemeToElement, serializeAmpThemeStyle } from "./theme/ampTheme.js";
@@ -33,7 +38,8 @@ import {
   getActiveGearDesignMode,
   initializeGearDesignPreview,
   isCollectionsDesignMode,
-  isMuseumDesignMode
+  isMuseumDesignMode,
+  syncGearDesignPreviewSwitcher
 } from "./gearLibraryDesignPreview.js";
 import {
   buildChapterOptions,
@@ -96,7 +102,8 @@ let ampLibraryStatsData = { ampCount: 0, manufacturerCount: 0 };
 const ampBrowserState = {
   manufacturer: ALL_MANUFACTURERS,
   searchQuery: "",
-  view: AMP_BROWSER_VIEW_DEFAULT,
+  sort: AMP_SORT_DEFAULT,
+  atlasPresentation: AMP_ATLAS_PRESENTATION_DEFAULT,
   imageFilter: AMP_IMAGE_FILTER.ALL
 };
 
@@ -129,6 +136,8 @@ let gearLibraryScroll = null;
 let gearLibrarySearch = null;
 let gearLibraryViewWrap = null;
 let gearAmpViewSelect = null;
+let gearAtlasPresentationToggle = null;
+let gearDesignPreview = null;
 let gearAmpBrowserStage = null;
 let gearAmpTimelineRail = null;
 let gearAmpTimelineTrack = null;
@@ -198,6 +207,8 @@ let gearManufacturerDetailDescription = null;
 let gearManufacturerDetailHistory = null;
 let gearManufacturerDetailWebsite = null;
 let gearDiscoverBoard = null;
+let gearKempanionSwitcher = null;
+let gearAtlasSwitcher = null;
 /** @type {import("./library/discoverLibrary.js").DiscoverBoardState | null} */
 let discoverBoardState = null;
 /** @type {ReturnType<typeof createDiscoverRotationController> | null} */
@@ -380,12 +391,43 @@ export function setAppView(view) {
   restoreViewScroll(view);
 }
 
+function normalizeAmpBrowserState(state = ampBrowserState) {
+  if (state.view && !state.sort) {
+    if (state.view === "timeline") {
+      state.atlasPresentation = AMP_ATLAS_PRESENTATION.TIMELINE;
+      state.sort = AMP_SORT_DEFAULT;
+    } else if (state.view === "model") {
+      state.sort = AMP_SORT.MODEL_ASC;
+      state.atlasPresentation = AMP_ATLAS_PRESENTATION_DEFAULT;
+    } else {
+      state.sort = AMP_SORT.MANUFACTURER_ASC;
+      state.atlasPresentation = AMP_ATLAS_PRESENTATION_DEFAULT;
+    }
+    delete state.view;
+  }
+
+  if (!state.atlasPresentation) {
+    state.atlasPresentation = AMP_ATLAS_PRESENTATION_DEFAULT;
+  }
+
+  state.sort = isAmpSortOption(state.sort)
+    ? state.sort
+    : normalizeAmpSort(state.sort || AMP_SORT_DEFAULT);
+}
+
+function isTimelinePresentation() {
+  return ampBrowserState.atlasPresentation === AMP_ATLAS_PRESENTATION.TIMELINE;
+}
+
 function resetAmpBrowserViewToDefault() {
-  ampBrowserState.view = AMP_BROWSER_VIEW_DEFAULT;
+  ampBrowserState.sort = AMP_SORT_DEFAULT;
+  ampBrowserState.atlasPresentation = AMP_ATLAS_PRESENTATION_DEFAULT;
 
   if (gearAmpViewSelect) {
-    gearAmpViewSelect.value = AMP_BROWSER_VIEW_DEFAULT;
+    gearAmpViewSelect.value = AMP_SORT_DEFAULT;
   }
+
+  syncAtlasPresentationToggle();
 }
 
 function isManufacturersCategory() {
@@ -494,13 +536,17 @@ function escapeHtml(value) {
 }
 
 function loadAmpBrowseEntries() {
+  const sort = isTimelinePresentation()
+    ? AMP_SORT.AMP_YEAR_ASC
+    : ampBrowserState.sort;
+
   return getAmpBrowseEntries({
     query: ampBrowserState.searchQuery,
     manufacturer:
       ampBrowserState.manufacturer === ALL_MANUFACTURERS
         ? ""
         : ampBrowserState.manufacturer,
-    sort: ampBrowserState.view,
+    sort,
     imageFilter: ampBrowserState.imageFilter
   });
 }
@@ -969,15 +1015,27 @@ function renderCollectionStatsFootnote(entryCount) {
   `;
 }
 
-function renderViewOptions() {
+function renderSortOptions() {
   if (!gearAmpViewSelect) return;
 
-  gearAmpViewSelect.innerHTML = AMP_BROWSER_VIEWS.map(
+  gearAmpViewSelect.innerHTML = AMP_SORT_OPTIONS.map(
     ({ value, label }) =>
       `<option value="${escapeHtml(value)}"${
-        ampBrowserState.view === value ? " selected" : ""
+        ampBrowserState.sort === value ? " selected" : ""
       }>${escapeHtml(label)}</option>`
   ).join("");
+}
+
+function syncAtlasPresentationToggle() {
+  if (!gearAtlasPresentationToggle) return;
+
+  const isTimeline = isTimelinePresentation();
+  gearAtlasPresentationToggle.dataset.mode = isTimeline ? "collection" : "timeline";
+  gearAtlasPresentationToggle.setAttribute("aria-pressed", isTimeline ? "true" : "false");
+  gearAtlasPresentationToggle.setAttribute(
+    "aria-label",
+    isTimeline ? "Back to collection view" : "Open timeline view"
+  );
 }
 
 /**
@@ -1260,13 +1318,17 @@ function handleMuseumModelNavClick(event) {
 }
 
 function syncAmpBrowserPresentation() {
-  const view = ampBrowserState.view;
+  const isTimeline = isTimelinePresentation();
+  const sortSpec = parseAmpSortSpec(ampBrowserState.sort);
   const designMode = getActiveGearDesignMode();
   const museumMode = isMuseumDesignMode(designMode);
   const collectionsMode = isCollectionsDesignMode(designMode);
+  const hideSortControls = isManufacturersCategory() || isTimeline || museumMode;
+  const hideViewIcons = isTimeline;
 
   if (gearAmpBrowserStage) {
-    gearAmpBrowserStage.dataset.ampView = view;
+    gearAmpBrowserStage.dataset.ampView = isTimeline ? "timeline" : sortSpec.field;
+    gearAmpBrowserStage.dataset.atlasPresentation = ampBrowserState.atlasPresentation;
     gearAmpBrowserStage.dataset.gearDesign = designMode;
   }
 
@@ -1275,30 +1337,50 @@ function syncAmpBrowserPresentation() {
       ? "museum"
       : collectionsMode
         ? "collections"
-        : view;
+        : isTimeline
+          ? "timeline"
+          : isManufacturerSort(ampBrowserState.sort)
+            ? "manufacturer"
+            : "model";
     ampBrowserGrid.dataset.gearDesign = designMode;
   }
 
   if (gearLibraryViewWrap) {
-    const hideView = isManufacturersCategory();
-    gearLibraryViewWrap.classList.toggle("is-inactive", hideView);
-    gearLibraryViewWrap.setAttribute("aria-hidden", hideView ? "true" : "false");
-  }
-
-  if (gearLibraryChapterWrap) {
-    const hideChapters = isManufacturersCategory();
-    gearLibraryChapterWrap.classList.toggle("is-inactive", hideChapters);
-    gearLibraryChapterWrap.setAttribute(
+    gearLibraryViewWrap.classList.toggle("is-inactive", hideSortControls);
+    gearLibraryViewWrap.setAttribute(
       "aria-hidden",
-      hideChapters ? "true" : "false"
+      hideSortControls ? "true" : "false"
     );
   }
 
-  if (gearAmpTimelineRail) {
-    gearAmpTimelineRail.hidden =
-      museumMode || collectionsMode || view !== AMP_BROWSER_VIEW.TIMELINE;
+  if (gearLibraryChapterWrap) {
+    gearLibraryChapterWrap.classList.toggle("is-inactive", isManufacturersCategory() || isTimeline);
+    gearLibraryChapterWrap.setAttribute(
+      "aria-hidden",
+      isManufacturersCategory() || isTimeline ? "true" : "false"
+    );
   }
 
+  if (gearDesignPreview) {
+    gearDesignPreview.classList.toggle("is-inactive", hideViewIcons);
+    gearDesignPreview.setAttribute("aria-hidden", hideViewIcons ? "true" : "false");
+  }
+
+  if (gearAtlasPresentationToggle) {
+    const hideTimelineToggle = isManufacturersCategory() || museumMode || isTimeline;
+    gearAtlasPresentationToggle.classList.toggle("is-inactive", hideTimelineToggle);
+    gearAtlasPresentationToggle.setAttribute(
+      "aria-hidden",
+      hideTimelineToggle ? "true" : "false"
+    );
+    gearAtlasPresentationToggle.hidden = hideTimelineToggle;
+  }
+
+  if (gearAmpTimelineRail) {
+    gearAmpTimelineRail.hidden = !isTimeline || museumMode || collectionsMode;
+  }
+
+  syncAtlasPresentationToggle();
   syncMuseumModelNavVisibility(museumMode);
 }
 
@@ -2100,8 +2182,7 @@ function closeArchiveAmpDetail() {
 }
 
 function setDesignPreviewSelectValue(designId) {
-  const select = document.querySelector("#gearDesignPreviewSelect");
-  if (select && designId) select.value = designId;
+  syncGearDesignPreviewSwitcher(designId);
 }
 
 function capturePresentationRestoreState() {
@@ -2129,6 +2210,7 @@ function restorePresentationState(snapshot) {
 
   activeGearCategory = snapshot.activeGearCategory || GEAR_CATEGORY.AMPS;
   Object.assign(ampBrowserState, snapshot.ampBrowserState || {});
+  normalizeAmpBrowserState();
   museumState.manufacturerId = snapshot.museumState?.manufacturerId ?? null;
   museumState.ampId = snapshot.museumState?.ampId ?? null;
   selectedAmpId = snapshot.selectedAmpId ?? null;
@@ -2149,7 +2231,8 @@ function restorePresentationState(snapshot) {
 
   updateGearCategoryPanels();
   syncGearLibrarySearchField();
-  if (gearAmpViewSelect) gearAmpViewSelect.value = ampBrowserState.view;
+  if (gearAmpViewSelect) gearAmpViewSelect.value = ampBrowserState.sort;
+  syncAtlasPresentationToggle();
   syncAmpImageFilterUi();
   renderAmpBrowser();
 
@@ -2279,7 +2362,7 @@ function buildPresentationPlaylist(scope, context = {}) {
   presentationCatalogEntries = getAmpBrowseEntries({
     query: "",
     manufacturer: "",
-    sort: AMP_BROWSER_VIEW.MANUFACTURER,
+    sort: AMP_SORT.MANUFACTURER_ASC,
     imageFilter: AMP_IMAGE_FILTER.ALL
   });
 
@@ -2393,11 +2476,9 @@ function renderAmpBrowser() {
   if (!ampBrowserGrid) return;
   if (isPresentationModeActive()) return;
 
+  normalizeAmpBrowserState();
   ampCatalogEntries = loadAmpBrowseEntries();
-  const view = isAmpBrowserView(ampBrowserState.view)
-    ? ampBrowserState.view
-    : AMP_BROWSER_VIEW_DEFAULT;
-  ampBrowserState.view = view;
+  const isTimeline = isTimelinePresentation();
   const designMode = getActiveGearDesignMode();
   const museumMode = isMuseumDesignMode(designMode);
   const collectionsMode = isCollectionsDesignMode(designMode);
@@ -2434,6 +2515,16 @@ function renderAmpBrowser() {
 
   const footnote = renderCollectionStatsFootnote(ampCatalogEntries.length);
 
+  if (isTimeline) {
+    ampBrowserGrid.innerHTML = `${renderAmpTimelineView(ampCatalogEntries)}${footnote}`;
+    renderTimelineRail(ampCatalogEntries);
+    observeTimelineYears();
+    if (gearLibraryScroll) {
+      gearLibraryScroll.scrollTop = 0;
+    }
+    return;
+  }
+
   if (museumMode) {
     if (gearAmpTimelineTrack) gearAmpTimelineTrack.innerHTML = "";
     renderMuseumBrowser(ampCatalogEntries);
@@ -2449,25 +2540,16 @@ function renderAmpBrowser() {
     return;
   }
 
-  if (view === AMP_BROWSER_VIEW.MODEL) {
-    ampBrowserGrid.innerHTML = `${renderAmpModelView(ampCatalogEntries)}${footnote}`;
-    return;
-  }
-
-  if (view === AMP_BROWSER_VIEW.TIMELINE) {
-    ampBrowserGrid.innerHTML = `${renderAmpTimelineView(ampCatalogEntries)}${footnote}`;
-    renderTimelineRail(ampCatalogEntries);
-    observeTimelineYears();
-    if (gearLibraryScroll) {
-      gearLibraryScroll.scrollTop = 0;
-    }
-    return;
-  }
-
   if (gearAmpTimelineTrack) gearAmpTimelineTrack.innerHTML = "";
-  ampBrowserGrid.innerHTML = `${buildAmpManufacturerViewSections(ampCatalogEntries)
-    .map((section, sectionIndex) => renderAmpBrowserGroup(section, sectionIndex))
-    .join("")}${footnote}`;
+
+  if (isManufacturerSort(ampBrowserState.sort)) {
+    ampBrowserGrid.innerHTML = `${buildAmpManufacturerViewSections(ampCatalogEntries)
+      .map((section, sectionIndex) => renderAmpBrowserGroup(section, sectionIndex))
+      .join("")}${footnote}`;
+    return;
+  }
+
+  ampBrowserGrid.innerHTML = `${renderAmpModelView(ampCatalogEntries)}${footnote}`;
 }
 
 function handleGearDesignModeChange() {
@@ -2559,15 +2641,24 @@ function handleAmpBrowserKeydown(event) {
   openArchiveAmpDetail(card.dataset.ampId);
 }
 
-function handleAmpViewChange() {
-  const nextView = gearAmpViewSelect?.value || AMP_BROWSER_VIEW_DEFAULT;
-  ampBrowserState.view = isAmpBrowserView(nextView)
-    ? nextView
-    : AMP_BROWSER_VIEW_DEFAULT;
+function handleAmpSortChange() {
+  const nextSort = gearAmpViewSelect?.value || AMP_SORT_DEFAULT;
+  ampBrowserState.sort = isAmpSortOption(nextSort)
+    ? nextSort
+    : normalizeAmpSort(nextSort);
 
-  if (gearAmpViewSelect && gearAmpViewSelect.value !== ampBrowserState.view) {
-    gearAmpViewSelect.value = ampBrowserState.view;
+  if (gearAmpViewSelect && gearAmpViewSelect.value !== ampBrowserState.sort) {
+    gearAmpViewSelect.value = ampBrowserState.sort;
   }
+
+  closeAllGearOverlays();
+  renderAmpBrowser();
+}
+
+function handleAtlasPresentationToggle() {
+  ampBrowserState.atlasPresentation = isTimelinePresentation()
+    ? AMP_ATLAS_PRESENTATION.COLLECTION
+    : AMP_ATLAS_PRESENTATION.TIMELINE;
 
   closeAllGearOverlays();
   renderAmpBrowser();
@@ -2587,7 +2678,8 @@ function handleAmpImageFilterClick(event) {
 }
 
 function setupGearLibraryControls() {
-  renderViewOptions();
+  renderSortOptions();
+  syncAtlasPresentationToggle();
   syncAmpImageFilterUi();
   bindTimelineRail();
 
@@ -2606,7 +2698,11 @@ function setupGearLibraryControls() {
   }
 
   if (gearAmpViewSelect) {
-    gearAmpViewSelect.addEventListener("change", handleAmpViewChange);
+    gearAmpViewSelect.addEventListener("change", handleAmpSortChange);
+  }
+
+  if (gearAtlasPresentationToggle) {
+    gearAtlasPresentationToggle.addEventListener("click", handleAtlasPresentationToggle);
   }
 
   if (gearLibraryChapterSelect) {
@@ -2699,6 +2795,8 @@ function bindGearLibraryDom() {
   gearLibrarySearch = document.querySelector("#gearLibrarySearch");
   gearLibraryViewWrap = document.querySelector("#gearLibraryViewWrap");
   gearAmpViewSelect = document.querySelector("#gearAmpViewSelect");
+  gearAtlasPresentationToggle = document.querySelector("#gearAtlasPresentationToggle");
+  gearDesignPreview = document.querySelector("#gearDesignPreview");
   gearLibraryChapterWrap = document.querySelector("#gearLibraryChapterWrap");
   gearLibraryChapterSelect = document.querySelector("#gearLibraryChapterSelect");
   museumModelNav = document.querySelector("#museumModelNav");
@@ -2772,6 +2870,8 @@ function bindGearLibraryDom() {
   gearManufacturerDetailHistory = document.querySelector("#gearManufacturerDetailHistory");
   gearManufacturerDetailWebsite = document.querySelector("#gearManufacturerDetailWebsite");
   gearDiscoverBoard = document.querySelector("#gearDiscoverBoard");
+  gearKempanionSwitcher = document.querySelector("#gearKempanionSwitcher");
+  gearAtlasSwitcher = document.querySelector("#gearAtlasSwitcher");
   audioToolsViewRoot = document.querySelector("#audioToolsView");
   appModuleLauncher = document.querySelector(".app-module-launcher");
   appModuleLauncherButton = document.querySelector("#appModuleLauncherButton");
@@ -2787,6 +2887,14 @@ function refreshGearLibraryCache() {
 }
 
 function setupNavigation() {
+  gearKempanionSwitcher?.addEventListener("click", () => {
+    setAppView(APP_VIEW.LIVE);
+  });
+
+  gearAtlasSwitcher?.addEventListener("click", () => {
+    setAppView(APP_VIEW.GEAR);
+  });
+
   appModuleLauncherButton?.addEventListener("click", (event) => {
     event.stopPropagation();
     toggleModuleMenu();
@@ -2817,7 +2925,7 @@ function setupNavigation() {
 export function initializeGearLibrary() {
   bindGearLibraryDom();
   initializeGearColorTheme({
-    selectElement: document.querySelector("#gearColorThemeSelect")
+    toggleElement: document.querySelector("#gearColorThemeToggle")
   });
   bindAmpDetailsOverlay({
     open: openAmpDetail,

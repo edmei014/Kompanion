@@ -156,6 +156,35 @@ export function applyGearDesignPreview(designId, options = {}) {
 }
 
 /**
+ * @param {HTMLElement | null | undefined} rootElement
+ * @param {string} activeId
+ */
+function syncDesignPreviewSwitcher(rootElement, activeId) {
+  if (!(rootElement instanceof HTMLElement)) return;
+
+  for (const button of rootElement.querySelectorAll("[data-gear-design]")) {
+    if (!(button instanceof HTMLButtonElement)) continue;
+
+    const isActive = normalizeGearDesignId(button.dataset.gearDesign ?? "") === activeId;
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    button.classList.toggle("is-active", isActive);
+  }
+}
+
+/**
+ * Keeps the visual switcher in sync when design mode changes elsewhere.
+ * @param {string} designId
+ */
+export function syncGearDesignPreviewSwitcher(designId) {
+  syncDesignPreviewSwitcher(
+    document.querySelector("#gearDesignPreview"),
+    isGearDesignPreviewOption(designId)
+      ? normalizeGearDesignId(designId)
+      : GEAR_DESIGN_PREVIEW.defaultId
+  );
+}
+
+/**
  * @param {{
  *   rootElement?: HTMLElement | null,
  *   rootElements?: Array<HTMLElement | null | undefined>,
@@ -176,24 +205,25 @@ export function initializeGearDesignPreview(options = {}) {
 
   if (rootElement) rootElement.hidden = false;
 
-  const selectElement = rootElement?.querySelector("#gearDesignPreviewSelect");
   let activeId = applyGearDesignPreview(readStoredGearDesignPreview(), {
     rootElements: targets
   });
 
-  if (selectElement) {
-    selectElement.innerHTML = GEAR_DESIGN_PREVIEW_OPTIONS.map(
-      ({ id, label }) =>
-        `<option value="${id}"${id === activeId ? " selected" : ""}>${label}</option>`
-    ).join("");
+  syncDesignPreviewSwitcher(rootElement, activeId);
 
-    selectElement.addEventListener("change", () => {
-      activeId = applyGearDesignPreview(selectElement.value, {
-        rootElements: targets
+  if (rootElement) {
+    for (const button of rootElement.querySelectorAll("[data-gear-design]")) {
+      if (!(button instanceof HTMLButtonElement)) continue;
+
+      button.addEventListener("click", () => {
+        activeId = applyGearDesignPreview(button.dataset.gearDesign ?? "", {
+          rootElements: targets
+        });
+        storeGearDesignPreview(activeId);
+        syncDesignPreviewSwitcher(rootElement, activeId);
+        onChange?.(activeId);
       });
-      storeGearDesignPreview(activeId);
-      onChange?.(activeId);
-    });
+    }
   }
 
   return activeId;

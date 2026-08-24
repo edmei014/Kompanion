@@ -14,7 +14,7 @@ import { resolveThemeForAmp } from "../theme/manufacturerThemes.js";
 
 import { createGearLibrary } from "./createGearLibrary.js";
 import { formatGearFieldValue, isMissingGearFieldValue } from "./fieldValues.js";
-import { getManufacturerDisplayName } from "./manufacturerLibrary.js";
+import { getManufacturerDisplayName, getManufacturerById } from "./manufacturerLibrary.js";
 
 export { AMP_IMAGE_BASE_PATH };
 
@@ -64,6 +64,7 @@ export { AMP_IMAGE_BASE_PATH };
  * @property {string} searchText
  * @property {number} sortIndex
  * @property {number | null} sortYear
+ * @property {number | null} sortManufacturerYear
  */
 
 /**
@@ -106,26 +107,53 @@ export { AMP_IMAGE_BASE_PATH };
  * @property {string[]} playedBy
  */
 
-/** Amp browser presentation modes (shared data, distinct UI). */
+/** Atlas collection sort modes (order only — not presentation). */
+export const AMP_SORT = Object.freeze({
+  MANUFACTURER_ASC: "manufacturer-asc",
+  MANUFACTURER_DESC: "manufacturer-desc",
+  MANUFACTURER_YEAR_ASC: "manufacturer-year-asc",
+  MANUFACTURER_YEAR_DESC: "manufacturer-year-desc",
+  MODEL_ASC: "model-asc",
+  MODEL_DESC: "model-desc",
+  AMP_YEAR_ASC: "amp-year-asc",
+  AMP_YEAR_DESC: "amp-year-desc"
+});
+
+export const AMP_SORT_OPTIONS = [
+  { value: AMP_SORT.MANUFACTURER_ASC, label: "Manufacturer ↑" },
+  { value: AMP_SORT.MANUFACTURER_DESC, label: "Manufacturer ↓" },
+  { value: AMP_SORT.MANUFACTURER_YEAR_ASC, label: "Manufacturer Year ↑" },
+  { value: AMP_SORT.MANUFACTURER_YEAR_DESC, label: "Manufacturer Year ↓" },
+  { value: AMP_SORT.MODEL_ASC, label: "Model A→Z" },
+  { value: AMP_SORT.MODEL_DESC, label: "Model Z→A" },
+  { value: AMP_SORT.AMP_YEAR_ASC, label: "Amp Release Year ↑" },
+  { value: AMP_SORT.AMP_YEAR_DESC, label: "Amp Release Year ↓" }
+];
+
+export const AMP_SORT_DEFAULT = AMP_SORT.MANUFACTURER_ASC;
+
+/** Standalone atlas presentation modes (layout — not sort order). */
+export const AMP_ATLAS_PRESENTATION = Object.freeze({
+  COLLECTION: "collection",
+  TIMELINE: "timeline"
+});
+
+export const AMP_ATLAS_PRESENTATION_DEFAULT = AMP_ATLAS_PRESENTATION.COLLECTION;
+
+/**
+ * @deprecated Legacy view ids — use AMP_SORT and AMP_ATLAS_PRESENTATION instead.
+ */
 export const AMP_BROWSER_VIEW = Object.freeze({
   MANUFACTURER: "manufacturer",
   MODEL: "model",
   TIMELINE: "timeline"
 });
 
-export const AMP_BROWSER_VIEWS = [
-  { value: AMP_BROWSER_VIEW.MANUFACTURER, label: "Manufacturer" },
-  { value: AMP_BROWSER_VIEW.MODEL, label: "Model" },
-  { value: AMP_BROWSER_VIEW.TIMELINE, label: "Timeline" }
-];
+/** @deprecated Use AMP_SORT_OPTIONS */
+export const AMP_BROWSER_VIEWS = AMP_SORT_OPTIONS;
 
-export const AMP_BROWSER_VIEW_DEFAULT = AMP_BROWSER_VIEW.MANUFACTURER;
-
-/** @deprecated Use AMP_BROWSER_VIEWS */
-export const AMP_SORT_OPTIONS = AMP_BROWSER_VIEWS;
-
-/** @deprecated Use AMP_BROWSER_VIEW_DEFAULT */
-export const AMP_SORT_DEFAULT = AMP_BROWSER_VIEW_DEFAULT;
+/** @deprecated Use AMP_SORT_DEFAULT */
+export const AMP_BROWSER_VIEW_DEFAULT = AMP_SORT_DEFAULT;
 
 
 export const AMP_IMAGE_FILTER = {
@@ -141,7 +169,8 @@ const ampStore = createGearLibrary({
     const aliases = record.aliases.join(" ");
     return `${record.manufacturer} ${record.model} ${aliases}`.toLowerCase();
   },
-  imageBasePath: AMP_IMAGE_BASE_PATH,
+  resolveImageSrc: (filename) =>
+    isUsableAmpImageFilename(filename) ? resolveAmpImageSrc(filename) : null,
   getImageFilename: (record) => record.image,
   getManufacturer: (record) =>
     getManufacturerDisplayName(record.manufacturerId) ?? record.manufacturer,
@@ -404,6 +433,80 @@ export function parseAmpSortYear(introduced) {
   return match ? Number(match[0]) : null;
 }
 
+/** @param {string | null | undefined} manufacturerId @returns {number | null} */
+export function parseManufacturerFoundedYear(manufacturerId) {
+  const record = getManufacturerById(String(manufacturerId ?? "").trim());
+  if (!record?.founded) return null;
+  return parseAmpSortYear(record.founded);
+}
+
+/**
+ * @typedef {{ field: "manufacturer" | "manufacturer-year" | "model" | "amp-year", direction: "asc" | "desc" }} AmpSortSpec
+ */
+
+/** @param {string} sort @returns {AmpSortSpec} */
+export function parseAmpSortSpec(sort) {
+  const value = String(sort ?? "").trim();
+
+  if (value === AMP_BROWSER_VIEW.MANUFACTURER || value === "manufacturer") {
+    return { field: "manufacturer", direction: "asc" };
+  }
+  if (value === AMP_BROWSER_VIEW.MODEL || value === "model") {
+    return { field: "model", direction: "asc" };
+  }
+  if (value === AMP_BROWSER_VIEW.TIMELINE || value === "timeline" || value === "year") {
+    return { field: "amp-year", direction: "asc" };
+  }
+
+  if (value.endsWith("-desc")) {
+    return { field: value.slice(0, -5), direction: "desc" };
+  }
+  if (value.endsWith("-asc")) {
+    return { field: value.slice(0, -4), direction: "asc" };
+  }
+
+  return { field: "manufacturer", direction: "asc" };
+}
+
+/** @param {string} sort @returns {string} */
+export function normalizeAmpSort(sort) {
+  const spec = parseAmpSortSpec(sort);
+  return `${spec.field}-${spec.direction}`;
+}
+
+/** @param {string} sort @returns {boolean} */
+export function isAmpSortOption(sort) {
+  return AMP_SORT_OPTIONS.some((option) => option.value === sort);
+}
+
+/** @param {string} sort @returns {boolean} */
+export function isManufacturerSort(sort) {
+  return parseAmpSortSpec(sort).field === "manufacturer";
+}
+
+/**
+ * @param {number | null} left
+ * @param {number | null} right
+ */
+function compareNullableYears(left, right) {
+  if (left === null && right === null) return 0;
+  if (left === null) return 1;
+  if (right === null) return -1;
+  return left - right;
+}
+
+/**
+ * @param {AmpBrowseEntry} left
+ * @param {AmpBrowseEntry} right
+ */
+function compareWithinManufacturer(left, right) {
+  return (
+    compareNullableYears(left.sortYear, right.sortYear) ||
+    left.model.localeCompare(right.model, undefined, { sensitivity: "base" }) ||
+    left.sortIndex - right.sortIndex
+  );
+}
+
 /**
  * @param {{
  *   query?: string,
@@ -417,11 +520,11 @@ export function getAmpBrowseEntries(options = {}) {
   const {
     query = "",
     manufacturer = "",
-    sort = AMP_BROWSER_VIEW_DEFAULT,
+    sort = AMP_SORT_DEFAULT,
     imageFilter = AMP_IMAGE_FILTER.ALL
   } = options;
   const normalizedQuery = query.trim().toLowerCase();
-  const sortMode = getAmpBrowseSortModeForView(sort);
+  const normalizedSort = normalizeAmpSort(sort);
 
   let records = searchAmps(normalizedQuery);
 
@@ -438,12 +541,13 @@ export function getAmpBrowseEntries(options = {}) {
     return {
       ...entry,
       sortYear: amp ? parseAmpSortYear(amp.introduced) : null,
+      sortManufacturerYear: parseManufacturerFoundedYear(entry.manufacturerId),
       theme: resolveThemeForAmp(amp)
     };
   });
 
   return browseEntries.sort((left, right) =>
-    compareAmpBrowseEntries(left, right, sortMode)
+    compareAmpBrowseEntries(left, right, normalizedSort)
   );
 }
 
@@ -507,14 +611,10 @@ export function segmentAmpBrowseEntriesByManufacturerRuns(entries) {
 }
 
 export function getAmpBrowseSortModeForView(view) {
-  if (view === AMP_BROWSER_VIEW.MODEL || view === "model") return "model";
-  if (
-    view === AMP_BROWSER_VIEW.TIMELINE ||
-    view === "timeline" ||
-    view === "year"
-  ) {
-    return "year";
-  }
+  const { field } = parseAmpSortSpec(view);
+  if (field === "model") return "model";
+  if (field === "amp-year") return "year";
+  if (field === "manufacturer-year") return "manufacturer-year";
   return "manufacturer";
 }
 
@@ -577,26 +677,32 @@ export function buildAmpTimelineSections(entries) {
  * @param {string} sortMode
  * @returns {AmpBrowseSection[]}
  */
-export function buildAmpBrowseSections(entries, sortMode = AMP_BROWSER_VIEW_DEFAULT) {
-  if (sortMode === AMP_BROWSER_VIEW.MANUFACTURER || sortMode === "manufacturer") {
+export function buildAmpBrowseSections(entries, sortMode = AMP_SORT_DEFAULT) {
+  if (isManufacturerSort(sortMode)) {
     return buildAmpManufacturerViewSections(entries);
   }
 
   return segmentAmpBrowseEntriesByManufacturerRuns(entries);
 }
 
-/** @param {string} view */
+/** @param {string} view @deprecated Use isAmpSortOption */
 export function isAmpBrowserView(view) {
-  return AMP_BROWSER_VIEWS.some((option) => option.value === view);
+  return (
+    isAmpSortOption(view) ||
+    view === AMP_BROWSER_VIEW.MANUFACTURER ||
+    view === AMP_BROWSER_VIEW.MODEL
+  );
 }
 
 /** @param {string} sortMode */
 export function isAmpSortMode(sortMode) {
   return (
+    isAmpSortOption(sortMode) ||
     sortMode === "manufacturer" ||
     sortMode === "model" ||
     sortMode === "year" ||
-    isAmpBrowserView(sortMode)
+    sortMode === "manufacturer-year" ||
+    sortMode === "amp-year"
   );
 }
 
@@ -605,51 +711,42 @@ export function isAmpSortMode(sortMode) {
  * @param {AmpBrowseEntry} right
  * @param {string} sortMode
  */
-export function compareAmpBrowseEntries(left, right, sortMode) {
-  const mode =
-    sortMode === AMP_BROWSER_VIEW.TIMELINE
-      ? "year"
-      : sortMode === AMP_BROWSER_VIEW.MODEL
-        ? "model"
-        : sortMode === AMP_BROWSER_VIEW.MANUFACTURER
-          ? "manufacturer"
-          : sortMode;
+export function compareAmpBrowseEntries(left, right, sort) {
+  const { field, direction } = parseAmpSortSpec(sort);
+  let result = 0;
 
-  switch (mode) {
+  switch (field) {
     case "model":
-      return (
+      result =
         left.model.localeCompare(right.model, undefined, { sensitivity: "base" }) ||
-        left.sortIndex - right.sortIndex
-      );
-    case "year": {
-      const leftYear = left.sortYear;
-      const rightYear = right.sortYear;
-
-      if (leftYear === null && rightYear === null) {
-        return (
-          left.model.localeCompare(right.model, undefined, { sensitivity: "base" }) ||
-          left.sortIndex - right.sortIndex
-        );
-      }
-
-      if (leftYear === null) return 1;
-      if (rightYear === null) return -1;
-
-      return (
-        leftYear - rightYear ||
-        left.model.localeCompare(right.model, undefined, { sensitivity: "base" }) ||
-        left.sortIndex - right.sortIndex
-      );
-    }
-    case "manufacturer":
-    default:
-      // Keep manufacturers A–Z; within each manufacturer reuse year order
-      // (oldest first, unknown years last, then model name).
-      return (
         left.manufacturer.localeCompare(right.manufacturer, undefined, {
           sensitivity: "base"
-        }) || compareAmpBrowseEntries(left, right, "year")
-      );
+        }) ||
+        left.sortIndex - right.sortIndex;
+      break;
+    case "manufacturer-year":
+      result =
+        compareNullableYears(left.sortManufacturerYear, right.sortManufacturerYear) ||
+        left.manufacturer.localeCompare(right.manufacturer, undefined, {
+          sensitivity: "base"
+        }) ||
+        compareWithinManufacturer(left, right);
+      break;
+    case "amp-year":
+      result =
+        compareNullableYears(left.sortYear, right.sortYear) ||
+        left.model.localeCompare(right.model, undefined, { sensitivity: "base" }) ||
+        left.sortIndex - right.sortIndex;
+      break;
+    case "manufacturer":
+    default:
+      result =
+        left.manufacturer.localeCompare(right.manufacturer, undefined, {
+          sensitivity: "base"
+        }) || compareWithinManufacturer(left, right);
+      break;
   }
+
+  return direction === "desc" ? -result : result;
 }
 

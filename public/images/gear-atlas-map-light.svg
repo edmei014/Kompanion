@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="2200" height="3000" viewBox="0 0 2200 3000" fill="none" aria-hidden="true">
   <defs>
     <style>
-      .atlas-contour { stroke: #7a6652; stroke-opacity: 0.20; stroke-width: 1; fill: none; }
-      .atlas-contour-light { stroke: #7a6652; stroke-opacity: 0.14; stroke-width: 0.75; fill: none; }
-      .atlas-arc { stroke: #7a6652; stroke-opacity: 0.17; stroke-width: 0.85; fill: none; }
+      .atlas-contour { stroke: #4a3d31; stroke-opacity: 0.22; stroke-width: 1; fill: none; }
+      .atlas-contour-light { stroke: #4a3d31; stroke-opacity: 0.17; stroke-width: 0.75; fill: none; }
+      .atlas-arc { stroke: #4a3d31; stroke-opacity: 0.17; stroke-width: 0.85; fill: none; }
     </style>
   </defs>
 

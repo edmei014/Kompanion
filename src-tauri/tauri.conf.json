@@ -21,15 +21,24 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["$RESOURCE/images/amps/**/*"]
+      }
     }
   },
   "bundle": {
     "active": true,
+    "publisher": "edmei014",
+    "copyright": "Kompanion · edmei014 · 2026",
     "targets": ["nsis"],
-	"icon": [
-    "icons/icon.ico"
-	],
+    "icon": [
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "resources/images/amps/": "images/amps/"
+    },
     "windows": {
       "nsis": {
         "template": "windows/nsis/installer.nsi"

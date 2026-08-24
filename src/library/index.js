@@ -3,11 +3,14 @@
  * Application code should import from here — never from src/data/* directly.
  */
 export {
+  AMP_ATLAS_PRESENTATION,
+  AMP_ATLAS_PRESENTATION_DEFAULT,
   AMP_BROWSER_VIEW,
   AMP_BROWSER_VIEWS,
   AMP_BROWSER_VIEW_DEFAULT,
   AMP_IMAGE_BASE_PATH,
   AMP_IMAGE_FILTER,
+  AMP_SORT,
   AMP_SORT_DEFAULT,
   AMP_SORT_OPTIONS,
   buildAmpBrowseSections,
@@ -33,7 +36,12 @@ export {
   hasAmpImage,
   isAmpBrowserView,
   isAmpSortMode,
+  isAmpSortOption,
+  isManufacturerSort,
+  normalizeAmpSort,
+  parseAmpSortSpec,
   parseAmpSortYear,
+  parseManufacturerFoundedYear,
   segmentAmpBrowseEntriesByManufacturerRuns,
   resolveAmpIdFromText,
   resolveAmpIdFromTextSources,

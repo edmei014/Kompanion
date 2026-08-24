@@ -87,6 +87,20 @@ function applyThemeDataset(themeId) {
 }
 
 /**
+ * @param {HTMLElement | null | undefined} toggle
+ */
+function syncThemeToggle(toggle) {
+  if (!(toggle instanceof HTMLButtonElement)) return;
+
+  const isDark = activeTheme === GEAR_COLOR_THEME.MUSEUM_DARK;
+  toggle.setAttribute(
+    "aria-label",
+    isDark ? "Switch to light mode" : "Switch to dark mode"
+  );
+  toggle.setAttribute("aria-pressed", isDark ? "false" : "true");
+}
+
+/**
  * @param {string} themeId
  * @param {{ persist?: boolean, silent?: boolean }} [options]
  * @returns {string}
@@ -100,10 +114,7 @@ export function setGearColorTheme(themeId, options = {}) {
     persistTheme(next);
   }
 
-  const select = document.querySelector("#gearColorThemeSelect");
-  if (select instanceof HTMLSelectElement && select.value !== next) {
-    select.value = next;
-  }
+  syncThemeToggle(document.querySelector("#gearColorThemeToggle"));
 
   if (!options.silent && typeof onThemeChange === "function") {
     onThemeChange(next);
@@ -113,8 +124,21 @@ export function setGearColorTheme(themeId, options = {}) {
 }
 
 /**
+ * Toggle between museum-dark and museum-light.
+ * @param {{ persist?: boolean, silent?: boolean }} [options]
+ * @returns {string}
+ */
+export function toggleGearColorTheme(options = {}) {
+  const next =
+    activeTheme === GEAR_COLOR_THEME.MUSEUM_DARK
+      ? GEAR_COLOR_THEME.MUSEUM_LIGHT
+      : GEAR_COLOR_THEME.MUSEUM_DARK;
+  return setGearColorTheme(next, options);
+}
+
+/**
  * @param {{
- *   selectElement?: HTMLSelectElement | null,
+ *   toggleElement?: HTMLButtonElement | null,
  *   onChange?: (themeId: string) => void
  * }} [options]
  */
@@ -123,18 +147,14 @@ export function initializeGearColorTheme(options = {}) {
   activeTheme = readStoredTheme();
   applyThemeDataset(activeTheme);
 
-  const select =
-    options.selectElement ??
-    document.querySelector("#gearColorThemeSelect");
+  const toggle =
+    options.toggleElement ??
+    document.querySelector("#gearColorThemeToggle");
 
-  if (select instanceof HTMLSelectElement) {
-    select.innerHTML = GEAR_COLOR_THEME_OPTIONS.map(
-      (option) =>
-        `<option value="${option.id}">${option.label}</option>`
-    ).join("");
-    select.value = activeTheme;
-    select.addEventListener("change", () => {
-      setGearColorTheme(select.value);
+  if (toggle instanceof HTMLButtonElement) {
+    syncThemeToggle(toggle);
+    toggle.addEventListener("click", () => {
+      toggleGearColorTheme();
     });
   }
 }

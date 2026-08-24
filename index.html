@@ -134,7 +134,7 @@
       </div>
     </div>
 
-    <div class="app-module-launcher" data-open="false">
+    <div class="app-module-launcher" data-open="false" hidden>
       <button
         type="button"
         id="appModuleLauncherButton"
@@ -234,6 +234,21 @@
       />
     </div>
 
+    <button
+      type="button"
+      id="gearAtlasSwitcher"
+      class="gear-atlas-switcher title-row-controls"
+      aria-label="Zu Gear Atlas wechseln"
+    >
+      <img
+        class="gear-atlas-switcher-signet"
+        src="/images/compass.png"
+        alt=""
+        decoding="async"
+        draggable="false"
+      />
+    </button>
+
   </div>
 
   <div id="errorStatus" class="error-status" data-visible="false"></div>
@@ -243,19 +258,15 @@
       <section class="result">
         
         <div id="performanceSection" class="performance-section" hidden>
-          <div class="performance-browser-header">
-            <div class="section-title">
-              <span>Performance Browser</span>
-            </div>
-            <button id="createLibraryButton" class="library-button" type="button">Rebuild Performance Library</button>
-          </div>
-
           <p id="performanceEmptyState" class="performance-empty-state" hidden>
             No Performance Library available
           </p>
 
-          <div id="performanceBrowserPanel" class="performance-browser-panel">
-            <div class="performance-browser-row">
+          <div id="performanceBrowserHeaderBar" class="performance-browser-header-bar">
+            <div id="performanceSearchZone" class="performance-search-zone">
+              <div class="performance-search-zone-heading section-title">
+                <span>Performance Browser</span>
+              </div>
               <div id="performanceExplorerSection" class="performance-explorer-section" hidden>
                 <input
                   id="performanceExplorerSearch"
@@ -269,7 +280,9 @@
                   aria-controls="performanceExplorerContent"
                 />
               </div>
+            </div>
 
+            <div class="performance-slots-zone">
               <div id="performanceBrowserControls" class="performance-browser-controls" hidden>
                 <div class="performance-browser-nav performance-browser-nav--prev">
                   <button id="performancePrevFastButton" class="performance-nav-button performance-nav-button--fast" type="button" aria-label="10 Performances zurück">
@@ -291,10 +304,21 @@
                   </button>
                 </div>
               </div>
-
-              <span id="performanceBrowserLabel" class="performance-browser-label" hidden>Performance 1</span>
             </div>
 
+            <span id="performanceBrowserLabel" class="performance-browser-label" hidden>Performance 1</span>
+          </div>
+
+          <button
+            id="createLibraryButton"
+            class="library-button performance-library-rebuild"
+            type="button"
+            hidden
+          >
+            Rebuild Performance Library
+          </button>
+
+          <div id="performanceBrowserPanel" class="performance-browser-panel">
             <div id="performanceExplorerContent" class="performance-explorer-content" hidden>
               <div class="performance-explorer-table">
                 <div class="performance-explorer-head" aria-hidden="true">
@@ -566,25 +590,63 @@
       <div class="shell shell--gear">
       <section class="gear-library-panel">
         <header class="gear-library-header">
-          <div class="gear-library-heading">
-            <span class="gear-library-eyebrow">Gear Atlas</span>
-            <h2 id="gearLibraryTitle" class="gear-library-title">Amp Collection</h2>
-            <p
-              id="gearLibraryCollectionMeta"
-              class="gear-library-collection-meta"
-              hidden
-            ></p>
+          <div class="gear-library-header-brand-row">
+            <div class="gear-atlas-main-brand">
+              <img
+                class="gear-atlas-main-brand-signet"
+                src="/images/gear-atlas.png"
+                alt=""
+                decoding="async"
+                draggable="false"
+              />     
+            </div>
+            <button
+              type="button"
+              id="gearKempanionSwitcher"
+              class="gear-kempanion-switcher"
+              aria-label="Zurück zu Kempanion"
+            >
+              <img
+                class="gear-kempanion-switcher-signet"
+                src="/images/rune.png"
+                alt=""
+                decoding="async"
+                draggable="false"
+              />
+            </button>
           </div>
-          <img
-            class="gear-atlas-signet"
-            src="/images/gear-atlas.png"
-            alt=""
-            width="2063"
-            height="661"
-            decoding="async"
-            draggable="false"
-            aria-hidden="true"
-          />
+          <div class="gear-library-heading-row">
+            <div class="gear-library-heading">
+              <h2 id="gearLibraryTitle" class="gear-library-title">Amp Collection</h2>
+              <p
+                id="gearLibraryCollectionMeta"
+                class="gear-library-collection-meta"
+                hidden
+              ></p>
+            </div>
+            <div class="gear-presentation-action">
+              <button
+                type="button"
+                id="gearPresentationButton"
+                class="gear-presentation-button"
+                aria-label="Presentation"
+                aria-pressed="false"
+              >
+                <svg
+                  class="gear-presentation-button-icon"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M5 7V5a2 2 0 0 1 2-2h2" />
+                  <path d="M15 3h2a2 2 0 0 1 2 2v2" />
+                  <path d="M19 15v2a2 2 0 0 1-2 2h-2" />
+                  <path d="M9 19H7a2 2 0 0 1-2-2v-2" />
+                  <rect x="7.5" y="8.5" width="9" height="7" rx="1.25" />
+                </svg>
+                <span id="gearPresentationButtonLabel" class="gear-presentation-button-label visually-hidden">Presentation</span>
+              </button>
+            </div>
+          </div>
           <nav
             id="gearCategoryNav"
             class="gear-category-nav"
@@ -620,27 +682,14 @@
                   </label>
                   <label
                     id="gearLibraryViewWrap"
-                    class="gear-library-toolbar-field gear-library-view-label"
+                    class="gear-library-toolbar-field gear-library-sort-label"
                     for="gearAmpViewSelect"
                   >
-                    <span class="gear-library-toolbar-caption">View</span>
+                    <span class="gear-library-toolbar-caption">Sort</span>
                     <select
                       id="gearAmpViewSelect"
-                      class="gear-library-toolbar-select gear-library-view-select"
-                      aria-label="Amp collection view"
-                    ></select>
-                  </label>
-                  <label
-                    id="gearDesignPreview"
-                    class="gear-library-toolbar-field gear-design-preview"
-                    for="gearDesignPreviewSelect"
-                    hidden
-                  >
-                    <span class="gear-library-toolbar-caption">Design Preview</span>
-                    <select
-                      id="gearDesignPreviewSelect"
-                      class="gear-library-toolbar-select gear-design-preview-select"
-                      aria-label="Gear Library design preview"
+                      class="gear-library-toolbar-select gear-library-sort-select"
+                      aria-label="Amp collection sort order"
                     ></select>
                   </label>
                   <label
@@ -655,47 +704,138 @@
                       aria-label="Manufacturer chapter"
                     ></select>
                   </label>
-                  <label
-                    class="gear-library-toolbar-field gear-color-theme-field"
-                    for="gearColorThemeSelect"
-                  >
-                    <span class="gear-library-toolbar-caption">Theme</span>
-                    <select
-                      id="gearColorThemeSelect"
-                      class="gear-library-toolbar-select gear-color-theme-select"
-                      aria-label="Gear Library color theme"
-                    >
-                      <option value="museum-dark">Museum Dark</option>
-                      <option value="museum-light">Museum Light</option>
-                    </select>
-                  </label>
-                </div>
-
-                <div class="gear-presentation-action">
+                  <span
+                    class="gear-library-controls-spacer"
+                    aria-hidden="true"
+                  ></span>
                   <button
                     type="button"
-                    id="gearPresentationButton"
-                    class="gear-presentation-button"
-                    aria-label="Presentation"
+                    id="gearAtlasPresentationToggle"
+                    class="gear-atlas-presentation-toggle"
+                    data-mode="timeline"
                     aria-pressed="false"
+                    aria-label="Open timeline view"
                   >
-                    <span id="gearPresentationButtonLabel" class="gear-presentation-button-label">Presentation</span>
+                    <svg
+                      class="gear-atlas-presentation-toggle-icon gear-atlas-presentation-toggle-icon--timeline"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 4v16M8 8h8M7 12h10M8 16h8" />
+                    </svg>
+                    <svg
+                      class="gear-atlas-presentation-toggle-icon gear-atlas-presentation-toggle-icon--collection"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 5h6v6H5V5zm8 0h6v6h-6V5zM5 13h6v6H5v-6zm8 0h6v6h-6v-6z" />
+                    </svg>
                   </button>
+                  <div class="gear-library-controls-trailing">
+                    <div
+                      id="gearDesignPreview"
+                      class="gear-design-preview"
+                      role="group"
+                      aria-label="Layout view"
+                      hidden
+                    >
+                      <div class="gear-design-preview-switcher">
+                        <button
+                          type="button"
+                          class="gear-design-preview-option"
+                          data-gear-design="default"
+                          aria-pressed="true"
+                          aria-label="Standard"
+                        >
+                          <span
+                            class="gear-design-preview-glyph gear-design-preview-glyph--standard"
+                            aria-hidden="true"
+                          >
+                            <span></span><span></span><span></span><span></span>
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          class="gear-design-preview-option"
+                          data-gear-design="collections"
+                          aria-pressed="false"
+                          aria-label="Collections"
+                        >
+                          <span
+                            class="gear-design-preview-glyph gear-design-preview-glyph--collections"
+                            aria-hidden="true"
+                          >
+                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          class="gear-design-preview-option"
+                          data-gear-design="editorial"
+                          aria-pressed="false"
+                          aria-label="Magazine"
+                        >
+                          <span
+                            class="gear-design-preview-glyph gear-design-preview-glyph--magazine"
+                            aria-hidden="true"
+                          >
+                            <span></span><span></span><span></span>
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          class="gear-design-preview-option"
+                          data-gear-design="museum"
+                          aria-pressed="false"
+                          aria-label="Museum"
+                        >
+                          <span
+                            class="gear-design-preview-glyph gear-design-preview-glyph--museum"
+                            aria-hidden="true"
+                          ></span>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="gear-library-toolbar-field gear-color-theme-field">
+                      <button
+                        type="button"
+                        id="gearColorThemeToggle"
+                        class="gear-color-theme-toggle"
+                        aria-label="Switch to light mode"
+                      >
+                        <svg
+                          class="gear-color-theme-toggle-icon gear-color-theme-toggle-icon--sun"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <circle cx="12" cy="12" r="4.25" />
+                          <path d="M12 3v2.5M12 18.5V21M4.22 4.22l1.77 1.77M18.01 18.01l1.77 1.77M3 12h2.5M18.5 12H21M4.22 19.78l1.77-1.77M18.01 5.99l1.77-1.77" />
+                        </svg>
+                        <svg
+                          class="gear-color-theme-toggle-icon gear-color-theme-toggle-icon--moon"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a7 7 0 1 0 11 11z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <nav
-              id="museumModelNav"
-              class="museum-model-nav"
-              aria-label="Models in this exhibition"
-              hidden
-            >
-              <div
-                id="museumModelNavTrack"
-                class="museum-model-nav-track companion-scroll"
-              ></div>
-            </nav>
+              <nav
+                id="museumModelNav"
+                class="museum-model-nav"
+                aria-label="Models in this exhibition"
+                hidden
+              >
+                <div
+                  id="museumModelNavTrack"
+                  class="museum-model-nav-track companion-scroll"
+                ></div>
+              </nav>
+            </div>
 
             <div
               id="gearAmpBrowserStage"

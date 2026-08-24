@@ -51,7 +51,7 @@ body[data-gear-design="collections"] .collections-catalog {
   width: 100%;
 }
 
-body[data-gear-design="collections"] .collections-box {
+body[data-gear-design="collections"][data-gear-theme="museum-dark"] .collections-box {
   display: flex;
   flex-direction: column;
   gap: 22px;
@@ -326,7 +326,7 @@ body[data-gear-design="editorial"] .gear-library-toolbar-caption {
 /* 4. Museum — curated single-amplifier exhibition                             */
 /* -------------------------------------------------------------------------- */
 
-body[data-gear-design="museum"] .gear-library-panel {
+body[data-gear-design="museum"][data-gear-theme="museum-dark"] .gear-library-panel {
   gap: 10px;
   padding: 24px 36px 36px;
   background:
@@ -382,7 +382,7 @@ body[data-gear-design="museum"] .gear-library-toolbar {
 
 body[data-gear-design="museum"] .gear-library-controls {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 1fr auto auto;
   align-items: end;
   column-gap: 14px;
   row-gap: 0;
@@ -680,7 +680,7 @@ body[data-gear-design="museum"] .gear-discover-column {
 
 @media (max-width: 1100px) {
   body[data-gear-design="museum"] .gear-library-controls {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 1fr auto auto;
     width: 100%;
     column-gap: 10px;
   }

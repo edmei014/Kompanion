@@ -71,6 +71,7 @@ body[data-gear-theme="museum-dark"],
   --gear-museum-panel: #1a1612;
   /* Catalog field: espresso charcoal (header + amp collection) */
   --gear-atlas-field: #1b1713;
+  --gear-atlas-topbar: #13100e;
   /* Discover field: cooler, slightly deeper editorial wall */
   --gear-discover-field: #110f0d;
   --gear-discover-panel-bg: #0f0d0b;
@@ -82,7 +83,7 @@ body[data-gear-theme="museum-dark"],
   --gear-atlas-map-size: min(100%, 2200px) auto;
   --gear-atlas-details-image: url("/images/gear-atlas-details.svg");
   --gear-atlas-details-size: min(100%, 1200px) auto;
-  --gear-atlas-details-opacity: 0.05;
+  --gear-atlas-details-opacity: 0.08;
   --gear-card: #1d1915;
   --gear-card-hover: #221d18;
   --gear-border: rgba(176, 141, 87, 0.18);
@@ -115,28 +116,27 @@ body[data-gear-theme="museum-dark"],
 
 body[data-gear-theme="museum-light"],
 [data-gear-theme="museum-light"] {
-  /* Museum board / paper — never pure white, never neutral gray */
-  --gear-bg: #f4f0e8;
-  --gear-surface: #f7f4ed;
-  --gear-surface-elevated: #f8f5ef;
-  --gear-museum-wall: #f7f4ed;
-  --gear-museum-panel: #f8f5ef;
-  --gear-atlas-field: #f7f3eb;
-  --gear-discover-field: #efe9df;
-  --gear-discover-panel-bg: #e7e1d6;
+  /* Museum board / paper — warm ivory, never pure white or neutral gray */
+  --gear-bg: #ebe5d8;
+  --gear-surface: #f2ece2;
+  --gear-surface-elevated: #f5f1ea;
+  --gear-museum-wall: #f2ece2;
+  --gear-museum-panel: #f5f1ea;
+  --gear-atlas-field: #efe9dc;
+  --gear-atlas-topbar: #27221d;
+  --gear-discover-field: #e8e2d6;
+  --gear-discover-panel-bg: #e0dace;
   --gear-discover-panel-border: rgba(176, 141, 87, 0.2);
   --gear-discover-panel-radius: 16px;
   --gear-discover-entry-divider: rgba(176, 141, 87, 0.16);
-  --gear-atlas-field-image: none;
-  --gear-atlas-field-image-opacity: 0.04;
-  --gear-atlas-map-image: url("/images/gear-atlas-map.svg");
+  --gear-atlas-map-image: url("/images/gear-atlas-map-light.svg");
   --gear-atlas-map-size: min(100%, 2200px) auto;
-  --gear-atlas-details-image: url("/images/gear-atlas-details.svg");
+  --gear-atlas-details-image: url("/images/gear-atlas-details-light.svg");
   --gear-atlas-details-size: min(100%, 1200px) auto;
-  --gear-atlas-details-opacity: 0.05;
-  --gear-card: #f8f5ef;
-  --gear-card-inner: #fbf8f3;
-  --gear-card-hover: #faf7f1;
+  --gear-atlas-details-opacity: 0.1;
+  --gear-card: #f5f1ea;
+  --gear-card-inner: #faf7f2;
+  --gear-card-hover: #f8f4ed;
   --gear-border: #d8c6a4;
   --gear-border-strong: #b08d57;
   --gear-divider: rgba(176, 141, 87, 0.22);
@@ -150,9 +150,9 @@ body[data-gear-theme="museum-light"],
   --gear-text: #2a241d;
   --gear-text-secondary: #6a6257;
   --gear-text-muted: #7a7165;
-  --gear-placeholder: rgba(0, 0, 0, 0.6);
-  --gear-input-bg: #f7f3ec;
-  --gear-chip-bg: #f0ebe1;
+  --gear-placeholder: rgba(0, 0, 0, 0.55);
+  --gear-input-bg: #f0ebe2;
+  --gear-chip-bg: #ebe4d8;
   --gear-chip-active-text: #2a241d;
   --gear-scrollbar: rgba(176, 141, 87, 0.32);
   --gear-scrollbar-hover: rgba(176, 141, 87, 0.48);
@@ -177,6 +177,15 @@ body[data-app-view="gear"][data-gear-theme="museum-light"] {
 
 body[data-app-view="gear"][data-gear-theme="museum-dark"] {
   color-scheme: dark;
+}
+
+body[data-app-view="gear"],
+#gearLibraryView,
+#gearLibraryView .gear-library-panel {
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    border-color 200ms ease;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -207,37 +216,141 @@ body[data-app-view="gear"][data-gear-theme="museum-dark"] {
 
 #gearLibraryView .gear-library-header {
   position: relative;
-  padding-right: clamp(8rem, 28vw, 14.5rem);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(14px, 2vw, 20px);
+  padding-right: 0;
+  width: 100%;
 }
 
-#gearLibraryView .gear-atlas-signet {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 1;
+#gearLibraryView .gear-library-header-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(12px, 2vw, 20px);
+  width: calc(100% + 80px);
+  min-height: clamp(4.25rem, 5.5vw, 5rem);
+  margin-left: -40px;
+  margin-right: -40px;
+  padding: clamp(10px, 1.25vw, 16px) 40px clamp(12px, 1.5vw, 18px);
+  background: var(--gear-atlas-topbar);
+  border-bottom: 1px solid color-mix(in srgb, var(--gear-border) 32%, transparent);
+  box-sizing: border-box;
+}
+
+body[data-gear-theme="museum-dark"] #gearLibraryView .gear-library-header-brand-row {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 235, 210, 0.06);
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.38),
+    0 2px 10px rgba(0, 0, 0, 0.24);
+  padding: clamp(14px, 1.6vw, 20px) 40px clamp(16px, 1.8vw, 22px);
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .gear-library-header-brand-row {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 244, 230, 0.07);
+  box-shadow:
+    0 8px 28px rgba(39, 34, 29, 0.12),
+    0 2px 10px rgba(70, 55, 30, 0.07);
+  padding: clamp(14px, 1.6vw, 20px) 40px clamp(16px, 1.8vw, 22px);
+}
+
+#gearLibraryView .gear-atlas-main-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(10px, 1.6vw, 14px);
+  min-width: 0;
+  padding-right: clamp(4px, 0.6vw, 10px);
+}
+
+#gearLibraryView .gear-atlas-main-brand-signet {
   display: block;
-  height: clamp(2.15rem, 4.6vw, 3.05rem);
+  flex: 0 0 auto;
+  height: clamp(1.9rem, 2.85vw, 3.8rem);
   width: auto;
-  max-width: min(34vw, 13.25rem);
+  max-width: min(72vw, 28rem);
+  max-height: none;
+  object-fit: contain;
+  object-position: left center;
+}
+
+#gearLibraryView .gear-atlas-main-brand-label {
+  color: var(--gear-label);
+  font-size: clamp(1.05rem, 2vw, 1.55rem);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+#gearLibraryView .gear-kempanion-switcher {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   margin: 0;
+  margin-left: auto;
   padding: 0;
   border: 0;
-  background: none;
-  box-shadow: none;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+  opacity: 0.82;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+#gearLibraryView .gear-kempanion-switcher:hover,
+#gearLibraryView .gear-kempanion-switcher:focus-visible {
+  opacity: 1;
+  outline: none;
+}
+
+#gearLibraryView .gear-kempanion-switcher-signet {
+  display: block;
+  height: clamp(1rem, 2vw, 1.35rem);
+  width: auto;
+  max-width: min(28vw, 5.5rem);
   object-fit: contain;
-  object-position: top right;
-  pointer-events: none;
-  user-select: none;
+  object-position: center;
 }
 
 @media (max-width: 720px) {
-  #gearLibraryView .gear-library-header {
-    padding-right: clamp(6.5rem, 36vw, 11rem);
+  #gearLibraryView .gear-library-header-brand-row {
+    width: calc(100% + 48px);
+    min-height: clamp(3.5rem, 12vw, 4.25rem);
+    margin-left: -24px;
+    margin-right: -24px;
+    padding: clamp(8px, 2vw, 12px) 24px clamp(10px, 2.5vw, 14px);
   }
 
-  #gearLibraryView .gear-atlas-signet {
-    height: clamp(1.85rem, 8vw, 2.45rem);
-    max-width: min(42vw, 11rem);
+  body[data-gear-theme="museum-dark"] #gearLibraryView .gear-library-header-brand-row {
+    border-radius: 10px;
+    padding: clamp(12px, 2.4vw, 16px) 24px clamp(14px, 2.8vw, 18px);
+  }
+
+  body[data-gear-theme="museum-light"] #gearLibraryView .gear-library-header-brand-row {
+    border-radius: 10px;
+    padding: clamp(12px, 2.4vw, 16px) 24px clamp(14px, 2.8vw, 18px);
+  }
+
+  #gearLibraryView .gear-atlas-main-brand-signet {
+    height: clamp(1.65rem, 7vw, 2.35rem);
+    max-width: min(78vw, 18rem);
+  }
+
+  #gearLibraryView .gear-atlas-main-brand-label {
+    font-size: clamp(0.82rem, 3.4vw, 1.05rem);
+    letter-spacing: 0.12em;
+  }
+
+  #gearLibraryView .gear-kempanion-switcher-signet {
+    height: clamp(0.9rem, 3.2vw, 1.15rem);
+    max-width: min(34vw, 4.75rem);
   }
 }
 
@@ -313,7 +426,84 @@ body[data-app-view="gear"][data-gear-theme="museum-dark"] {
 
 #gearLibraryView .gear-library-title {
   color: var(--gear-text);
-  border-bottom-color: var(--gear-divider);
+  border-bottom: 0;
+  padding-bottom: 0;
+  font-size: clamp(1.1rem, 1.65vw, 1.45rem);
+}
+
+#gearLibraryView .gear-library-heading-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: clamp(16px, 2.5vw, 32px);
+  width: 100%;
+}
+
+#gearLibraryView .gear-library-heading-row .gear-library-heading {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  max-width: none;
+}
+
+#gearLibraryView .gear-library-heading-row .gear-presentation-action {
+  flex: 0 0 auto;
+  margin-left: 0;
+  align-self: flex-end;
+}
+
+#gearLibraryView .gear-presentation-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  margin: 0;
+  color: var(--gear-label);
+  cursor: pointer;
+  line-height: 0;
+  white-space: nowrap;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+#gearLibraryView .gear-presentation-button-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity 160ms ease, transform 180ms ease;
+}
+
+#gearLibraryView .gear-presentation-button-icon rect {
+  fill: none;
+}
+
+#gearLibraryView .gear-presentation-button:hover,
+#gearLibraryView .gear-presentation-button:focus-visible {
+  color: var(--gear-accent-highlight);
+  border-color: var(--gear-border);
+  background: color-mix(in srgb, var(--gear-accent) 7%, var(--gear-input-bg));
+  outline: none;
+}
+
+#gearLibraryView .gear-presentation-button:hover .gear-presentation-button-icon,
+#gearLibraryView .gear-presentation-button:focus-visible .gear-presentation-button-icon {
+  opacity: 0.96;
+  transform: scale(1.04);
+}
+
+#gearLibraryView .gear-presentation-button:focus-visible {
+  box-shadow: 0 0 0 2px var(--gear-focus-ring);
 }
 
 #gearLibraryView .gear-library-collection-meta,
@@ -364,9 +554,9 @@ body[data-gear-theme="museum-light"] #gearLibraryView .gear-discover-column {
 
 body[data-gear-theme="museum-light"] #gearLibraryView .gear-library-search,
 body[data-gear-theme="museum-light"] #gearLibraryView .gear-library-toolbar-select,
-body[data-gear-theme="museum-light"] #gearLibraryView .gear-design-preview-select,
 body[data-gear-theme="museum-light"] #gearLibraryView .gear-library-chapter-select,
-body[data-gear-theme="museum-light"] #gearLibraryView .gear-color-theme-select,
+body[data-gear-theme="museum-light"] #gearLibraryView .gear-color-theme-toggle,
+body[data-gear-theme="museum-light"] #gearLibraryView .gear-design-preview-switcher,
 body[data-gear-theme="museum-light"] #gearLibraryView .gear-presentation-button {
   border-color: var(--gear-border);
   background: var(--gear-input-bg);
@@ -392,61 +582,6 @@ body[data-gear-theme="museum-light"] #gearLibraryView .collections-thumb {
   border-color: var(--gear-border);
   background: var(--gear-card);
   box-shadow: var(--gear-shadow-soft);
-}
-
-body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card {
-  border-color: color-mix(in srgb, var(--amp-theme-border) 22%, var(--gear-border));
-  /* Brand tint mixes into paper — never a translucent dark veil */
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--amp-theme-border) 9%, var(--gear-card-inner)) 0%,
-    var(--gear-card-inner) 34%,
-    var(--gear-card) 100%
-  );
-  box-shadow: var(--gear-shadow-soft);
-}
-
-body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card:hover {
-  border-color: color-mix(in srgb, var(--amp-theme-border) 48%, var(--gear-border-strong));
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--amp-theme-border) 12%, var(--gear-card-inner)) 0%,
-    var(--gear-card-inner) 36%,
-    var(--gear-card-hover) 100%
-  );
-  box-shadow: var(--gear-shadow);
-}
-
-body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card[data-selected="true"] {
-  border-color: color-mix(in srgb, var(--amp-theme-border) 58%, var(--gear-border-strong));
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--amp-theme-border) 10%, var(--gear-card-inner)) 0%,
-    var(--gear-card-inner) 34%,
-    var(--gear-card) 100%
-  );
-  box-shadow: var(--gear-shadow-soft);
-}
-
-body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card:focus-visible {
-  outline-color: color-mix(in srgb, var(--amp-theme-border) 40%, var(--gear-border-strong));
-}
-
-/* Amp stage stays neutral paper — no brand wash under the image */
-body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card-media {
-  background: transparent;
-}
-
-body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card-manufacturer {
-  color: color-mix(in srgb, var(--amp-theme-border) 42%, var(--gear-label));
-}
-
-body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card-image {
-  filter: drop-shadow(0 12px 18px rgba(70, 55, 30, 0.12));
-}
-
-body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card:hover .amp-browser-card-image {
-  filter: drop-shadow(0 14px 22px rgba(70, 55, 30, 0.15));
 }
 
 body[data-gear-theme="museum-light"] #gearLibraryView .gear-library-title {
@@ -479,10 +614,11 @@ body[data-gear-theme="museum-light"] #gearManufacturerDetailOverlay .gear-manufa
 #gearLibraryView .gear-library-search,
 #gearLibraryView .gear-library-toolbar-select,
 #gearLibraryView .gear-library-sort,
+#gearLibraryView .gear-library-sort-select,
 #gearLibraryView .gear-library-view-select,
-#gearLibraryView .gear-design-preview-select,
 #gearLibraryView .gear-library-chapter-select,
-#gearLibraryView .gear-color-theme-select,
+#gearLibraryView .gear-atlas-presentation-toggle,
+#gearLibraryView .gear-color-theme-toggle,
 #gearLibraryView .gear-presentation-button {
   border: 1px solid var(--gear-divider);
   border-radius: var(--gear-radius-control);
@@ -491,6 +627,222 @@ body[data-gear-theme="museum-light"] #gearManufacturerDetailOverlay .gear-manufa
   box-shadow: none;
 }
 
+#gearLibraryView .gear-color-theme-field {
+  display: flex;
+  align-items: flex-end;
+}
+
+#gearLibraryView .gear-color-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--gear-divider);
+  border-radius: var(--gear-radius-control);
+  background: var(--gear-input-bg);
+  color: var(--gear-label);
+  cursor: pointer;
+  line-height: 0;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+#gearLibraryView .gear-color-theme-toggle:hover,
+#gearLibraryView .gear-color-theme-toggle:focus-visible {
+  color: var(--gear-accent-highlight);
+  border-color: var(--gear-border);
+  background: color-mix(in srgb, var(--gear-accent) 7%, var(--gear-input-bg));
+  outline: none;
+}
+
+#gearLibraryView .gear-color-theme-toggle:focus-visible {
+  box-shadow: 0 0 0 2px var(--gear-focus-ring);
+}
+
+#gearLibraryView .gear-color-theme-toggle-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  transition:
+    opacity 180ms ease,
+    transform 200ms ease;
+}
+
+#gearLibraryView .gear-color-theme-toggle-icon--moon {
+  fill: currentColor;
+  stroke: none;
+}
+
+#gearLibraryView .gear-color-theme-toggle:hover .gear-color-theme-toggle-icon,
+#gearLibraryView .gear-color-theme-toggle:focus-visible .gear-color-theme-toggle-icon {
+  transform: rotate(-10deg);
+}
+
+body[data-gear-theme="museum-dark"] #gearLibraryView .gear-color-theme-toggle-icon--sun,
+[data-gear-theme="museum-dark"] #gearLibraryView .gear-color-theme-toggle-icon--sun {
+  display: block;
+}
+
+body[data-gear-theme="museum-dark"] #gearLibraryView .gear-color-theme-toggle-icon--moon,
+[data-gear-theme="museum-dark"] #gearLibraryView .gear-color-theme-toggle-icon--moon {
+  display: none;
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .gear-color-theme-toggle-icon--sun,
+[data-gear-theme="museum-light"] #gearLibraryView .gear-color-theme-toggle-icon--sun {
+  display: none;
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .gear-color-theme-toggle-icon--moon,
+[data-gear-theme="museum-light"] #gearLibraryView .gear-color-theme-toggle-icon--moon {
+  display: block;
+}
+
+#gearLibraryView .gear-design-preview {
+  display: flex;
+  align-items: flex-end;
+  min-width: 0;
+}
+
+#gearLibraryView .gear-design-preview-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 40px;
+  padding: 3px;
+  border: 1px solid var(--gear-divider);
+  border-radius: var(--gear-radius-control);
+  background: var(--gear-input-bg);
+  box-sizing: border-box;
+}
+
+#gearLibraryView .gear-design-preview-option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+  margin: 0;
+  border: 1px solid transparent;
+  border-radius: calc(var(--gear-radius-control) - 3px);
+  background: transparent;
+  color: var(--gear-text-muted);
+  cursor: pointer;
+  line-height: 0;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+#gearLibraryView .gear-design-preview-option:hover,
+#gearLibraryView .gear-design-preview-option:focus-visible {
+  color: var(--gear-accent);
+  border-color: color-mix(in srgb, var(--gear-border) 45%, transparent);
+  background: color-mix(in srgb, var(--gear-accent) 5%, var(--gear-input-bg));
+  outline: none;
+}
+
+#gearLibraryView .gear-design-preview-option.is-active,
+#gearLibraryView .gear-design-preview-option[aria-pressed="true"] {
+  color: var(--gear-accent-highlight);
+  border-color: var(--gear-border);
+  background: color-mix(in srgb, var(--gear-accent) 10%, var(--gear-input-bg));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gear-accent) 12%, transparent);
+}
+
+#gearLibraryView .gear-design-preview-option:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--gear-accent) 12%, transparent),
+    0 0 0 2px var(--gear-focus-ring);
+}
+
+#gearLibraryView .gear-design-preview-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.82;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+#gearLibraryView .gear-design-preview-option.is-active .gear-design-preview-glyph,
+#gearLibraryView .gear-design-preview-option[aria-pressed="true"] .gear-design-preview-glyph {
+  opacity: 1;
+}
+
+#gearLibraryView .gear-design-preview-option:hover .gear-design-preview-glyph,
+#gearLibraryView .gear-design-preview-option:focus-visible .gear-design-preview-glyph {
+  opacity: 0.96;
+}
+
+#gearLibraryView .gear-design-preview-glyph--standard {
+  display: grid;
+  grid-template-columns: repeat(2, 4px);
+  grid-template-rows: repeat(2, 4px);
+  gap: 2px;
+}
+
+#gearLibraryView .gear-design-preview-glyph--standard span {
+  display: block;
+  border: 1px solid currentColor;
+  border-radius: 1px;
+  box-sizing: border-box;
+}
+
+#gearLibraryView .gear-design-preview-glyph--collections {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+#gearLibraryView .gear-design-preview-glyph--collections span {
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+#gearLibraryView .gear-design-preview-glyph--magazine {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+#gearLibraryView .gear-design-preview-glyph--magazine span {
+  display: block;
+  width: 5px;
+  height: 7px;
+  border: 1px solid currentColor;
+  border-radius: 1px;
+  box-sizing: border-box;
+}
+
+#gearLibraryView .gear-design-preview-glyph--museum {
+  display: block;
+  width: 12px;
+  height: 10px;
+  border: 1px solid currentColor;
+  border-radius: 1px;
+  box-sizing: border-box;
+}
+
+
 #gearLibraryView .gear-library-search::placeholder {
   color: var(--gear-placeholder);
   opacity: 1;
@@ -498,10 +850,10 @@ body[data-gear-theme="museum-light"] #gearManufacturerDetailOverlay .gear-manufa
 
 #gearLibraryView .gear-library-search:focus,
 #gearLibraryView .gear-library-toolbar-select:focus,
+#gearLibraryView .gear-library-sort-select:focus,
 #gearLibraryView .gear-library-view-select:focus,
-#gearLibraryView .gear-design-preview-select:focus,
 #gearLibraryView .gear-library-chapter-select:focus,
-#gearLibraryView .gear-color-theme-select:focus,
+#gearLibraryView .gear-atlas-presentation-toggle:focus-visible,
 #gearLibraryView .gear-presentation-button:focus-visible {
   outline: none;
   border-color: var(--gear-border-strong);
@@ -602,14 +954,38 @@ body[data-gear-theme="museum-light"] #gearManufacturerDetailOverlay .gear-manufa
 }
 
 /*
- * Gallery cards: near-black frame. Brand identity only as whisper accents
- * (wash / outline / hover) — never a filled brand surface.
+ * Isolate Gear Atlas cards from Kempanion cabinet defaults in styles.css.
+ * Structure is shared; dark/light surfaces are theme-scoped below.
  */
 #gearLibraryView .amp-browser-card {
   gap: 36px;
   padding: 44px 38px 38px;
-  border: 1px solid color-mix(in srgb, var(--amp-theme-border) 55%, var(--gear-border));
   border-radius: var(--gear-radius-card);
+  color: var(--gear-text);
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    background 220ms ease,
+    transform 220ms ease;
+}
+
+#gearLibraryView .amp-browser-card:focus {
+  outline: none;
+}
+
+#gearLibraryView .manufacturer-browser-card:focus-visible {
+  outline: 2px solid var(--gear-border-strong);
+  outline-offset: 3px;
+}
+
+/*
+ * Dark gallery cards: near-black frame. Brand identity only as whisper accents.
+ */
+body[data-gear-theme="museum-dark"] #gearLibraryView .amp-browser-card {
+  border: 1px solid color-mix(in srgb, var(--amp-theme-border) 55%, var(--gear-border));
   background:
     radial-gradient(
       ellipse 68% 52% at 50% 30%,
@@ -622,16 +998,10 @@ body[data-gear-theme="museum-light"] #gearManufacturerDetailOverlay .gear-manufa
       transparent 72%
     ),
     var(--gear-card);
-  color: var(--gear-text);
   box-shadow: var(--gear-shadow-soft);
-  transition:
-    border-color 220ms ease,
-    box-shadow 220ms ease,
-    background 220ms ease,
-    transform 220ms ease;
 }
 
-#gearLibraryView .amp-browser-card:hover {
+body[data-gear-theme="museum-dark"] #gearLibraryView .amp-browser-card:hover {
   background:
     radial-gradient(
       ellipse 70% 54% at 50% 30%,
@@ -651,18 +1021,88 @@ body[data-gear-theme="museum-light"] #gearManufacturerDetailOverlay .gear-manufa
   transform: translateY(-2px);
 }
 
-#gearLibraryView .amp-browser-card:focus-visible,
-#gearLibraryView .manufacturer-browser-card:focus-visible {
+body[data-gear-theme="museum-dark"] #gearLibraryView .amp-browser-card:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--amp-theme-border) 60%, var(--gear-border-strong));
   outline-offset: 3px;
 }
 
-#gearLibraryView .amp-browser-card[data-selected="true"] {
+body[data-gear-theme="museum-dark"] #gearLibraryView .amp-browser-card[data-selected="true"] {
   border-color: color-mix(in srgb, var(--amp-theme-border) 75%, var(--gear-accent));
   box-shadow:
     var(--gear-shadow-soft),
     0 0 0 1px color-mix(in srgb, var(--amp-theme-glow) 40%, transparent);
   transform: none;
+}
+
+body[data-gear-theme="museum-dark"] #gearLibraryView .amp-browser-card-image {
+  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.45));
+}
+
+body[data-gear-theme="museum-dark"] #gearLibraryView .amp-browser-card:hover .amp-browser-card-image {
+  transform: none;
+  filter: drop-shadow(0 22px 32px rgba(0, 0, 0, 0.5));
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card {
+  --amp-theme-surface: var(--gear-card) !important;
+  --amp-theme-gradient-start: transparent !important;
+  --amp-theme-gradient-end: transparent !important;
+  --amp-theme-glow: transparent !important;
+  border: 1px solid var(--gear-border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--gear-accent) 6%, var(--gear-card-inner)) 0%,
+    var(--gear-card-inner) 34%,
+    var(--gear-card) 100%
+  );
+  box-shadow: var(--gear-shadow-soft);
+  transform: none;
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card:hover {
+  border-color: var(--gear-border-strong);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--gear-accent) 9%, var(--gear-card-inner)) 0%,
+    var(--gear-card-inner) 36%,
+    var(--gear-card-hover) 100%
+  );
+  box-shadow: var(--gear-shadow);
+  transform: translateY(-2px);
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card[data-selected="true"] {
+  border-color: var(--gear-border-strong);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--gear-accent) 8%, var(--gear-card-inner)) 0%,
+    var(--gear-card-inner) 34%,
+    var(--gear-card) 100%
+  );
+  box-shadow: var(--gear-shadow-soft);
+  transform: none;
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card:focus-visible {
+  outline: 2px solid var(--gear-border-strong);
+  outline-offset: 3px;
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card-media {
+  background: transparent;
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card-manufacturer {
+  color: var(--gear-label);
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card-image {
+  filter: drop-shadow(0 12px 18px rgba(70, 55, 30, 0.12));
+}
+
+body[data-gear-theme="museum-light"] #gearLibraryView .amp-browser-card:hover .amp-browser-card-image {
+  transform: none;
+  filter: drop-shadow(0 14px 22px rgba(70, 55, 30, 0.15));
 }
 
 #gearLibraryView .amp-browser-card-media {
@@ -672,16 +1112,7 @@ body[data-gear-theme="museum-light"] #gearManufacturerDetailOverlay .gear-manufa
   background: transparent;
 }
 
-#gearLibraryView .amp-browser-card-image {
-  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.45));
-}
-
-#gearLibraryView .amp-browser-card:hover .amp-browser-card-image {
-  transform: none;
-  filter: drop-shadow(0 22px 32px rgba(0, 0, 0, 0.5));
-}
-
-#gearLibraryView .amp-browser-card-manufacturer {
+body[data-gear-theme="museum-dark"] #gearLibraryView .amp-browser-card-manufacturer {
   color: color-mix(in srgb, var(--amp-theme-border) 70%, var(--gear-label));
 }
 
@@ -722,12 +1153,14 @@ body[data-gear-theme="museum-light"] #gearManufacturerDetailOverlay .gear-manufa
   background: var(--gear-card);
   box-shadow: var(--gear-shadow-soft);
   color: var(--gear-text);
+  transform: none;
 }
 
 #gearLibraryView .manufacturer-browser-card:hover {
   border-color: var(--gear-border-strong);
   background: var(--gear-card-hover);
   box-shadow: var(--gear-shadow);
+  transform: translateY(-2px);
 }
 
 #gearLibraryView .gear-library-empty,
@@ -1393,46 +1826,115 @@ body[data-app-view="gear"][data-gear-theme="museum-light"] .app-module-menu-item
 }
 
 #gearLibraryView .gear-library-controls {
-  grid-template-columns: repeat(5, minmax(0, 1fr)) auto auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 1fr auto auto;
+  align-items: end;
+}
+
+#gearLibraryView .gear-library-search-label {
+  grid-column: 1;
+}
+
+#gearLibraryView .gear-library-sort-label {
+  grid-column: 2;
+}
+
+#gearLibraryView .gear-library-chapter-label {
+  grid-column: 3;
+}
+
+#gearLibraryView .gear-library-controls-spacer {
+  grid-column: 4;
+  min-width: 0;
+}
+
+#gearLibraryView .gear-atlas-presentation-toggle {
+  grid-column: 5;
+  justify-self: end;
+}
+
+#gearLibraryView .gear-library-controls-trailing {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  grid-column: 6;
+  justify-self: end;
+}
+
+#gearLibraryView .gear-library-controls-trailing .gear-design-preview {
+  flex: 0 0 auto;
+}
+
+#gearLibraryView .gear-library-controls-trailing .gear-color-theme-field {
+  flex: 0 0 auto;
+}
+
+#gearLibraryView .gear-library-controls-trailing .gear-color-theme-toggle {
+  border-color: color-mix(in srgb, var(--gear-border) 52%, var(--gear-divider));
+}
+
+#gearLibraryView .gear-atlas-presentation-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--gear-divider);
+  border-radius: var(--gear-radius-control);
+  background: var(--gear-input-bg);
+  color: var(--gear-label);
+  cursor: pointer;
+  line-height: 0;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+#gearLibraryView .gear-atlas-presentation-toggle-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#gearLibraryView .gear-atlas-presentation-toggle-icon--collection {
+  display: none;
+}
+
+#gearLibraryView .gear-atlas-presentation-toggle[data-mode="collection"] .gear-atlas-presentation-toggle-icon--timeline {
+  display: none;
+}
+
+#gearLibraryView .gear-atlas-presentation-toggle[data-mode="collection"] .gear-atlas-presentation-toggle-icon--collection {
+  display: block;
+  fill: currentColor;
+  stroke: none;
+}
+
+#gearLibraryView .gear-atlas-presentation-toggle:hover,
+#gearLibraryView .gear-atlas-presentation-toggle:focus-visible {
+  color: var(--gear-accent-highlight);
+  border-color: var(--gear-border);
+  background: color-mix(in srgb, var(--gear-accent) 8%, var(--gear-input-bg));
+  outline: none;
+}
+
+#gearLibraryView .gear-atlas-presentation-toggle[aria-pressed="true"] {
+  color: var(--gear-chip-active-text);
+  border-color: var(--gear-border);
+  background: var(--gear-accent-soft);
 }
 
 @media (max-width: 1280px) {
   #gearLibraryView .gear-library-controls {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 1fr auto auto;
   }
-}
-
-/* Combo amp label — display-only, tokenized for Museum Light / Dark */
-body[data-gear-theme="museum-light"] .cabinet-combo-label,
-[data-gear-theme="museum-light"] .cabinet-combo-label,
-body[data-gear-theme="museum-light"] .cabinet-details-group-title,
-[data-gear-theme="museum-light"] .cabinet-details-group-title {
-  color: var(--gear-label);
-}
-
-body[data-gear-theme="museum-dark"] .cabinet-combo-label,
-[data-gear-theme="museum-dark"] .cabinet-combo-label,
-body[data-gear-theme="museum-dark"] .cabinet-details-group-title,
-[data-gear-theme="museum-dark"] .cabinet-details-group-title {
-  color: var(--gear-label);
-}
-
-body[data-gear-theme="museum-light"] .cabinet-details-group,
-[data-gear-theme="museum-light"] .cabinet-details-group {
-  border-color: var(--gear-border);
-  background:
-    linear-gradient(180deg, var(--gear-accent-faint), transparent 46%),
-    var(--gear-card-inner, var(--gear-surface-elevated));
-}
-
-body[data-gear-theme="museum-light"] .cabinet-details-row dt,
-[data-gear-theme="museum-light"] .cabinet-details-row dt {
-  color: var(--gear-text-muted);
-}
-
-body[data-gear-theme="museum-light"] .cabinet-details-row dd,
-[data-gear-theme="museum-light"] .cabinet-details-row dd,
-body[data-gear-theme="museum-light"] .cabinet-configuration-line,
-[data-gear-theme="museum-light"] .cabinet-configuration-line {
-  color: var(--gear-text);
 }

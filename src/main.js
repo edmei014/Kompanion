@@ -20,6 +20,7 @@ import { initializeBidirectionalDiscovery } from "./modules/bidirectional/Bidire
 import { isBooleanOn } from "./modules/bidirectional/decoder/parameterScales.js";
 import { parameterService } from "./modules/bidirectional/ParameterService.js";
 import { CONTROL_PARAMETERS } from "./modules/bidirectional/controlBindings.js";
+import { initializeAmpImageResolver } from "./resolver/imageResolver.js";
 import {
   getEffectTypeName,
   observeEffectType,
@@ -350,6 +351,8 @@ const performanceProgress = document.querySelector("#performanceProgress");
 const performanceProgressFill = document.querySelector("#performanceProgressFill");
 const performanceSlotGrid = document.querySelector("#performanceSlotGrid");
 const performanceExplorerSection = document.querySelector("#performanceExplorerSection");
+const performanceSearchZone = document.querySelector("#performanceSearchZone");
+const performanceBrowserHeaderBar = document.querySelector("#performanceBrowserHeaderBar");
 const performanceBrowserPanel = document.querySelector("#performanceBrowserPanel");
 const performanceExplorerContent = document.querySelector("#performanceExplorerContent");
 const performanceExplorerSearch = document.querySelector("#performanceExplorerSearch");
@@ -1098,45 +1101,81 @@ function setPerformanceExplorerExpanded(expanded) {
     performanceExplorerContent.hidden = !expanded;
   }
 
+  if (performanceSection) {
+    performanceSection.dataset.explorerExpanded = expanded ? "true" : "false";
+  }
+
+  syncCreateLibraryButtonVisibility();
+
   if (expanded) {
     renderPerformanceExplorer();
   }
 }
 
+function syncCreateLibraryButtonVisibility() {
+  if (!createLibraryButton) return;
+
+  const hasLibrary = hasPerformanceLibrary(performanceLibraryDocument);
+
+  if (!hasLibrary) {
+    createLibraryButton.hidden = false;
+    return;
+  }
+
+  createLibraryButton.hidden = !(performanceExplorerExpanded || performanceLibraryScanInProgress);
+}
+
 function isPerformanceExplorerEventTarget(target) {
   if (!(target instanceof Node)) return false;
   return Boolean(
-    performanceExplorerSection?.contains(target) ||
-    performanceExplorerContent?.contains(target)
+    performanceSearchZone?.contains(target) ||
+    performanceExplorerContent?.contains(target) ||
+    createLibraryButton?.contains(target)
   );
 }
 
 function updatePerformanceSectionLayout() {
   const hasLibrary = hasPerformanceLibrary(performanceLibraryDocument);
+  const showLibraryUi = hasLibrary && !performanceLibraryScanInProgress;
+
+  if (performanceBrowserHeaderBar) {
+    performanceBrowserHeaderBar.hidden = !showLibraryUi;
+  }
+
+  if (performanceSearchZone) {
+    performanceSearchZone.hidden = !showLibraryUi;
+  }
 
   if (performanceBrowserPanel) {
-    performanceBrowserPanel.hidden = !hasLibrary || performanceLibraryScanInProgress;
+    performanceBrowserPanel.hidden = !showLibraryUi;
   }
 
   if (performanceExplorerSection) {
-    const showExplorerSection = hasLibrary && !performanceLibraryScanInProgress;
-    performanceExplorerSection.hidden = !showExplorerSection;
+    performanceExplorerSection.hidden = !showLibraryUi;
+  }
 
-    if (!showExplorerSection && performanceExplorerContent) {
+  if (!showLibraryUi) {
+    if (performanceExplorerContent) {
       performanceExplorerContent.hidden = true;
-      performanceExplorerExpanded = false;
-      if (performanceExplorerSearch) {
-        performanceExplorerSearch.setAttribute("aria-expanded", "false");
-      }
-      return;
     }
+    performanceExplorerExpanded = false;
+    if (performanceExplorerSearch) {
+      performanceExplorerSearch.setAttribute("aria-expanded", "false");
+    }
+    if (performanceSection) {
+      performanceSection.dataset.explorerExpanded = "false";
+    }
+    syncCreateLibraryButtonVisibility();
+    return;
   }
 
   if (performanceExplorerContent) {
     performanceExplorerContent.hidden = !performanceExplorerExpanded;
   }
 
-  if (hasLibrary && performanceExplorerExpanded && !performanceLibraryScanInProgress) {
+  syncCreateLibraryButtonVisibility();
+
+  if (performanceExplorerExpanded) {
     renderPerformanceExplorer();
   }
 }
@@ -1473,7 +1512,6 @@ function renderPerformanceBrowser() {
     if (performanceBrowserControls) performanceBrowserControls.hidden = true;
     if (performanceBrowserLabel) performanceBrowserLabel.hidden = true;
     if (createLibraryButton) {
-      createLibraryButton.hidden = false;
       createLibraryButton.disabled = performanceLibraryScanInProgress;
     }
     if (!performanceLibraryScanInProgress) {
@@ -1496,7 +1534,6 @@ function renderPerformanceBrowser() {
   }
   updatePerformanceNavButtons();
   if (createLibraryButton) {
-    createLibraryButton.hidden = false;
     createLibraryButton.disabled = performanceLibraryScanInProgress;
   }
   if (!performanceLibraryScanInProgress) {
@@ -3797,7 +3834,13 @@ registerViewChangeHandler((view) => {
   }
 });
 
-initializeGearLibrary();
 ensureGainScaleTicks();
 applyGainDisplay(null, "");
-bootApplication();
+
+async function initializeApplication() {
+  await initializeAmpImageResolver();
+  initializeGearLibrary();
+  await bootApplication();
+}
+
+initializeApplication();
