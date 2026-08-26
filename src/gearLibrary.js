@@ -62,9 +62,7 @@ import {
   getPresentationVariant,
   initializePresentationMode,
   isPresentationModeActive,
-  PRESENTATION_SCOPE,
-  resumePresentationMode,
-  suspendPresentationMode
+  PRESENTATION_SCOPE
 } from "./presentation/presentationMode.js";
 import { getPresentationVariantConfig } from "./presentation/presentationVariants.js";
 import {
@@ -209,6 +207,7 @@ let gearManufacturerDetailWebsite = null;
 let gearDiscoverBoard = null;
 let gearKempanionSwitcher = null;
 let gearAtlasSwitcher = null;
+let noMidiGearAtlasSwitcher = null;
 /** @type {import("./library/discoverLibrary.js").DiscoverBoardState | null} */
 let discoverBoardState = null;
 /** @type {ReturnType<typeof createDiscoverRotationController> | null} */
@@ -365,8 +364,7 @@ export function setAppView(view) {
   captureViewScroll(activeView);
 
   if (activeView === APP_VIEW.GEAR && isPresentationModeActive()) {
-    // Keep playlist/selection armed; release slideshow while another module is open.
-    suspendPresentationMode();
+    exitPresentationMode();
   }
 
   if (view !== APP_VIEW.GEAR) {
@@ -380,12 +378,8 @@ export function setAppView(view) {
 
   onViewChange?.(view);
 
-  if (view === APP_VIEW.GEAR) {
-    if (isPresentationModeActive()) {
-      resumePresentationMode();
-    } else if (discoverBoardState) {
-      startDiscoverRotation();
-    }
+  if (view === APP_VIEW.GEAR && discoverBoardState && !isPresentationModeActive()) {
+    startDiscoverRotation();
   }
 
   restoreViewScroll(view);
@@ -653,20 +647,8 @@ function renderManufacturerChapterMeta(manufacturerId, ampCount) {
 function syncGearLibraryCollectionMeta() {
   if (!gearLibraryCollectionMeta) return;
 
-  if (!isAmpsCategory()) {
-    gearLibraryCollectionMeta.hidden = true;
-    gearLibraryCollectionMeta.textContent = "";
-    return;
-  }
-
-  const ampCount = ampLibraryStatsData?.ampCount ?? 0;
-  const manufacturerCount = ampLibraryStatsData?.manufacturerCount ?? 0;
-  const ampLabel = ampCount === 1 ? "Amplifier" : "Amplifiers";
-  const manufacturerLabel =
-    manufacturerCount === 1 ? "Manufacturer" : "Manufacturers";
-
-  gearLibraryCollectionMeta.textContent = `${ampCount} ${ampLabel} • ${manufacturerCount} ${manufacturerLabel}`;
-  gearLibraryCollectionMeta.hidden = false;
+  gearLibraryCollectionMeta.hidden = true;
+  gearLibraryCollectionMeta.textContent = "";
 }
 
 function renderManufacturerBrowserCard(entry) {
@@ -990,29 +972,8 @@ function renderLibraryStats(_filteredCount) {
   syncGearLibraryCollectionMeta();
 }
 
-function renderCollectionStatsFootnote(entryCount) {
-  if (!isAmpsCategory()) return "";
-
-  const isFiltered = isAmpBrowserFiltered();
-  const ampLabel = entryCount === 1 ? "amp" : "amps";
-
-  if (isFiltered) {
-    return `
-      <footer class="gear-collection-footnote" aria-label="Collection statistics">
-        <span>${entryCount} ${ampLabel}</span>
-        <span class="gear-collection-footnote-separator" aria-hidden="true">·</span>
-        <span>${ampLibraryStatsData.ampCount} in collection</span>
-      </footer>
-    `;
-  }
-
-  return `
-    <footer class="gear-collection-footnote" aria-label="Collection statistics">
-      <span>${entryCount} ${ampLabel}</span>
-      <span class="gear-collection-footnote-separator" aria-hidden="true">·</span>
-      <span>${ampLibraryStatsData.manufacturerCount} manufacturers</span>
-    </footer>
-  `;
+function renderCollectionStatsFootnote(_entryCount) {
+  return "";
 }
 
 function renderSortOptions() {
@@ -1034,8 +995,9 @@ function syncAtlasPresentationToggle() {
   gearAtlasPresentationToggle.setAttribute("aria-pressed", isTimeline ? "true" : "false");
   gearAtlasPresentationToggle.setAttribute(
     "aria-label",
-    isTimeline ? "Back to collection view" : "Open timeline view"
+    isTimeline ? "Back to collection view" : "Timeline"
   );
+  gearAtlasPresentationToggle.classList.toggle("is-timeline-back", isTimeline);
 }
 
 /**
@@ -1367,7 +1329,7 @@ function syncAmpBrowserPresentation() {
   }
 
   if (gearAtlasPresentationToggle) {
-    const hideTimelineToggle = isManufacturersCategory() || museumMode || isTimeline;
+    const hideTimelineToggle = isManufacturersCategory() || museumMode;
     gearAtlasPresentationToggle.classList.toggle("is-inactive", hideTimelineToggle);
     gearAtlasPresentationToggle.setAttribute(
       "aria-hidden",
@@ -2872,6 +2834,7 @@ function bindGearLibraryDom() {
   gearDiscoverBoard = document.querySelector("#gearDiscoverBoard");
   gearKempanionSwitcher = document.querySelector("#gearKempanionSwitcher");
   gearAtlasSwitcher = document.querySelector("#gearAtlasSwitcher");
+  noMidiGearAtlasSwitcher = document.querySelector("#noMidiGearAtlasSwitcher");
   audioToolsViewRoot = document.querySelector("#audioToolsView");
   appModuleLauncher = document.querySelector(".app-module-launcher");
   appModuleLauncherButton = document.querySelector("#appModuleLauncherButton");
@@ -2892,6 +2855,10 @@ function setupNavigation() {
   });
 
   gearAtlasSwitcher?.addEventListener("click", () => {
+    setAppView(APP_VIEW.GEAR);
+  });
+
+  noMidiGearAtlasSwitcher?.addEventListener("click", () => {
     setAppView(APP_VIEW.GEAR);
   });
 

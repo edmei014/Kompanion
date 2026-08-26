@@ -191,7 +191,23 @@
     <div id="liveView" class="app-view-root" aria-hidden="false">
       <div id="noMidiOverlay" class="no-midi-overlay" data-visible="false" aria-live="polite" aria-hidden="true">
         <div class="connection-overlay-content no-midi-content">
-          <p class="no-midi-brand">Kompanion</p>
+          <div class="no-midi-header">
+            <p class="no-midi-brand">Kompanion</p>
+            <button
+              type="button"
+              id="noMidiGearAtlasSwitcher"
+              class="gear-atlas-switcher"
+              aria-label="Zu Gear Atlas wechseln"
+            >
+              <img
+                class="gear-atlas-switcher-signet"
+                src="/images/compass.png"
+                alt=""
+                decoding="async"
+                draggable="false"
+              />
+            </button>
+          </div>
           <h1 class="no-midi-headline">No Kemper Profiler Connected</h1>
           <p class="no-midi-lead">
             Connect your Kemper Profiler to start exploring rigs, profiles and real-time information.
@@ -624,28 +640,6 @@
                 hidden
               ></p>
             </div>
-            <div class="gear-presentation-action">
-              <button
-                type="button"
-                id="gearPresentationButton"
-                class="gear-presentation-button"
-                aria-label="Presentation"
-                aria-pressed="false"
-              >
-                <svg
-                  class="gear-presentation-button-icon"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path d="M5 7V5a2 2 0 0 1 2-2h2" />
-                  <path d="M15 3h2a2 2 0 0 1 2 2v2" />
-                  <path d="M19 15v2a2 2 0 0 1-2 2h-2" />
-                  <path d="M9 19H7a2 2 0 0 1-2-2v-2" />
-                  <rect x="7.5" y="8.5" width="9" height="7" rx="1.25" />
-                </svg>
-                <span id="gearPresentationButtonLabel" class="gear-presentation-button-label visually-hidden">Presentation</span>
-              </button>
-            </div>
           </div>
           <nav
             id="gearCategoryNav"
@@ -681,6 +675,18 @@
                     />
                   </label>
                   <label
+                    id="gearLibraryChapterWrap"
+                    class="gear-library-toolbar-field gear-library-chapter-label"
+                    for="gearLibraryChapterSelect"
+                  >
+                    <span class="gear-library-toolbar-caption">Manufacturer</span>
+                    <select
+                      id="gearLibraryChapterSelect"
+                      class="gear-library-toolbar-select gear-library-chapter-select"
+                      aria-label="Manufacturer filter"
+                    ></select>
+                  </label>
+                  <label
                     id="gearLibraryViewWrap"
                     class="gear-library-toolbar-field gear-library-sort-label"
                     for="gearAmpViewSelect"
@@ -692,107 +698,124 @@
                       aria-label="Amp collection sort order"
                     ></select>
                   </label>
-                  <label
-                    id="gearLibraryChapterWrap"
-                    class="gear-library-toolbar-field gear-library-chapter-label"
-                    for="gearLibraryChapterSelect"
-                  >
-                    <span class="gear-library-toolbar-caption">Chapter</span>
-                    <select
-                      id="gearLibraryChapterSelect"
-                      class="gear-library-toolbar-select gear-library-chapter-select"
-                      aria-label="Manufacturer chapter"
-                    ></select>
-                  </label>
                   <span
                     class="gear-library-controls-spacer"
                     aria-hidden="true"
                   ></span>
-                  <button
-                    type="button"
-                    id="gearAtlasPresentationToggle"
-                    class="gear-atlas-presentation-toggle"
-                    data-mode="timeline"
-                    aria-pressed="false"
-                    aria-label="Open timeline view"
-                  >
-                    <svg
-                      class="gear-atlas-presentation-toggle-icon gear-atlas-presentation-toggle-icon--timeline"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path d="M12 4v16M8 8h8M7 12h10M8 16h8" />
-                    </svg>
-                    <svg
-                      class="gear-atlas-presentation-toggle-icon gear-atlas-presentation-toggle-icon--collection"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path d="M5 5h6v6H5V5zm8 0h6v6h-6V5zM5 13h6v6H5v-6zm8 0h6v6h-6v-6z" />
-                    </svg>
-                  </button>
                   <div class="gear-library-controls-trailing">
-                    <div
-                      id="gearDesignPreview"
-                      class="gear-design-preview"
-                      role="group"
-                      aria-label="Layout view"
-                      hidden
-                    >
-                      <div class="gear-design-preview-switcher">
+                    <div class="gear-library-view-controls">
+                      <div
+                        id="gearDesignPreview"
+                        class="gear-design-preview"
+                        role="group"
+                        aria-label="Layout view"
+                        hidden
+                      >
+                        <div class="gear-design-preview-switcher">
+                          <button
+                            type="button"
+                            class="gear-design-preview-option"
+                            data-gear-design="default"
+                            aria-pressed="true"
+                            aria-label="Standard"
+                          >
+                            <span
+                              class="gear-design-preview-glyph gear-design-preview-glyph--standard"
+                              aria-hidden="true"
+                            >
+                              <span></span><span></span><span></span><span></span>
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            class="gear-design-preview-option"
+                            data-gear-design="collections"
+                            aria-pressed="false"
+                            aria-label="Collections"
+                          >
+                            <span
+                              class="gear-design-preview-glyph gear-design-preview-glyph--collections"
+                              aria-hidden="true"
+                            >
+                              <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            class="gear-design-preview-option"
+                            data-gear-design="editorial"
+                            aria-pressed="false"
+                            aria-label="Magazine"
+                          >
+                            <span
+                              class="gear-design-preview-glyph gear-design-preview-glyph--magazine"
+                              aria-hidden="true"
+                            >
+                              <span></span><span></span><span></span>
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            class="gear-design-preview-option"
+                            data-gear-design="museum"
+                            aria-pressed="false"
+                            aria-label="Museum"
+                          >
+                            <span
+                              class="gear-design-preview-glyph gear-design-preview-glyph--museum"
+                              aria-hidden="true"
+                            ></span>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="gear-library-mode-controls">
                         <button
                           type="button"
-                          class="gear-design-preview-option"
-                          data-gear-design="default"
-                          aria-pressed="true"
-                          aria-label="Standard"
+                          id="gearAtlasPresentationToggle"
+                          class="gear-atlas-presentation-toggle"
+                          data-mode="timeline"
+                          aria-pressed="false"
+                          aria-label="Timeline"
                         >
-                          <span
-                            class="gear-design-preview-glyph gear-design-preview-glyph--standard"
+                          <svg
+                            class="gear-atlas-presentation-toggle-icon gear-atlas-presentation-toggle-icon--timeline"
+                            viewBox="0 0 24 24"
                             aria-hidden="true"
                           >
-                            <span></span><span></span><span></span><span></span>
-                          </span>
+                            <path d="M3 12h18" />
+                            <circle cx="5" cy="12" r="2" />
+                            <circle cx="10" cy="12" r="2" />
+                            <circle cx="15" cy="12" r="2" />
+                            <circle cx="20" cy="12" r="2" />
+                          </svg>
+                          <svg
+                            class="gear-atlas-presentation-toggle-icon gear-atlas-presentation-toggle-icon--back"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path d="M14 7 9 12 14 17" />
+                          </svg>
+                          <span class="gear-atlas-presentation-toggle-label">Back</span>
                         </button>
                         <button
                           type="button"
-                          class="gear-design-preview-option"
-                          data-gear-design="collections"
+                          id="gearPresentationButton"
+                          class="gear-presentation-button"
+                          aria-label="Presentation Mode"
                           aria-pressed="false"
-                          aria-label="Collections"
                         >
-                          <span
-                            class="gear-design-preview-glyph gear-design-preview-glyph--collections"
+                          <svg
+                            class="gear-presentation-button-icon"
+                            viewBox="0 0 24 24"
                             aria-hidden="true"
                           >
-                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          class="gear-design-preview-option"
-                          data-gear-design="editorial"
-                          aria-pressed="false"
-                          aria-label="Magazine"
-                        >
-                          <span
-                            class="gear-design-preview-glyph gear-design-preview-glyph--magazine"
-                            aria-hidden="true"
-                          >
-                            <span></span><span></span><span></span>
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          class="gear-design-preview-option"
-                          data-gear-design="museum"
-                          aria-pressed="false"
-                          aria-label="Museum"
-                        >
-                          <span
-                            class="gear-design-preview-glyph gear-design-preview-glyph--museum"
-                            aria-hidden="true"
-                          ></span>
+                            <rect x="4" y="5" width="16" height="11" rx="1.5" />
+                            <path d="M12 16v2.5" />
+                            <path d="M8 20h8" />
+                            <path d="M8 9.5h8" />
+                            <circle cx="12" cy="12.25" r="1" />
+                          </svg>
+                          <span id="gearPresentationButtonLabel" class="gear-presentation-button-label visually-hidden">Presentation Mode</span>
                         </button>
                       </div>
                     </div>

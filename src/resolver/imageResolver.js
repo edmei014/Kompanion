@@ -8,7 +8,9 @@ export const AMP_IMAGE_PLACEHOLDER_SRC = "/images/comingsoon.png";
 let resolvedAmpImageBasePath = AMP_IMAGE_BASE_PATH;
 
 export async function initializeAmpImageResolver() {
-  if (!window.__TAURI_INTERNALS__) {
+  if (!window.__TAURI_INTERNALS__ || import.meta.env.DEV) {
+    // Dev: Vite middleware serves live files from src-tauri/resources/images/amps/.
+    // Production (non-Tauri): same public path for browser preview.
     resolvedAmpImageBasePath = AMP_IMAGE_BASE_PATH;
     return;
   }

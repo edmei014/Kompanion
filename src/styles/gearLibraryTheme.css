@@ -84,6 +84,10 @@ body[data-gear-theme="museum-dark"],
   --gear-atlas-details-image: url("/images/gear-atlas-details.svg");
   --gear-atlas-details-size: min(100%, 1200px) auto;
   --gear-atlas-details-opacity: 0.08;
+  --gear-atlas-details-tile-w: 1200px;
+  --gear-atlas-details-tile-h: 1800px;
+  --gear-atlas-map-tile-w: 2200px;
+  --gear-atlas-map-tile-h: 3000px;
   --gear-card: #1d1915;
   --gear-card-hover: #221d18;
   --gear-border: rgba(176, 141, 87, 0.18);
@@ -134,6 +138,10 @@ body[data-gear-theme="museum-light"],
   --gear-atlas-details-image: url("/images/gear-atlas-details-light.svg");
   --gear-atlas-details-size: min(100%, 1200px) auto;
   --gear-atlas-details-opacity: 0.1;
+  --gear-atlas-details-tile-w: 1200px;
+  --gear-atlas-details-tile-h: 1800px;
+  --gear-atlas-map-tile-w: 2200px;
+  --gear-atlas-map-tile-h: 3000px;
   --gear-card: #f5f1ea;
   --gear-card-inner: #faf7f2;
   --gear-card-hover: #f8f4ed;
@@ -488,6 +496,17 @@ body[data-gear-theme="museum-light"] #gearLibraryView .gear-library-header-brand
   fill: none;
 }
 
+#gearLibraryView .gear-presentation-button-icon circle {
+  fill: currentColor;
+  stroke: none;
+}
+
+#gearLibraryView .gear-library-mode-controls .gear-presentation-button {
+  border: 1px solid var(--gear-divider);
+  border-radius: var(--gear-radius-control);
+  background: var(--gear-input-bg);
+}
+
 #gearLibraryView .gear-presentation-button:hover,
 #gearLibraryView .gear-presentation-button:focus-visible {
   color: var(--gear-accent-highlight);
@@ -588,7 +607,12 @@ body[data-gear-theme="museum-light"] #gearLibraryView .gear-library-title {
   border-bottom-color: var(--gear-divider);
 }
 
-body[data-gear-theme="museum-light"] #gearArchiveAmpDetailOverlay .gear-archive-detail-dialog,
+body[data-gear-theme="museum-light"] #gearArchiveAmpDetailOverlay .gear-archive-detail-dialog {
+  background: var(--gear-card);
+  border-color: var(--gear-border);
+  box-shadow: var(--gear-shadow);
+}
+
 body[data-gear-theme="museum-light"] #gearManufacturerDetailOverlay .gear-manufacturer-detail-dialog {
   background: var(--gear-card);
   border-color: var(--gear-border);
@@ -1826,7 +1850,7 @@ body[data-app-view="gear"][data-gear-theme="museum-light"] .app-module-menu-item
 }
 
 #gearLibraryView .gear-library-controls {
-  grid-template-columns: repeat(3, minmax(0, 1fr)) 1fr auto auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 1fr auto;
   align-items: end;
 }
 
@@ -1834,11 +1858,11 @@ body[data-app-view="gear"][data-gear-theme="museum-light"] .app-module-menu-item
   grid-column: 1;
 }
 
-#gearLibraryView .gear-library-sort-label {
+#gearLibraryView .gear-library-chapter-label {
   grid-column: 2;
 }
 
-#gearLibraryView .gear-library-chapter-label {
+#gearLibraryView .gear-library-sort-label {
   grid-column: 3;
 }
 
@@ -1847,17 +1871,34 @@ body[data-app-view="gear"][data-gear-theme="museum-light"] .app-module-menu-item
   min-width: 0;
 }
 
-#gearLibraryView .gear-atlas-presentation-toggle {
-  grid-column: 5;
-  justify-self: end;
-}
-
 #gearLibraryView .gear-library-controls-trailing {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  grid-column: 6;
+  grid-column: 5;
   justify-self: end;
+}
+
+#gearLibraryView .gear-library-view-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+#gearLibraryView .gear-library-mode-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding-left: 10px;
+  border-left: 1px solid var(--gear-divider);
+}
+
+#gearLibraryView .gear-library-view-controls .gear-design-preview {
+  width: auto;
+  min-width: 0;
+  justify-items: stretch;
 }
 
 #gearLibraryView .gear-library-controls-trailing .gear-design-preview {
@@ -1876,6 +1917,7 @@ body[data-app-view="gear"][data-gear-theme="museum-light"] .app-module-menu-item
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0;
   width: 40px;
   min-width: 40px;
   height: 40px;
@@ -1905,18 +1947,42 @@ body[data-app-view="gear"][data-gear-theme="museum-light"] .app-module-menu-item
   stroke-linejoin: round;
 }
 
-#gearLibraryView .gear-atlas-presentation-toggle-icon--collection {
+#gearLibraryView .gear-atlas-presentation-toggle-icon--timeline circle {
+  fill: currentColor;
+  stroke: none;
+}
+
+#gearLibraryView .gear-atlas-presentation-toggle-icon--back {
   display: none;
+}
+
+#gearLibraryView .gear-atlas-presentation-toggle-label {
+  display: none;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 #gearLibraryView .gear-atlas-presentation-toggle[data-mode="collection"] .gear-atlas-presentation-toggle-icon--timeline {
   display: none;
 }
 
-#gearLibraryView .gear-atlas-presentation-toggle[data-mode="collection"] .gear-atlas-presentation-toggle-icon--collection {
+#gearLibraryView .gear-atlas-presentation-toggle[data-mode="collection"] .gear-atlas-presentation-toggle-icon--back {
   display: block;
-  fill: currentColor;
-  stroke: none;
+}
+
+#gearLibraryView .gear-atlas-presentation-toggle[data-mode="collection"] .gear-atlas-presentation-toggle-label {
+  display: inline;
+}
+
+#gearLibraryView .gear-atlas-presentation-toggle.is-timeline-back {
+  width: auto;
+  min-width: 40px;
+  padding: 0 12px;
+  gap: 6px;
 }
 
 #gearLibraryView .gear-atlas-presentation-toggle:hover,
@@ -1935,6 +2001,6 @@ body[data-app-view="gear"][data-gear-theme="museum-light"] .app-module-menu-item
 
 @media (max-width: 1280px) {
   #gearLibraryView .gear-library-controls {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) 1fr auto auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 1fr auto;
   }
 }

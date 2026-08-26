@@ -379,5 +379,27 @@ export const manufacturerRecords = [
   heroImage: null,
 
   accentColor: null
+},
+{
+  id: "rivera",
+  name: "Rivera",
+
+  founded: 1976,
+  founder: "Paul Rivera",
+
+  country: "United States",
+
+  description:
+    "Rivera Amplification is an American boutique amplifier manufacturer founded by Paul Rivera and known for combining classic Fender-inspired clean tones with powerful British-style overdrive and highly versatile professional features. Rivera amplifiers are renowned for their robust construction, dynamic response and ability to cover a wide range of traditional and modern guitar sounds.",
+
+  history:
+    "Founded in 1976 by Paul Rivera, Rivera Amplification grew from Rivera's extensive experience servicing and modifying Fender amplifiers. After working with Fender as a designer and product development specialist during the late 1970s and early 1980s, Rivera established his own company and began producing amplifiers that combined American clean circuitry with British-inspired gain stages and innovative switching systems. Models such as the Knucklehead, Fandango, Suprema and Venus became particularly respected among professional guitarists. Rivera continues to build amplifiers in the United States, with an emphasis on hand-built construction, versatility and high-performance stage and studio applications.",
+
+  website: "https://www.rivera.com",
+
+  logo: null,
+  heroImage: null,
+
+  accentColor: null
 }
 ];

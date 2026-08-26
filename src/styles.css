@@ -134,6 +134,14 @@ body[data-connection="boot_loading"] #livePage {
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
 }
 
+.no-midi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
 .no-midi-brand {
   margin: 0;
   color: #8e9a74;
@@ -626,11 +634,11 @@ body[data-app-view="audio"] #audioToolsView {
   user-select: none;
 }
 
-.live-page .gear-atlas-switcher {
+.live-page .gear-atlas-switcher,
+.no-midi-overlay .gear-atlas-switcher {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
   padding: 0;
   border: 0;
   background: transparent;
@@ -640,13 +648,20 @@ body[data-app-view="audio"] #audioToolsView {
   transition: opacity 160ms ease;
 }
 
+.live-page .gear-atlas-switcher {
+  margin-left: auto;
+}
+
 .live-page .gear-atlas-switcher:hover,
-.live-page .gear-atlas-switcher:focus-visible {
+.live-page .gear-atlas-switcher:focus-visible,
+.no-midi-overlay .gear-atlas-switcher:hover,
+.no-midi-overlay .gear-atlas-switcher:focus-visible {
   opacity: 1;
   outline: none;
 }
 
-.live-page .gear-atlas-switcher-signet {
+.live-page .gear-atlas-switcher-signet,
+.no-midi-overlay .gear-atlas-switcher-signet {
   display: block;
   height: clamp(1.65rem, 2.85vw, 2.35rem);
   width: auto;

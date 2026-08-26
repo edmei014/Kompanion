@@ -363,14 +363,18 @@ body[data-gear-design="museum"] .gear-library-eyebrow {
 }
 
 body[data-gear-design="museum"] .gear-library-collection-meta {
-  margin-top: 2px;
-  letter-spacing: 0.05em;
+  display: none !important;
+}
+
+body[data-gear-design="museum"] .gear-library-layout {
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: 0;
 }
 
 body[data-gear-design="museum"] .gear-category-shell {
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 8px;
-  padding-right: clamp(12px, 1.6vw, 22px);
+  padding-right: 0;
 }
 
 body[data-gear-design="museum"] .gear-library-toolbar {
@@ -380,14 +384,48 @@ body[data-gear-design="museum"] .gear-library-toolbar {
   justify-items: stretch;
 }
 
-body[data-gear-design="museum"] .gear-library-controls {
+body[data-gear-design="museum"] #gearLibraryView .gear-library-controls {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) 1fr auto auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 1fr auto;
   align-items: end;
   column-gap: 14px;
   row-gap: 0;
   width: min(100%, 1280px);
   max-width: 100%;
+}
+
+body[data-gear-design="museum"] #gearLibraryView .gear-library-search-label {
+  grid-column: 1;
+}
+
+body[data-gear-design="museum"] #gearLibraryView .gear-library-chapter-label {
+  grid-column: 2;
+}
+
+body[data-gear-design="museum"] #gearLibraryView .gear-library-sort-label {
+  grid-column: 3;
+}
+
+body[data-gear-design="museum"] #gearLibraryView .gear-library-controls-spacer {
+  grid-column: 4;
+}
+
+body[data-gear-design="museum"] #gearLibraryView .gear-library-controls-trailing {
+  grid-column: 5;
+}
+
+/* Keep inactive sort in the grid flow so column 3 stays reserved. */
+body[data-gear-design="museum"] #gearLibraryView .gear-library-sort-label.is-inactive {
+  display: grid !important;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Same for the timeline toggle hidden in museum trailing controls. */
+body[data-gear-design="museum"] #gearLibraryView .gear-atlas-presentation-toggle.is-inactive {
+  display: inline-flex !important;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 body[data-gear-design="museum"] .gear-library-search-label,
@@ -481,46 +519,54 @@ body[data-gear-design="museum"] .gear-amp-browser-stage {
 }
 
 body[data-gear-design="museum"] .gear-library-scroll {
-  overflow-x: hidden;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
   direction: ltr;
-  padding: 0 0 40px;
-  scroll-padding-top: 0;
-  scrollbar-gutter: stable;
-  overscroll-behavior: contain;
+  padding: 0;
+  overscroll-behavior: none;
 }
 
 body[data-gear-design="museum"] .amp-browser-catalog,
 body[data-gear-design="museum"] .amp-browser-catalog[data-amp-presentation="museum"] {
   width: 100%;
   max-width: none;
-  height: auto;
+  height: 100%;
+  max-height: 100%;
   min-height: 0;
   padding-top: 0;
-  overflow: visible;
+  overflow: hidden;
+  align-content: center;
 }
 
 body[data-gear-design="museum"] .gear-discover-column {
-  opacity: 0.82;
+  display: none !important;
 }
 
 .museum-catalog {
   display: grid;
-  align-content: start;
+  align-content: center;
   width: 100%;
   min-width: 0;
-  padding: 8px 0 0;
+  min-height: 0;
+  max-height: 100%;
+  padding: 0;
+  overflow: hidden;
 }
 
 .museum-stage {
   display: grid;
-  align-content: start;
+  align-content: center;
   width: 100%;
   min-width: 0;
+  min-height: 0;
+  max-height: 100%;
   padding: clamp(16px, 2vw, 28px);
   border: 1px solid var(--gear-divider, rgba(255, 255, 255, 0.05));
   border-radius: var(--gear-radius-card, 22px);
   background: var(--gear-museum-wall, var(--gear-bg, #141210));
+  overflow: hidden;
 }
 
 .museum-exhibit {
@@ -533,9 +579,12 @@ body[data-gear-design="museum"] .gear-discover-column {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
   gap: clamp(28px, 3.2vw, 52px);
-  align-items: start;
+  align-items: center;
   width: 100%;
   min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
 }
 
 .museum-exhibit-hero {
@@ -554,7 +603,7 @@ body[data-gear-design="museum"] .gear-discover-column {
   width: auto;
   max-width: 100%;
   height: auto;
-  max-height: min(58vh, 640px);
+  max-height: min(calc(100dvh - 18rem), 640px);
   margin-top: 0;
   object-fit: contain;
   object-position: center top;
@@ -564,11 +613,14 @@ body[data-gear-design="museum"] .gear-discover-column {
 
 .museum-exhibit-panel {
   display: grid;
-  align-content: start;
+  align-content: center;
   gap: 18px;
   width: 100%;
   min-width: 0;
+  min-height: 0;
+  max-height: 100%;
   padding-top: 2px;
+  overflow: hidden;
   background: transparent;
   color: var(--gear-text, #f0eee7);
 }
@@ -636,6 +688,8 @@ body[data-gear-design="museum"] .gear-discover-column {
   display: grid;
   gap: 18px;
   margin-top: 2px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .museum-exhibit-section {
@@ -679,8 +733,8 @@ body[data-gear-design="museum"] .gear-discover-column {
 }
 
 @media (max-width: 1100px) {
-  body[data-gear-design="museum"] .gear-library-controls {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) 1fr auto auto;
+  body[data-gear-design="museum"] #gearLibraryView .gear-library-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 1fr auto;
     width: 100%;
     column-gap: 10px;
   }
@@ -691,6 +745,6 @@ body[data-gear-design="museum"] .gear-discover-column {
   }
 
   .museum-exhibit-image {
-    max-height: min(48vh, 520px);
+    max-height: min(calc(100dvh - 20rem), 520px);
   }
 }

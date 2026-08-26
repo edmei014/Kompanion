@@ -55,6 +55,15 @@ body[data-presentation-mode="true"][data-presentation-cursor="visible"] .gear-pr
   opacity: 1;
 }
 
+body[data-presentation-mode="true"][data-gear-theme="museum-light"] .gear-presentation-exit {
+  color: color-mix(in srgb, var(--gear-text-secondary) 78%, transparent);
+}
+
+body[data-presentation-mode="true"][data-gear-theme="museum-light"] .gear-presentation-exit:hover,
+body[data-presentation-mode="true"][data-gear-theme="museum-light"] .gear-presentation-exit:focus-visible {
+  color: color-mix(in srgb, var(--gear-text) 88%, transparent);
+}
+
 /* -------------------------------------------------------------------------- */
 /* Shared exhibition shell                                                     */
 /* -------------------------------------------------------------------------- */
@@ -84,6 +93,7 @@ body[data-presentation-mode="true"] {
 
 body[data-presentation-mode="true"] .gear-library-header,
 body[data-presentation-mode="true"] .gear-library-toolbar,
+body[data-presentation-mode="true"] .gear-library-toolbar-row,
 body[data-presentation-mode="true"] .museum-model-nav,
 body[data-presentation-mode="true"] .gear-category-nav {
   display: none !important;
@@ -116,7 +126,13 @@ body[data-presentation-mode="true"] .shell--gear {
   overflow: hidden;
 }
 
+body[data-presentation-mode="true"] #gearLibraryView .gear-library-panel {
+  gap: 0;
+}
+
 body[data-presentation-mode="true"] .gear-library-panel {
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -131,10 +147,47 @@ body[data-presentation-mode="true"] .gear-library-panel {
   border-radius: 0;
   box-shadow: none;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse 90% 60% at 50% 12%, rgba(255, 248, 230, 0.045), transparent 58%),
-    radial-gradient(ellipse 70% 50% at 80% 90%, rgba(90, 70, 40, 0.08), transparent 55%),
-    rgba(10, 11, 11, 0.98);
+  background: var(--gear-atlas-field);
+}
+
+/* Full-viewport atlas grit — same layers as .gear-library-scroll in gearLibraryTheme.css */
+@keyframes gear-presentation-atlas-drift {
+  from {
+    background-position:
+      0 0,
+      0 0;
+  }
+
+  to {
+    background-position:
+      0 calc(-1 * var(--gear-atlas-details-tile-h)),
+      0 calc(-1 * var(--gear-atlas-map-tile-h));
+  }
+}
+
+body[data-presentation-mode="true"] .gear-library-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  background-color: transparent;
+  background-image: var(--gear-atlas-details-image), var(--gear-atlas-map-image);
+  /* Tile at native SVG size — repeat horizontally + vertically for full viewport coverage */
+  background-repeat: repeat, repeat;
+  background-size:
+    var(--gear-atlas-details-tile-w) var(--gear-atlas-details-tile-h),
+    var(--gear-atlas-map-tile-w) var(--gear-atlas-map-tile-h);
+  background-position: 0 0, 0 0;
+  animation: gear-presentation-atlas-drift 72s linear infinite;
+  will-change: background-position;
+}
+
+body[data-presentation-mode="true"] .gear-library-panel > * {
+  position: relative;
+  z-index: 1;
 }
 
 body[data-presentation-mode="true"] .gear-library-layout {
@@ -172,7 +225,9 @@ body[data-presentation-mode="true"] .gear-category-shell {
   padding-right: 0;
 }
 
+body[data-presentation-mode="true"] #gearLibraryView .gear-library-scroll,
 body[data-presentation-mode="true"] .gear-library-scroll,
+body[data-presentation-mode="true"][data-gear-design="museum"] #gearLibraryView .gear-library-scroll,
 body[data-presentation-mode="true"][data-gear-design="museum"] .gear-library-scroll {
   display: flex;
   flex-direction: column;
@@ -184,6 +239,8 @@ body[data-presentation-mode="true"][data-gear-design="museum"] .gear-library-scr
   scrollbar-gutter: auto;
   scrollbar-width: none;
   overscroll-behavior: none;
+  background: transparent none;
+  background-image: none;
 }
 
 body[data-presentation-mode="true"] .gear-library-scroll::-webkit-scrollbar {
@@ -201,6 +258,22 @@ body[data-presentation-mode="true"] .gear-discover-column {
 body[data-presentation-mode="true"] .gear-discover-board {
   max-width: none !important;
   overflow: hidden;
+}
+
+body[data-presentation-mode="true"] #gearLibraryView .museum-catalog,
+body[data-presentation-mode="true"] #gearLibraryView .museum-stage,
+body[data-presentation-mode="true"] .museum-catalog,
+body[data-presentation-mode="true"] .museum-stage {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body[data-presentation-mode="true"][data-gear-theme="museum-light"] #gearLibraryView .museum-stage {
+  border: 0;
+  background: transparent;
 }
 
 body[data-presentation-mode="true"] .museum-exhibit-layout {
@@ -226,8 +299,7 @@ body[data-presentation-mode="true"] .museum-exhibit-hero {
   max-height: 100%;
   padding: 0;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse 70% 55% at 50% 58%, rgba(255, 255, 255, 0.035), transparent 70%);
+  background: transparent;
 }
 
 body[data-presentation-mode="true"] .museum-exhibit-image {
@@ -240,6 +312,7 @@ body[data-presentation-mode="true"] .museum-exhibit-image {
   object-position: center;
 }
 
+body[data-presentation-mode="true"] #gearLibraryView .museum-exhibit-panel,
 body[data-presentation-mode="true"] .museum-exhibit-panel {
   display: grid;
   align-content: center;
@@ -248,8 +321,28 @@ body[data-presentation-mode="true"] .museum-exhibit-panel {
   min-width: 0;
   min-height: 0;
   max-height: 100%;
-  padding: 0;
+  padding: var(--pres-card-pad);
   overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--gear-border) 55%, transparent);
+  border-radius: var(--gear-radius-control);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--gear-accent) 2.5%, var(--gear-museum-wall)) 0%,
+    var(--gear-museum-wall) 38%,
+    color-mix(in srgb, var(--gear-bg) 55%, var(--gear-museum-wall)) 100%
+  );
+  box-shadow: var(--gear-shadow-soft);
+}
+
+body[data-presentation-mode="true"][data-gear-theme="museum-light"] #gearLibraryView .museum-exhibit-panel {
+  border-color: color-mix(in srgb, var(--gear-border) 75%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--gear-accent) 2%, var(--gear-museum-wall)) 0%,
+    var(--gear-museum-wall) 42%,
+    var(--gear-museum-panel) 100%
+  );
+  box-shadow: var(--gear-shadow-soft);
 }
 
 body[data-presentation-mode="true"] .museum-exhibit-header {
@@ -557,5 +650,12 @@ body[data-presentation-variant="discover-only"] .gear-discover-text {
 
   body[data-presentation-mode="true"] {
     --pres-image-max: calc(42vh * var(--pres-fit));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-presentation-mode="true"] .gear-library-panel::before {
+    animation: none;
+    background-position: 0 0, 0 0;
   }
 }

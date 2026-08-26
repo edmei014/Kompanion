@@ -211,12 +211,7 @@ export function suspendPresentationMode() {
   clearAdvanceTimer();
   clearCursorTimer();
   setCursorHidden(false);
-  document.body.dataset.presentationSuspended = "true";
-
-  if (exitButton) {
-    exitButton.hidden = true;
-    exitButton.setAttribute("aria-hidden", "true");
-  }
+  syncChrome();
 }
 
 /** Resume Presentation after returning to Gear Library. */
@@ -415,9 +410,9 @@ async function goToRelative(delta) {
 }
 
 function syncChrome() {
-  if (modeButtonLabel) modeButtonLabel.textContent = "Presentation";
+  if (modeButtonLabel) modeButtonLabel.textContent = "Presentation Mode";
   if (modeButton) {
-    modeButton.setAttribute("aria-label", "Presentation");
+    modeButton.setAttribute("aria-label", "Presentation Mode");
     modeButton.setAttribute("aria-pressed", active ? "true" : "false");
   }
 
@@ -427,7 +422,7 @@ function syncChrome() {
     exitButton.setAttribute("aria-hidden", showExit ? "false" : "true");
   }
 
-  document.body.dataset.presentationMode = active ? "true" : "false";
+  document.body.dataset.presentationMode = active && !suspended ? "true" : "false";
   document.body.dataset.presentationPaused = active && paused ? "true" : "false";
   document.body.dataset.presentationSuspended = active && suspended ? "true" : "false";
 

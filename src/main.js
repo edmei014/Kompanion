@@ -13,7 +13,8 @@ import {
 } from "./library/index.js";
 import {
   initializeGearLibrary,
-  registerViewChangeHandler
+  registerViewChangeHandler,
+  setAppView
 } from "./gearLibrary.js";
 import { initializeAudioTools } from "./modules/audioTools/AudioToolsView.js";
 import { initializeBidirectionalDiscovery } from "./modules/bidirectional/BidirectionalDiscovery.js";
@@ -505,6 +506,10 @@ async function bootApplication() {
     }
 
     await finishBootPresentation();
+
+    if (connectionState === CONNECTION_STATE.NO_MIDI) {
+      setAppView("gear");
+    }
   }
 }
 

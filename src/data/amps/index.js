@@ -25,6 +25,7 @@ import { voxAmps } from "./vox.js";
 import { matchlessAmps } from "./matchless.js";
 import { victoryAmps } from "./victory.js";
 import { revvAmps } from "./revv.js";
+import { riveraAmps } from "./rivera.js";
 
 /**
  * Sole amp registration list.
@@ -60,5 +61,6 @@ export const allAmpRecords = [
   ...voxAmps,
   ...matchlessAmps,
   ...victoryAmps,
-  ...revvAmps
+  ...revvAmps,
+  ...riveraAmps
 ];

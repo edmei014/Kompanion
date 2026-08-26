@@ -39,7 +39,7 @@ export function buildChapterOptions(entries) {
       manufacturerId,
       manufacturer,
       ampCount,
-      label: `${manufacturer} (${ampCount})`
+      label: manufacturer
     }))
     .sort((left, right) =>
       left.manufacturer.localeCompare(right.manufacturer, undefined, {
@@ -62,8 +62,8 @@ function escapeHtml(value) {
 }
 
 /**
- * Syncs chapter options. The select always shows a manufacturer name with count,
- * e.g. "Fender (35)" — never a "Jump to Chapter" placeholder.
+ * Syncs chapter options. The select always shows a manufacturer name —
+ * never a "Jump to Chapter" placeholder.
  *
  * @param {HTMLSelectElement | null | undefined} selectElement
  * @param {ChapterOption[]} options
