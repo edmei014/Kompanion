@@ -1,247 +1,158 @@
+# Kompanion
 
-
-# Kompanion v2.0
-
-![Kempanion main interface](public/images/image.png)
-
-A real-time monitoring and control companion for Kemper Profiler.
-
-## Video Demonstrations
-
-### Kempanion v2.0 Overview
-
-[[Video Link]](https://youtu.be/eZKvXai_k7g)
-
-### Adding Custom Amp Images
-
-[[Video Link]](https://youtu.be/Fl0tA2Wt3qE)
+Kompanion is a desktop application for the Kemper Profiler. It has two main parts: Kempanion (live use with the Profiler) and Gear Atlas (amp database). Both use the same amp data and are linked in the UI.
 
 ---
 
-## What is Kompanion?
+## Overview
 
-**Kompanion** is a desktop application for the Kemper Profiler. Its main module, **Kempanion**, provides real-time rig monitoring and performance controls.
+Kompanion reads rig and amp information from the Kemper and, where possible, maps it to entries in the Gear Atlas. The user sees the current rig, an amp image when a match exists, and can open further details for that model. The Gear Atlas can also be used on its own to browse, search, and filter the amp collection.
 
-Kompanion combines live rig visualization with practical performance controls, allowing guitarists to monitor and interact with their Profiler from a dedicated desktop application.
+The two areas:
 
-The application communicates directly with the Kemper via MIDI SysEx and MIDI control messages and automatically updates all displayed information in real time.
-
-Additional modules include **Gear Atlas** and **Audio Tools**.
-
----
-
-## Features
-
-### Real-Time Monitoring (Kempanion)
-
-* Live rig information
-* Live amp information
-* Live cabinet information
-* Live gain display
-* Real-time effect monitoring
-* Automatic rig change detection
-* Automatic image matching for amps, cabinets and effects
-
-### Performance Browser
-
-![Performance Browser](public/images/performancebrowser.png)
-
-* Browse stored Kemper performances
-* Performance Explorer
-* Search rigs across all scanned performances
-* Direct performance navigation
-* Direct slot selection
-* Local performance library
-
-### Live Control
-
-* Slot selection
-* Performance navigation
-* Effect on/off control
-* Tuner control
-* Morph trigger
-* Tap Tempo
-* BPM display
-* BPM input and setting
-
-### User Experience
-
-* Boot screen
-* No-MIDI connection screen
-* Automatic Kemper detection
-* Performance library rebuild
-* Scan progress indicator
-* Native Windows desktop application built with Tauri
+- Kempanion — connection to the Kemper, live rig/performance display, Performance Browser
+- Gear Atlas — amp collection with search, filters, several view modes, and amp detail pages
 
 ---
 
-## Requirements
+## Kempanion
 
-* Windows
-* Kemper Profiler
-* USB connection between Kemper and computer
+Kempanion connects to a Kemper Profiler over MIDI and shows current state from the device.
 
-Rig Manager is optional and not required.
+Functions include:
+
+- connection status and MIDI port selection
+- current rig name and performance information
+- amp image and labels when the active rig matches a Gear Atlas entry
+- slot and performance navigation from the live view
+- Performance Browser (see below)
+
+Timeline and Presentation Mode are part of the Gear Atlas UI but belong to the same application.
 
 ---
 
-## Installation
+## Performance Browser
 
-### Option 1: Use a Release Build
+The Performance Browser lists performances from a locally built performance library. Each performance contains multiple slots; each slot holds one rig.
 
-Download the latest installer from the GitHub Releases page and install the application normally.
+The user can:
 
-After installation, launch **Kompanion** from the Windows Start Menu.
+- step through performances
+- select a slot and load that rig on the Kemper
+- see an amp image for the slot when a Gear Atlas match exists
 
-### Option 2: Build from Source
+Clicking the amp image opens the amp detail overlay (manufacturer, model, image, description, history, and other fields from the database). The compass signet in the top right of the Kempanion view opens the Gear Atlas; the same signet remains available from the live page while working with rigs.
 
-Clone the repository:
+---
+
+## Gear Atlas
+
+The Gear Atlas holds the amp models used for images and detail text in Kempanion. Entries include manufacturer, model name, images, and optional descriptive data.
+
+### Rig and amp matching
+
+Kempanion tries to match rig names and amp labels reported by the Kemper to Gear Atlas entries. Matching depends on naming; not every rig name will resolve automatically. If a model exists in the atlas, the user can see that it is in the database and align rig naming with atlas entries to improve future matches.
+
+From Kempanion, the typical flow is: active rig → matched amp image → amp detail overlay → Gear Atlas (via the signet). From the atlas, clicking an amp card opens the same detail view for that entry.
+
+### Browse and filter
+
+- amp cards in grid or grouped layouts
+- text search
+- manufacturer filter and manufacturer category
+- sort options (e.g. by manufacturer, model, or year)
+
+The manufacturer filter limits the collection to one maker, which reduces noise in large lists.
+
+### Amp detail
+
+The detail view shows one amp: image, manufacturer, model, and text sections where defined in the data (description, history, specs, and similar). The same detail component is used from Kempanion (after a match) and from the atlas (after selecting a card).
+
+### Switching views
+
+- Compass signet on the Kempanion live page → Gear Atlas
+- Kempanion signet on the Gear Atlas page → Kempanion live page
+- The same signets also appear on the no-MIDI connection screen for atlas access without a connected Kemper
+
+The Gear Atlas works without a Kemper connection; Kempanion live features require MIDI to the Profiler.
+
+---
+
+## Gear Atlas display modes
+
+All modes use the same underlying amp data. They differ in layout only.
+
+### Standard and Collections
+
+Standard view shows amps as cards in a catalog layout. Collections groups amps into themed boxes. Both support search, filters, and opening amp detail.
+
+### Museum Mode
+
+Museum Mode shows one amp at a time in a dedicated exhibition-style layout, with a secondary row for other models from the same manufacturer. Sort controls are hidden in this mode. It is not the same as Presentation Mode.
+
+### Amp detail
+
+Available from any mode by selecting an amp. Opens the shared detail overlay or page for that model.
+
+---
+
+## Timeline
+
+Timeline is a Gear Atlas view that sorts and groups amps by production year. A year rail can be used to jump between sections. It uses the same database as the standard catalog; it does not replace the Performance Browser.
+
+---
+
+## Presentation Mode
+
+Presentation Mode is a full-screen display mode in the Gear Atlas. It hides most chrome (header, toolbar, filters) and shows amp content with minimal UI. It is intended for playing, practising, or presenting where a larger, less cluttered view is useful.
+
+Presentation Mode is separate from Museum Mode: Museum is a catalog layout option; Presentation Mode is a fullscreen presentation layer.
+
+---
+
+## Installation & Getting Started
+
+### Requirements
+
+- Windows
+- Kemper Profiler (for Kempanion live features)
+- MIDI connection between Kemper and computer (e.g. via a MIDI interface)
+
+### Installation
+
+1. Download the installer from the GitHub Releases page for this project
+2. Install and launch Kompanion from the Start menu
+3. Connect the Kemper, then select MIDI input and output in Kompanion
+
+After connection, live data updates from the Profiler. Build the performance library separately to use the Performance Browser.
+
+### Building from source
 
 ```bash
-git clone https://github.com/edmei014/Kemper-Live-Companion.git
-cd Kemper-Live-Companion
-```
-
-Install dependencies:
-
-```bash
+git clone https://github.com/edmei014/Kompanion.git
+cd Kompanion
 npm install
+npm run tauri:build
 ```
 
-Build the application:
-
-```bash
-npm run tauri build
-```
-
-After a successful build, the executable can be found at:
-
-```text
-src-tauri\target\release\live_companion.exe
-```
-
-The generated Windows installer (NSIS) can be found at:
-
-```text
-src-tauri\target\release\bundle\nsis
-```
-
-The installer shows a Kempanion information page first (unsigned open-source notice), then the normal Tauri/NSIS setup. That page does not change or bypass Windows SmartScreen. The custom page is defined in `src-tauri/windows/nsis/installer.nsi` and selected via `bundle.windows.nsis.template` in `src-tauri/tauri.conf.json`.
-
----
-
-## How It Works
-
-Kompanion communicates directly with the Kemper Profiler through MIDI SysEx and MIDI control messages.
-
-The application automatically requests and updates information from the Profiler while also providing selected control functions.
-
-Currently supported:
-
-### Read
-
-* Rig Name
-* Amp Name
-* Amp Model
-* Amp Manufacturer
-* Amp Production Year
-* Cabinet Information
-* Gain Value
-* Effect Slot Names
-* Effect States
-* Current BPM
-
-### Control
-
-* Performance Selection
-* Slot Selection
-* Effect Toggle
-* Morph Trigger
-* Tuner Toggle
-* Tap Tempo
-* BPM Setting
-
----
-
-## Performance Library
-
-The Performance Library allows users to build a local database of their Kemper performances.
-
-Features:
-
-* Performance scanning
-* Local storage
-* Fast browsing
-* Rig search across performances
-* Direct navigation from browser to performance slot
-
-The library can be rebuilt at any time using the integrated rebuild function.
-
----
-
-## Custom Images
-
-Amp, cabinet and effect images are stored in:
-
-```text
-public/images/amps
-public/images/cabinets
-public/images/effects
-```
-
-Users can add their own images to support additional equipment.
-
-Relevant files:
-
-```text
-src/library/index.js    Public Gear Library API (import from here)
-src/data/amps/          Amp records by manufacturer
-docs/GEAR_LIBRARY.md    Architecture and contribution guide
-```
-
-See [docs/GEAR_LIBRARY.md](docs/GEAR_LIBRARY.md) for how to add amps, manufacturers, and future categories.
-
-Legacy image map files (`src/ampImageMap.js`, etc.) have been replaced by the Gear Library.
-
-Photopea is a useful free tool for background removal and image preparation.
-
----
-
-## Limitations
-
-* No rig editing
-* No profile creation
-* No profile management
-* No deep parameter editing
-* Image matching depends on available aliases and image files
-
----
-
-## Development Highlights
-
-* MIDI SysEx communication
-* MIDI control implementation
-* Real-time Kemper monitoring
-* Performance library system
-* Performance browser
-* Effect control system
-* Automatic image matching
-* Native desktop deployment using Tauri
-
----
-
-## Disclaimer
-
-Kompanion is an independent third-party project.
-
-This application is not affiliated with, endorsed by, sponsored by, or approved by Kemper GmbH or the Kemper Profiler product team.
-
-"Kemper" and "Kemper Profiler" are trademarks of their respective owners and are referenced solely for compatibility and descriptive purposes.
-
-Kompanion is developed independently and is intended to provide additional monitoring and control functionality for users of the Kemper Profiler platform.
+Installer output: `src-tauri/target/release/bundle/nsis/`
 
 ---
 
 ## Project Status
 
-Actively developed personal project focused on live Kemper monitoring and performance navigation.
+Early release. Kempanion and Gear Atlas are integrated; the amp database is extended over time. Video documentation may be added later in a separate section.
+
+---
+
+## Author
+
+edmei014 — [github.com/edmei014](https://github.com/edmei014)
+
+---
+
+## Disclaimer
+
+Kompanion is an independent third-party project. It is not affiliated with, endorsed by, or supported by Kemper GmbH.
+
+“Kemper” and “Kemper Profiler” are trademarks of their respective owners and are used here only to describe compatibility.
