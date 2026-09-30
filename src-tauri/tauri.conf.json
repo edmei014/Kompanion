@@ -37,7 +37,8 @@
       "icons/icon.ico"
     ],
     "resources": {
-      "resources/images/amps/": "images/amps/"
+      "resources/images/amps/": "images/amps/",
+      "resources/images/amps-performance/": "images/amps-performance/"
     },
     "windows": {
       "nsis": {

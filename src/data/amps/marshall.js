@@ -1315,7 +1315,9 @@ export const marshallAmps = [
   aliases: [
     "sv20h",
     "sv20",
-    "studio vintage"
+    "studio vintage",
+    "plexi reissue 20",
+    "plexi 20"
   ],
   image: "studio-vintage-sv20h.png",
   description:

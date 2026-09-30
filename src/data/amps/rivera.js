@@ -12,7 +12,8 @@ export const riveraAmps = [
     "knucklehead reverb",
     "knucklehead ii",
     "knucklehead 100",
-    "rivera knucklehead"
+    "rivera knucklehead",
+    "knock head"
   ],
   image: "knucklehead.png",
   description:
@@ -42,6 +43,53 @@ export const riveraAmps = [
     "6L6",
     "American",
     "British Voicing"
+  ]
+},
+{
+  id: "rivera-thirty-twelve",
+  manufacturerId: "rivera",
+  manufacturer: "Rivera",
+  model: "Thirty Twelve",
+  aliases: [
+    "thirty twelve",
+    "30 12",
+    "30/12",
+    "rivera thirty twelve",
+    "rivera 30 12"
+  ],
+  image: "thirty-twelve.png",
+  description:
+    "The Thirty Twelve is a compact Rivera tube combo combining Fender-inspired American clean tones with Rivera's characteristic British-influenced overdrive. Its 1x12 format and moderate power make it a versatile amplifier for studio, club and rehearsal use.",
+  history:
+    "The Thirty Twelve was developed during Rivera's early period as a compact alternative to the company's larger professional amplifiers. The amplifier reflects Paul Rivera's approach of combining familiar American-style clean circuitry with a more aggressive British-inspired gain section, while retaining the robust construction and practical switching associated with Rivera amplifiers.",
+  introduced: 1980,
+  discontinued: null,
+  country: "United States",
+  ampType: "Tube Combo",
+  power: "30 W",
+  channels: 2,
+  tubes: {
+    preamp: [
+      "12AX7"
+    ],
+    power: [
+      "2 × 6L6"
+    ]
+  },
+  genres: [
+    "Blues",
+    "Rock",
+    "Country",
+    "Jazz"
+  ],
+  notableUsers: [],
+  tags: [
+    "Boutique",
+    "American",
+    "British Voicing",
+    "6L6",
+    "1x12",
+    "Vintage"
   ]
 },
 {

@@ -15,7 +15,8 @@ export const mesaAmps = [
     "dual rect",
     "dual recto",
     "dual rev",
-    "duel rev"
+    "duel rev",
+    "mebo duel"
   ],
   image: "dual_rectifier.png",
   description:

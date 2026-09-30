@@ -23,7 +23,8 @@ export const AMP_RECORD_FIELDS = [
   "genres",
   "notableUsers",
   "tags",
-  "theme"
+  "theme",
+  "isCombo"
 ];
 
 /**
@@ -59,7 +60,9 @@ export function createAmpRecord(raw) {
     genres: raw.genres ?? null,
     notableUsers: raw.notableUsers ?? null,
     tags: raw.tags ?? null,
-    theme: normalizeAmpThemeInput(raw.theme)
+    theme: normalizeAmpThemeInput(raw.theme),
+    // Only emitted when set, so normalizing data files does not add `isCombo: false` everywhere.
+    ...(raw.isCombo === true ? { isCombo: true } : {})
   };
 }
 

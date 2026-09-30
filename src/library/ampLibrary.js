@@ -8,7 +8,8 @@ import {
 import {
   AMP_IMAGE_BASE_PATH,
   isUsableAmpImageFilename,
-  resolveAmpImageSrc
+  resolveAmpImageSrc,
+  resolveAmpPerformanceThumbnailSrc
 } from "../resolver/imageResolver.js";
 import { resolveThemeForAmp } from "../theme/manufacturerThemes.js";
 
@@ -38,6 +39,7 @@ export { AMP_IMAGE_BASE_PATH };
  * @property {string | string[] | null} genres
  * @property {string | string[] | null} notableUsers
  * @property {string | string[] | null} tags
+ * @property {boolean} [isCombo] Explicit combo amp flag; absent means not a combo.
  */
 
 /**
@@ -217,6 +219,13 @@ export function getAmpAliases(ampId) {
 /** @param {string} ampId @returns {string | null} Public image URL or null. */
 export function getAmpImage(ampId) {
   return ampStore.getImageSrc(ampId);
+}
+
+/** @param {string} ampId @returns {string | null} Performance-browser thumbnail URL or null. */
+export function getAmpPerformanceThumbnail(ampId) {
+  const filename = getAmpImageFilename(ampId);
+  if (!filename) return null;
+  return resolveAmpPerformanceThumbnailSrc(filename);
 }
 
 /** @param {string} ampId @returns {string | null} Image filename or null. */

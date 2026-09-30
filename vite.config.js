@@ -4,10 +4,22 @@ import { defineConfig } from "vite";
 
 const AMP_IMAGE_ROUTE = "/images/amps/";
 const AMP_IMAGE_RESOURCE_DIR = resolve("src-tauri/resources/images/amps");
+const AMP_PERFORMANCE_THUMB_ROUTE = "/images/amps-performance/";
+const AMP_PERFORMANCE_THUMB_RESOURCE_DIR = resolve(
+  "src-tauri/resources/images/amps-performance"
+);
 
-function serveAmpImagesFromTauriResources() {
+function contentTypeForImagePath(imagePath) {
+  const extension = extname(imagePath).toLowerCase();
+
+  if (extension === ".jpg" || extension === ".jpeg") return "image/jpeg";
+  if (extension === ".webp") return "image/webp";
+  return "image/png";
+}
+
+function serveTauriImageDirectory(routePrefix, resourceDir, pluginName) {
   return {
-    name: "serve-amp-images-from-tauri-resources",
+    name: pluginName,
     apply: "serve",
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
@@ -22,19 +34,19 @@ function serveAmpImagesFromTauriResources() {
           return;
         }
 
-        if (!pathname.startsWith(AMP_IMAGE_ROUTE)) {
+        if (!pathname.startsWith(routePrefix)) {
           next();
           return;
         }
 
-        const filename = pathname.slice(AMP_IMAGE_ROUTE.length);
+        const filename = pathname.slice(routePrefix.length);
         if (!filename || filename.includes("/") || filename.includes("\\") || filename.includes("..")) {
           next();
           return;
         }
 
-        const imagePath = resolve(AMP_IMAGE_RESOURCE_DIR, filename);
-        if (!imagePath.startsWith(`${AMP_IMAGE_RESOURCE_DIR}${sep}`)) {
+        const imagePath = resolve(resourceDir, filename);
+        if (!imagePath.startsWith(`${resourceDir}${sep}`)) {
           next();
           return;
         }
@@ -45,9 +57,7 @@ function serveAmpImagesFromTauriResources() {
             return;
           }
 
-          const contentType =
-            extname(imagePath).toLowerCase() === ".jpg" ? "image/jpeg" : "image/png";
-          response.setHeader("Content-Type", contentType);
+          response.setHeader("Content-Type", contentTypeForImagePath(imagePath));
           response.setHeader("Content-Length", fileStats.size);
           createReadStream(imagePath).pipe(response);
         });
@@ -56,12 +66,31 @@ function serveAmpImagesFromTauriResources() {
   };
 }
 
+function serveAmpImagesFromTauriResources() {
+  return serveTauriImageDirectory(
+    AMP_IMAGE_ROUTE,
+    AMP_IMAGE_RESOURCE_DIR,
+    "serve-amp-images-from-tauri-resources"
+  );
+}
+
+function serveAmpPerformanceThumbnailsFromTauriResources() {
+  return serveTauriImageDirectory(
+    AMP_PERFORMANCE_THUMB_ROUTE,
+    AMP_PERFORMANCE_THUMB_RESOURCE_DIR,
+    "serve-amp-performance-thumbnails-from-tauri-resources"
+  );
+}
+
 export default defineConfig({
   base: "./",
 
   clearScreen: false,
 
-  plugins: [serveAmpImagesFromTauriResources()],
+  plugins: [
+    serveAmpImagesFromTauriResources(),
+    serveAmpPerformanceThumbnailsFromTauriResources()
+  ],
 
   server: {
     port: 1420,

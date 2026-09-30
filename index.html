@@ -322,7 +322,25 @@
               </div>
             </div>
 
-            <span id="performanceBrowserLabel" class="performance-browser-label" hidden>Performance 1</span>
+            <div class="performance-browser-meta">
+              <span
+                id="performanceBrowserLabel"
+                class="performance-browser-label"
+                role="button"
+                tabindex="0"
+                hidden
+              >Performance 1</span>
+              <button
+                id="performanceReloadButton"
+                class="performance-reload-button"
+                type="button"
+                aria-label="Reload current performance"
+                title="Reload current performance"
+                hidden
+              >
+                <span class="performance-reload-button-icon" aria-hidden="true">↻</span>
+              </button>
+            </div>
           </div>
 
           <button
@@ -503,15 +521,23 @@
                             <span class="gain-scale-value" id="gainScaleValue">—</span>
                             <span class="gain-scale-range">/ 10</span>
                           </div>
-                          <div class="gain-scale-track" id="gainScaleTrack">
-                            <div id="gainScaleTicks" class="gain-scale-ticks"></div>
-                            <div id="gainScaleFill" class="gain-scale-fill"></div>
-                            <div id="gainScaleMarker" class="gain-scale-marker"></div>
-                          </div>
                           <div class="gain-scale-labels" aria-hidden="true">
                             <span>0</span>
+                            <span>1</span>
+                            <span>2</span>
+                            <span>3</span>
+                            <span>4</span>
                             <span>5</span>
+                            <span>6</span>
+                            <span>7</span>
+                            <span>8</span>
+                            <span>9</span>
                             <span>10</span>
+                          </div>
+                          <div class="gain-scale-track" id="gainScaleTrack">
+                            <div id="gainScaleTicks" class="gain-scale-ticks"></div>
+                            <div id="gainScaleFill" class="gain-scale-fill" aria-hidden="true"></div>
+                            <div id="gainScaleMarker" class="gain-scale-marker"></div>
                           </div>
                         </div>
                       </div>
@@ -561,7 +587,7 @@
               <span>Cabinet</span>
             </div>
 
-            <p id="cabinetComboLabel" class="cabinet-combo-label" hidden>COMBO AMP</p>
+            <p id="cabinetComboLabel" class="cabinet-combo-label" hidden>Combo Amp</p>
 
             <div id="cabinetImageContainer" class="cabinet-image-container"></div>
 
@@ -591,10 +617,21 @@
               </section>
             </div>
           </div>
+
+          <div class="rig-notes">
+            <label class="rig-notes-label" for="rigNotesInput">Notes</label>
+            <textarea
+              id="rigNotesInput"
+              class="rig-notes-input companion-scroll"
+              rows="4"
+              placeholder="..."
+              spellcheck="false"
+              disabled
+            ></textarea>
+          </div>
         </div>
         <div class="effects-block">
-          <span>Effects</span>
-          <ul id="effectsList" class="effects-list companion-scroll"></ul>
+          <ul id="effectsList" class="effects-list companion-scroll" aria-label="Effects"></ul>
         </div>
       </section>
 

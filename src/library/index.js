@@ -25,6 +25,7 @@ export {
   getAmpDetailView,
   getAmpFieldDisplayValue,
   getAmpImage,
+  getAmpPerformanceThumbnail,
   getAmpImageFilename,
   getAmpImageFilenameForText,
   getAmpImageForText,

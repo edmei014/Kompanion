@@ -5,8 +5,10 @@ import "./styles/presentationMode.css";
 import { invoke } from "@tauri-apps/api/core";
 import { effectImageMap } from "./effectImageMap.js";
 import {
+  getAmpById,
   getAmpDetailView,
   getAmpImage,
+  getAmpPerformanceThumbnail,
   getCabinetDetailView,
   resolveAmpRecordFromTextSources,
   resolveCabinetRecordFromTextSources
@@ -127,6 +129,9 @@ let delayReverbStatusRefreshInFlight = false;
 let delayReverbStatusRefreshQueued = false;
 const PERFORMANCE_LIBRARY_STORAGE_KEY = "kemper-performance-library";
 const PERFORMANCE_LIBRARY_META_KEY = "_meta";
+const PERFORMANCE_NAMES_KEY = "performanceNames";
+const RIG_NOTES_KEY = "rigNotes";
+const RIG_NOTES_SAVE_DEBOUNCE_MS = 800;
 const CONTROL_CHANGES = {
   tapTempo: 30,
   tuner: 31,
@@ -249,7 +254,8 @@ const EFFECT_IMAGE_ALIASES = {
   "Cirrus Reverb": "reverb.png",
   "Formant Reverb": "reverb.png",
   "Ionosphere Reverb": "shimmer_reverb.png",
-  "Spring Reverb": "reverb.png"
+  "Spring Reverb": "reverb.png",
+  "Recti Shaper": "octafuzz.png"
 };
 const MODULE_FALLBACK_EFFECTS = {
   reverb: {
@@ -317,6 +323,7 @@ const ampDetailsOriginalRigName = document.querySelector("#ampDetailsOriginalRig
 const ampDetailsOriginalAmpName = document.querySelector("#ampDetailsOriginalAmpName");
 const productionYear = document.querySelector("#productionYear");
 const cabinetSection = document.querySelector(".cabinet-section");
+const rigNotesInput = document.querySelector("#rigNotesInput");
 const cabinetComboLabel = document.querySelector("#cabinetComboLabel");
 const cabinetRecognizedGroup = document.querySelector("[data-cabinet-recognized]");
 const cabinetRecognizedList = document.querySelector("[data-cabinet-recognized-list]");
@@ -360,6 +367,7 @@ const performanceExplorerSearch = document.querySelector("#performanceExplorerSe
 const performanceExplorerEmpty = document.querySelector("#performanceExplorerEmpty");
 const performanceExplorerList = document.querySelector("#performanceExplorerList");
 const createLibraryButton = document.querySelector("#createLibraryButton");
+const performanceReloadButton = document.querySelector("#performanceReloadButton");
 const libraryConfirmDialog = document.querySelector("#libraryConfirmDialog");
 const cancelLibraryScanButton = document.querySelector("#cancelLibraryScanButton");
 const startLibraryScanButton = document.querySelector("#startLibraryScanButton");
@@ -398,7 +406,14 @@ let reconnectInProgress = false;
 let connectionWatcher = null;
 let consecutiveMonitorFailures = 0;
 let performanceLibraryDocument = {};
+/** Kempanion-only labels keyed by performance number; never sent to the Kemper. */
+let performanceNames = {};
+let rigNotes = {};
+let rigNotesRigName = "";
+let rigNotesSaveTimer = null;
 let performanceLibraryScanInProgress = false;
+let isReloadingCurrentPerformance = false;
+let activePerformanceSlotIndex = 1;
 let selectedPerformanceIndex = null;
 let performanceExplorerExpanded = false;
 let isLoadingPerformanceSlot = false;
@@ -962,6 +977,131 @@ function getPerformanceEntries(document = {}) {
   );
 }
 
+/**
+ * Normalizes a performance slot entry (legacy rig-name string or scan object).
+ * @param {unknown} slotValue
+ * @returns {{ rigName: string, ampName: string, ampManufacturer: string, ampModel: string, ampId: string | null }}
+ */
+function normalizePerformanceSlotRecord(slotValue) {
+  if (typeof slotValue === "string") {
+    return {
+      rigName: slotValue.trim(),
+      ampName: "",
+      ampManufacturer: "",
+      ampModel: "",
+      ampId: null
+    };
+  }
+
+  if (slotValue && typeof slotValue === "object") {
+    const record = /** @type {Record<string, unknown>} */ (slotValue);
+    const ampId = record.ampId;
+    return {
+      rigName: String(record.rigName ?? "").trim(),
+      ampName: String(record.ampName ?? "").trim(),
+      ampManufacturer: String(record.ampManufacturer ?? "").trim(),
+      ampModel: String(record.ampModel ?? "").trim(),
+      ampId: typeof ampId === "string" && ampId.trim() ? ampId.trim() : null
+    };
+  }
+
+  return {
+    rigName: "",
+    ampName: "",
+    ampManufacturer: "",
+    ampModel: "",
+    ampId: null
+  };
+}
+
+/** @param {unknown} slotValue */
+function getPerformanceSlotRigName(slotValue) {
+  return normalizePerformanceSlotRecord(slotValue).rigName;
+}
+
+function enrichPerformanceSlotWithAmpMatch(slotEntry) {
+  const resolvedAmp = resolveLiveAmpRecord(
+    slotEntry.rigName,
+    slotEntry.ampName,
+    slotEntry.ampManufacturer,
+    slotEntry.ampModel
+  );
+
+  const nextSlot = {
+    rigName: slotEntry.rigName,
+    ampName: slotEntry.ampName,
+    ampManufacturer: slotEntry.ampManufacturer,
+    ampModel: slotEntry.ampModel
+  };
+
+  if (resolvedAmp?.id) {
+    nextSlot.ampId = resolvedAmp.id;
+  }
+
+  return nextSlot;
+}
+
+function applyAmpMatchingToPerformanceSlots(performanceData) {
+  for (const slotKey of Object.keys(performanceData)) {
+    const normalized = normalizePerformanceSlotRecord(performanceData[slotKey]);
+    performanceData[slotKey] = enrichPerformanceSlotWithAmpMatch({
+      rigName: normalized.rigName,
+      ampName: normalized.ampName,
+      ampManufacturer: normalized.ampManufacturer,
+      ampModel: normalized.ampModel
+    });
+  }
+
+  return performanceData;
+}
+
+function applyAmpMatchingToPerformanceLibrary(library) {
+  const entries = getPerformanceEntries(library);
+
+  for (const slots of Object.values(entries)) {
+    if (!slots || typeof slots !== "object") continue;
+    applyAmpMatchingToPerformanceSlots(slots);
+  }
+}
+
+function resolveActiveSlotIndexForPerformance(performanceIndex) {
+  if (
+    String(selectedPerformanceIndex) === String(performanceIndex) &&
+    activePerformanceSlotIndex >= 1 &&
+    activePerformanceSlotIndex <= SLOT_SELECTORS.length
+  ) {
+    return activePerformanceSlotIndex;
+  }
+
+  const slots = getPerformanceEntries(performanceLibraryDocument)[String(performanceIndex)] || {};
+  const currentRig = String(currentRigName || "").trim();
+
+  if (currentRig) {
+    for (let slotIndex = 1; slotIndex <= SLOT_SELECTORS.length; slotIndex += 1) {
+      if (getPerformanceSlotRigName(slots[String(slotIndex)]) === currentRig) {
+        return slotIndex;
+      }
+    }
+  }
+
+  return 1;
+}
+
+function updatePerformanceReloadButtonState() {
+  if (!performanceReloadButton) return;
+
+  const hasLibrary = hasPerformanceLibrary(performanceLibraryDocument);
+  const showLibraryUi = hasLibrary && !performanceLibraryScanInProgress;
+  performanceReloadButton.hidden = !showLibraryUi;
+
+  performanceReloadButton.disabled =
+    !showLibraryUi ||
+    !isConnectionOperational() ||
+    performanceLibraryScanInProgress ||
+    isLoadingPerformanceSlot ||
+    isReloadingCurrentPerformance;
+}
+
 function countSavedPerformances(document = {}) {
   return Object.keys(getPerformanceEntries(document)).length;
 }
@@ -970,7 +1110,43 @@ function hasPerformanceLibrary(document = {}) {
   return countSavedPerformances(document) > 0;
 }
 
+function normalizePerformanceNames(value) {
+  if (!value || typeof value !== "object") return {};
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key, name]) => /^\d+$/.test(key) && typeof name === "string" && name.trim())
+      .map(([key, name]) => [key, name.trim()])
+  );
+}
+
+function getPerformanceName(performanceIndex) {
+  return performanceNames[String(performanceIndex)] || "";
+}
+
+function formatPerformanceLabel(performanceIndex) {
+  const name = getPerformanceName(performanceIndex);
+  return name ? `Performance ${performanceIndex} · ${name}` : `Performance ${performanceIndex}`;
+}
+
+function normalizeRigNotes(value) {
+  if (!value || typeof value !== "object") return {};
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key, note]) => key.trim() && typeof note === "string" && note.trim())
+      .map(([key, note]) => [key.trim(), note])
+  );
+}
+
 async function loadPerformanceLibraryDocument() {
+  const document = await readPerformanceLibraryDocument();
+  performanceNames = normalizePerformanceNames(document?.[PERFORMANCE_NAMES_KEY]);
+  rigNotes = normalizeRigNotes(document?.[RIG_NOTES_KEY]);
+  return document;
+}
+
+async function readPerformanceLibraryDocument() {
   const fromTauri = await invokeTauri("load_performance_library");
 
   if (typeof fromTauri === "string") {
@@ -994,6 +1170,19 @@ async function savePerformanceLibraryDocument(document) {
     ...document[PERFORMANCE_LIBRARY_META_KEY],
     lastSavedAt: new Date().toISOString()
   };
+
+  // A rescan starts from an empty document; names must survive it.
+  if (Object.keys(performanceNames).length > 0) {
+    document[PERFORMANCE_NAMES_KEY] = { ...performanceNames };
+  } else {
+    delete document[PERFORMANCE_NAMES_KEY];
+  }
+
+  if (Object.keys(rigNotes).length > 0) {
+    document[RIG_NOTES_KEY] = { ...rigNotes };
+  } else {
+    delete document[RIG_NOTES_KEY];
+  }
 
   const serialized = JSON.stringify(document, null, 2);
   const fromTauri = await invokeTauri("save_performance_library", { contents: serialized });
@@ -1047,6 +1236,42 @@ function normalizeExplorerQuery(query) {
   return String(query || "").trim().toLowerCase();
 }
 
+/** @param {unknown} slotValue */
+function getPerformanceSlotSearchTexts(slotValue) {
+  const record = normalizePerformanceSlotRecord(slotValue);
+  const texts = [
+    record.rigName,
+    record.ampName,
+    record.ampManufacturer,
+    record.ampModel,
+    record.ampId || ""
+  ];
+
+  if (record.ampId) {
+    const atlasAmp = getAmpById(record.ampId);
+    if (atlasAmp) {
+      texts.push(
+        atlasAmp.manufacturer,
+        atlasAmp.model,
+        atlasAmp.id,
+        ...(atlasAmp.aliases || [])
+      );
+    }
+  }
+
+  return texts
+    .map((text) => String(text || "").trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/** @param {unknown} slotValue @param {number} slotIndex @param {string} query */
+function performanceSlotMatchesExplorerQuery(slotValue, slotIndex, query) {
+  const slotLabel = `slot ${slotIndex}`;
+  if (slotLabel.includes(query)) return true;
+
+  return getPerformanceSlotSearchTexts(slotValue).some((text) => text.includes(query));
+}
+
 function performanceMatchesExplorerQuery(performanceIndex, slots, query) {
   if (!query) return true;
 
@@ -1055,12 +1280,11 @@ function performanceMatchesExplorerQuery(performanceIndex, slots, query) {
   const performanceLabel = `performance ${performanceIndex}`;
   if (performanceLabel.includes(query)) return true;
 
+  if (getPerformanceName(performanceIndex).toLowerCase().includes(query)) return true;
+
   return SLOT_SELECTORS.some((slot, index) => {
     const slotIndex = index + 1;
-    const rigName = String(slots[String(slotIndex)] || "").toLowerCase();
-    const slotLabel = `slot ${slotIndex}`;
-
-    return rigName.includes(query) || slotLabel.includes(query);
+    return performanceSlotMatchesExplorerQuery(slots[String(slotIndex)], slotIndex, query);
   });
 }
 
@@ -1133,10 +1357,57 @@ function syncCreateLibraryButtonVisibility() {
 function isPerformanceExplorerEventTarget(target) {
   if (!(target instanceof Node)) return false;
   return Boolean(
-    performanceSearchZone?.contains(target) ||
-    performanceExplorerContent?.contains(target) ||
+    performanceBrowserPanel?.contains(target) ||
+    performanceExplorerSearch?.contains(target) ||
+    performanceBrowserControls?.contains(target) ||
+    performanceReloadButton?.contains(target) ||
+    performanceBrowserLabel?.contains(target) ||
     createLibraryButton?.contains(target)
   );
+}
+
+function isPerformanceBrowserEntrySurfaceTarget(target) {
+  if (!(target instanceof Element)) return false;
+  if (!livePage?.contains(target)) return false;
+
+  return Boolean(
+    target.closest("#livePage .title-panel") || target.closest("#performanceSection")
+  );
+}
+
+function isPerformanceBrowserEntryInteractiveException(target) {
+  if (!(target instanceof Element)) return false;
+
+  return Boolean(
+    target.closest("#gearAtlasSwitcher") ||
+    target.closest(".gear-atlas-switcher") ||
+    target.closest(".title-brand") ||
+    target.closest("#errorStatus") ||
+    target.closest("#performanceBrowserControls") ||
+    target.closest(".performance-browser-nav") ||
+    target.closest("#performanceSlotGrid") ||
+    target.closest("#performanceReloadButton") ||
+    target.closest("#performanceBrowserLabel") ||
+    target.closest("#performanceExplorerSearch") ||
+    target.closest("#createLibraryButton") ||
+    target.closest("#performanceExplorerContent") ||
+    target.closest("#performanceScanPanel") ||
+    target.closest("button") ||
+    target.closest("input") ||
+    target.closest("select") ||
+    target.closest("textarea") ||
+    target.closest("a[href]")
+  );
+}
+
+function activatePerformanceBrowserEntry() {
+  if (!hasPerformanceLibrary(performanceLibraryDocument)) return;
+
+  setPerformanceExplorerExpanded(true);
+
+  if (performanceExplorerSearch && !performanceExplorerSection?.hidden) {
+    performanceExplorerSearch.focus({ preventScroll: true });
+  }
 }
 
 function updatePerformanceSectionLayout() {
@@ -1250,15 +1521,24 @@ function renderPerformanceExplorer() {
     }
 
     const label = document.createElement("div");
+    const performanceName = getPerformanceName(performanceIndex);
+    const labelText = performanceName ? `${performanceIndex} · ${performanceName}` : performanceIndex;
     label.className = "performance-explorer-row-label";
-    appendExplorerHighlightedText(label, performanceIndex, query);
+    const performanceLabelMatches =
+      Boolean(query) &&
+      (String(performanceIndex).includes(query) ||
+        `performance ${performanceIndex}`.includes(query) ||
+        getPerformanceName(performanceIndex).toLowerCase().includes(query));
+    appendExplorerHighlightedText(label, labelText, performanceLabelMatches ? query : "");
+    if (performanceName) label.title = formatPerformanceLabel(performanceIndex);
 
     const slotsWrap = document.createElement("div");
     slotsWrap.className = "performance-explorer-slots";
 
     SLOT_SELECTORS.forEach((slot, index) => {
       const slotIndex = index + 1;
-      const rigName = slots[String(slotIndex)] || "Keine Antwort";
+      const slotRecord = normalizePerformanceSlotRecord(slots[String(slotIndex)]);
+      const rigName = slotRecord.rigName || "Keine Antwort";
       const chip = document.createElement("button");
       const name = document.createElement("span");
 
@@ -1272,11 +1552,22 @@ function renderPerformanceExplorer() {
         performanceLibraryScanInProgress ||
         isLoadingPerformanceSlot;
 
-      const rigMatches = Boolean(query) && rigName.toLowerCase().includes(query);
-      const slotMatches = Boolean(query) && `slot ${slotIndex}`.includes(query);
-
-      if (rigMatches || slotMatches) {
+      if (Boolean(query) && performanceSlotMatchesExplorerQuery(slots[String(slotIndex)], slotIndex, query)) {
         chip.dataset.match = "true";
+      }
+
+      const thumbSrc = slotRecord.ampId ? getAmpPerformanceThumbnail(slotRecord.ampId) : null;
+      if (thumbSrc) {
+        const thumb = document.createElement("img");
+        thumb.className = "performance-explorer-slot-thumb";
+        thumb.src = thumbSrc;
+        thumb.alt = "";
+        thumb.loading = "lazy";
+        thumb.decoding = "async";
+        thumb.addEventListener("error", () => {
+          thumb.remove();
+        });
+        chip.append(thumb);
       }
 
       name.className = "performance-explorer-slot-name";
@@ -1340,7 +1631,8 @@ function selectAdjacentPerformance(direction) {
 
 function updatePerformanceNavButtons() {
   const indexes = getPerformanceIndexList();
-  const blocked = performanceLibraryScanInProgress || isLoadingPerformanceSlot;
+  const blocked =
+    performanceLibraryScanInProgress || isLoadingPerformanceSlot || isReloadingCurrentPerformance;
   const navButtons = [
     performancePrevFastButton,
     performancePrevButton,
@@ -1432,7 +1724,9 @@ async function waitForRigChangeFrom(previousRigName, { timeoutMs = 8000, pollMs 
 }
 
 async function loadBrowserPerformanceSlot(performanceIndex, slotIndex) {
-  if (isLoadingPerformanceSlot || performanceLibraryScanInProgress) return;
+  if (isLoadingPerformanceSlot || performanceLibraryScanInProgress || isReloadingCurrentPerformance) {
+    return;
+  }
 
   const slot = SLOT_SELECTORS[slotIndex - 1];
   if (!slot) return;
@@ -1440,14 +1734,18 @@ async function loadBrowserPerformanceSlot(performanceIndex, slotIndex) {
   selectedPerformanceIndex = String(performanceIndex);
 
   const entries = getPerformanceEntries(performanceLibraryDocument);
-  const expectedRigName = entries[String(performanceIndex)]?.[String(slotIndex)] || "";
+  const expectedRigName = getPerformanceSlotRigName(
+    entries[String(performanceIndex)]?.[String(slotIndex)]
+  );
   const performanceNumber = Number(performanceIndex);
 
   if (!Number.isFinite(performanceNumber) || performanceNumber < 1) return;
 
   isLoadingPerformanceSlot = true;
+  activePerformanceSlotIndex = slotIndex;
   stopRigMonitor();
   updateControlSectionControls();
+  updatePerformanceReloadButtonState();
   setPerformanceSlotCardsState(slotIndex, "loading");
   setPerformanceExplorerSlotState(performanceIndex, slotIndex, "loading");
 
@@ -1497,6 +1795,7 @@ async function loadBrowserPerformanceSlot(performanceIndex, slotIndex) {
   } finally {
     isLoadingPerformanceSlot = false;
     updatePerformanceNavButtons();
+    updatePerformanceReloadButtonState();
     updateControlSectionControls();
 
     if (connectionState === CONNECTION_STATE.CONNECTED) {
@@ -1523,6 +1822,7 @@ function renderPerformanceBrowser() {
       setPerformanceScanPanelVisible(false);
     }
     updatePerformanceSectionLayout();
+    updatePerformanceReloadButtonState();
     return;
   }
 
@@ -1535,9 +1835,14 @@ function renderPerformanceBrowser() {
   }
   if (performanceBrowserLabel) {
     performanceBrowserLabel.hidden = performanceLibraryScanInProgress;
-    performanceBrowserLabel.textContent = `Performance ${selected.performanceIndex}`;
+    if (performanceBrowserLabel.dataset.editing !== "true") {
+      const labelText = formatPerformanceLabel(selected.performanceIndex);
+      performanceBrowserLabel.textContent = labelText;
+      performanceBrowserLabel.title = `${labelText} — click to rename`;
+    }
   }
   updatePerformanceNavButtons();
+  updatePerformanceReloadButtonState();
   if (createLibraryButton) {
     createLibraryButton.disabled = performanceLibraryScanInProgress;
   }
@@ -1551,7 +1856,7 @@ function renderPerformanceBrowser() {
     const card = document.createElement("button");
     const label = document.createElement("span");
     const name = document.createElement("strong");
-    const rig = selected.slots[String(slotIndex)] || "Keine Antwort";
+    const rig = getPerformanceSlotRigName(selected.slots[String(slotIndex)]) || "Keine Antwort";
 
     card.type = "button";
     card.className = "performance-slot-card";
@@ -1570,11 +1875,134 @@ function renderPerformanceBrowser() {
   });
 
   updatePerformanceSectionLayout();
+  updatePerformanceReloadButtonState();
 }
 
 async function initializePerformanceLibrary() {
   performanceLibraryDocument = await loadPerformanceLibraryDocument();
   renderPerformanceBrowser();
+  renderRigNotes(currentRigName, { force: true });
+}
+
+async function setPerformanceName(performanceIndex, name) {
+  const key = String(performanceIndex);
+  const trimmed = String(name || "").trim();
+  const nextNames = { ...performanceNames };
+
+  if (trimmed) {
+    nextNames[key] = trimmed;
+  } else {
+    delete nextNames[key];
+  }
+
+  if (nextNames[key] === performanceNames[key]) return;
+
+  performanceNames = nextNames;
+  await savePerformanceLibraryDocument(performanceLibraryDocument);
+}
+
+async function setRigNote(rigNameKey, text) {
+  const key = String(rigNameKey || "").trim();
+  if (!key) return;
+
+  const note = String(text ?? "");
+  const nextNotes = { ...rigNotes };
+
+  if (note.trim()) {
+    nextNotes[key] = note;
+  } else {
+    delete nextNotes[key];
+  }
+
+  if (nextNotes[key] === rigNotes[key]) return;
+
+  rigNotes = nextNotes;
+  // A running scan saves its own document on every step and carries rigNotes along.
+  if (performanceLibraryScanInProgress) return;
+  await savePerformanceLibraryDocument(performanceLibraryDocument);
+}
+
+function flushRigNote() {
+  if (rigNotesSaveTimer != null) {
+    window.clearTimeout(rigNotesSaveTimer);
+    rigNotesSaveTimer = null;
+  }
+  if (!rigNotesInput || !rigNotesRigName) return;
+
+  setRigNote(rigNotesRigName, rigNotesInput.value).catch((error) => {
+    console.warn("[Live Companion] Rig note save failed:", error?.message || error);
+  });
+}
+
+function renderRigNotes(nextRigName, { force = false } = {}) {
+  if (!rigNotesInput) return;
+
+  const key = String(nextRigName || "").trim();
+  if (key === rigNotesRigName) {
+    if (!force || document.activeElement === rigNotesInput) return;
+  } else {
+    flushRigNote();
+  }
+
+  rigNotesRigName = key;
+  rigNotesInput.value = key ? rigNotes[key] || "" : "";
+  rigNotesInput.disabled = !key;
+  rigNotesInput.setAttribute("aria-label", key ? `Notes for ${key}` : "Notes");
+}
+
+function beginPerformanceNameEdit() {
+  if (!performanceBrowserLabel || performanceLibraryScanInProgress) return;
+  if (performanceBrowserLabel.dataset.editing === "true") return;
+
+  const performanceIndex = selectedPerformanceIndex;
+  if (!performanceIndex) return;
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "performance-browser-label-input";
+  input.value = getPerformanceName(performanceIndex);
+  input.placeholder = `Performance ${performanceIndex}`;
+  input.maxLength = 60;
+  input.spellcheck = false;
+  input.autocomplete = "off";
+  input.setAttribute(
+    "aria-label",
+    `Name for Performance ${performanceIndex}. Leave empty to remove the name.`
+  );
+
+  let finished = false;
+
+  async function finish(commit, restoreFocus) {
+    if (finished) return;
+    finished = true;
+    delete performanceBrowserLabel.dataset.editing;
+
+    if (commit) {
+      await setPerformanceName(performanceIndex, input.value);
+    }
+
+    renderPerformanceBrowser();
+    if (restoreFocus) performanceBrowserLabel.focus();
+  }
+
+  input.addEventListener("keydown", (event) => {
+    event.stopPropagation();
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+      finish(true, true);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      finish(false, true);
+    }
+  });
+  input.addEventListener("blur", () => finish(true, false));
+
+  performanceBrowserLabel.dataset.editing = "true";
+  performanceBrowserLabel.textContent = "";
+  performanceBrowserLabel.append(input);
+  input.focus();
+  input.select();
 }
 
 function setLibraryConfirmDialogOpen(isOpen) {
@@ -1631,6 +2059,123 @@ function confirmPerformanceLibraryRebuild() {
   });
 }
 
+async function readPerformanceSlotLibraryEntry(contextLabel) {
+  const rigName = await readRigNameSafe(contextLabel);
+  const ampTags = await readPerformanceSlotAmpTags();
+
+  return {
+    rigName,
+    ampName: ampTags.ampName,
+    ampManufacturer: ampTags.ampManufacturer,
+    ampModel: ampTags.ampModel
+  };
+}
+
+async function readPerformanceSlotsForPerformanceFromDevice(output, performanceIndex, contextLabel) {
+  const performanceNumber = Number(performanceIndex);
+  if (!Number.isFinite(performanceNumber) || performanceNumber < 1) {
+    return {};
+  }
+
+  sendMidiSafe(
+    output,
+    makePerformanceSelectCommand(performanceNumber - 1),
+    `${contextLabel} Performance ${performanceNumber} select`
+  );
+  await delay(PERFORMANCE_SELECT_SETTLE_MS);
+
+  const performanceData = {};
+
+  for (let slotIndex = 1; slotIndex <= SLOT_SELECTORS.length; slotIndex += 1) {
+    const slot = SLOT_SELECTORS[slotIndex - 1];
+
+    sendMidiSafe(
+      output,
+      makeSlotSelectCommand(slot),
+      `${contextLabel} Performance ${performanceNumber} Slot ${slotIndex}`
+    );
+    await delay(SLOT_SETTLE_MS);
+
+    performanceData[String(slotIndex)] = await readPerformanceSlotLibraryEntry(
+      `${contextLabel} Performance ${performanceNumber} Slot ${slotIndex}`
+    );
+  }
+
+  return performanceData;
+}
+
+async function reloadCurrentPerformanceFromDevice() {
+  if (
+    isReloadingCurrentPerformance ||
+    performanceLibraryScanInProgress ||
+    isLoadingPerformanceSlot ||
+    !isConnectionOperational()
+  ) {
+    return;
+  }
+
+  const selected = getSelectedPerformanceData();
+  if (!selected) return;
+
+  const performanceIndex = selected.performanceIndex;
+  const restoreSlotIndex = resolveActiveSlotIndexForPerformance(performanceIndex);
+
+  isReloadingCurrentPerformance = true;
+  stopRigMonitor();
+  updatePerformanceReloadButtonState();
+  updatePerformanceNavButtons();
+
+  try {
+    const { output } = await getMidiPorts();
+    const performanceData = await readPerformanceSlotsForPerformanceFromDevice(
+      output,
+      performanceIndex,
+      "Reload"
+    );
+
+    applyAmpMatchingToPerformanceSlots(performanceData);
+    performanceLibraryDocument[String(performanceIndex)] = performanceData;
+    await savePerformanceLibraryDocument(performanceLibraryDocument);
+
+    renderPerformanceBrowser();
+    if (performanceExplorerExpanded) {
+      renderPerformanceExplorer();
+    }
+  } catch (error) {
+    console.warn("[Live Companion] Performance reload failed:", error.message || error);
+  } finally {
+    isReloadingCurrentPerformance = false;
+    updatePerformanceReloadButtonState();
+    updatePerformanceNavButtons();
+
+    try {
+      await loadBrowserPerformanceSlot(performanceIndex, restoreSlotIndex);
+    } catch (error) {
+      console.warn(
+        "[Live Companion] Performance reload restore failed:",
+        error.message || error
+      );
+      if (connectionState === CONNECTION_STATE.CONNECTED) {
+        startRigMonitor();
+      }
+    }
+  }
+}
+
+async function readPerformanceSlotAmpTags() {
+  const [ampName, ampManufacturer, ampModel] = await Promise.all([
+    requestStringTag(STRING_TAGS.ampName),
+    requestStringTag(STRING_TAGS.ampManufacturer),
+    requestStringTag(STRING_TAGS.ampModel)
+  ]);
+
+  return {
+    ampName: ampName || "",
+    ampManufacturer: ampManufacturer || "",
+    ampModel: ampModel || ""
+  };
+}
+
 async function readRigNameSafe(contextLabel) {
   try {
     const value = await requestCurrentRigName();
@@ -1682,7 +2227,7 @@ async function scanPerformanceLibrary({ onProgress } = {}) {
         sendMidiSafe(output, makeSlotSelectCommand(slot), `Performance ${performanceIndex} Slot ${slotIndex}`);
         await delay(SLOT_SETTLE_MS);
 
-        performanceData[String(slotIndex)] = await readRigNameSafe(
+        performanceData[String(slotIndex)] = await readPerformanceSlotLibraryEntry(
           `Performance ${performanceIndex} Slot ${slotIndex}`
         );
       }
@@ -1706,6 +2251,8 @@ async function scanPerformanceLibrary({ onProgress } = {}) {
         await delay(PERFORMANCE_ADVANCE_MS);
       }
     }
+
+    applyAmpMatchingToPerformanceLibrary(library);
 
     library[PERFORMANCE_LIBRARY_META_KEY].scanInProgress = false;
     library[PERFORMANCE_LIBRARY_META_KEY].scanComplete = true;
@@ -2453,19 +3000,6 @@ function normalizeGearName(value) {
   return String(value ?? "").trim().toLowerCase();
 }
 
-/**
- * Display-only combo detection: identical Amp Name and Cabinet Name.
- * Does not mutate amp or cabinet source data.
- * @param {unknown} ampName
- * @param {unknown} cabinetName
- * @returns {boolean}
- */
-function isComboAmpByIdenticalNames(ampName, cabinetName) {
-  const amp = normalizeGearName(ampName);
-  const cabinet = normalizeGearName(cabinetName);
-  return Boolean(amp) && amp === cabinet;
-}
-
 function isPresentCabinetValue(value) {
   return Boolean(String(value ?? "").trim());
 }
@@ -2474,10 +3008,6 @@ function valuesMatchIgnoreCase(left, right) {
   const a = normalizeGearName(left);
   const b = normalizeGearName(right);
   return Boolean(a) && a === b;
-}
-
-function isRedundantCabinetValue(value, ampName) {
-  return !isPresentCabinetValue(value) || valuesMatchIgnoreCase(value, ampName);
 }
 
 /**
@@ -2606,8 +3136,7 @@ function buildReportedCabinetRows(name) {
 /**
  * Cabinet panel display only. Source cabinet fields stay populated.
  * @param {{
- *   originalAmpName?: string,
- *   originalCabinetName?: string,
+ *   isCombo?: boolean,
  *   cabinetName?: string,
  *   recognizedCabinet?: {
  *     recognizedRows?: { label: string, value: string }[],
@@ -2618,28 +3147,17 @@ function buildReportedCabinetRows(name) {
  * }} liveData
  */
 function renderCabinetSection(liveData) {
-  const ampName = liveData.originalAmpName || "";
-  const cabinetName = liveData.originalCabinetName || liveData.cabinetName || "";
-  const isCombo = isComboAmpByIdenticalNames(ampName, cabinetName);
+  const isCombo = liveData.isCombo === true;
   const recognized = liveData.recognizedCabinet || null;
 
-  let recognizedRows = (recognized?.recognizedRows || []).filter((row) =>
-    isPresentCabinetValue(row.value)
-  );
-  let reportedRows = buildReportedCabinetRows(liveData.cabinetName);
-
-  if (isCombo) {
-    recognizedRows = recognizedRows.filter(
-      (row) => !isRedundantCabinetValue(row.value, ampName)
-    );
-    reportedRows = reportedRows.filter(
-      (row) => !isRedundantCabinetValue(row.value, ampName)
-    );
-  }
+  const recognizedRows = isCombo
+    ? []
+    : (recognized?.recognizedRows || []).filter((row) => isPresentCabinetValue(row.value));
+  const reportedRows = isCombo ? [] : buildReportedCabinetRows(liveData.cabinetName);
 
   const showRecognized = recognizedRows.length > 0;
   const showReported = reportedRows.length > 0;
-  const showImage = Boolean(recognized?.imageSrc);
+  const showImage = !isCombo && Boolean(recognized?.imageSrc);
 
   if (cabinetSection) {
     cabinetSection.dataset.combo = isCombo ? "true" : "false";
@@ -2897,6 +3415,7 @@ async function requestLiveKemperData() {
     rigName: currentRigName,
     rigAuthor: liveRigAuthor || "",
     ampId: resolvedAmp?.id ?? null,
+    isCombo: resolvedAmp?.isCombo === true,
     ampName: liveAmpName,
     manufacturer: resolvedAmp?.manufacturer ?? "",
     ampModel: resolvedAmp?.model ?? "",
@@ -3574,6 +4093,7 @@ async function refreshLiveData() {
     const liveData = await requestLiveKemperData();
     currentRigName = liveData.rigName || currentRigName;
     rigName.textContent = liveData.rigName || "-";
+    renderRigNotes(liveData.rigName);
     ampManufacturer.textContent = liveData.manufacturer || "-";
     ampModel.textContent = liveData.ampModel || "-";
     ampModel.title = liveData.ampModel || "";
@@ -3702,7 +4222,17 @@ if (performanceExplorerSearch) {
   });
 }
 
-document.addEventListener("pointerdown", (event) => {
+if (livePage) {
+  livePage.addEventListener("click", (event) => {
+    if (performanceExplorerExpanded) return;
+    if (!isPerformanceBrowserEntrySurfaceTarget(event.target)) return;
+    if (isPerformanceBrowserEntryInteractiveException(event.target)) return;
+    activatePerformanceBrowserEntry();
+    event.stopPropagation();
+  });
+}
+
+document.addEventListener("click", (event) => {
   if (!performanceExplorerExpanded) return;
   if (isPerformanceExplorerEventTarget(event.target)) return;
   setPerformanceExplorerExpanded(false);
@@ -3735,6 +4265,33 @@ if (performanceNextButton) {
 
 if (performanceNextFastButton) {
   performanceNextFastButton.addEventListener("click", () => selectPerformanceByOffset(10));
+}
+
+if (performanceReloadButton) {
+  performanceReloadButton.addEventListener("click", () => {
+    void reloadCurrentPerformanceFromDevice();
+  });
+}
+
+if (performanceBrowserLabel) {
+  performanceBrowserLabel.addEventListener("click", (event) => {
+    if (event.target.closest(".performance-browser-label-input")) return;
+    beginPerformanceNameEdit();
+  });
+  performanceBrowserLabel.addEventListener("keydown", (event) => {
+    if (event.target !== performanceBrowserLabel) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    beginPerformanceNameEdit();
+  });
+}
+
+if (rigNotesInput) {
+  rigNotesInput.addEventListener("input", () => {
+    if (rigNotesSaveTimer != null) window.clearTimeout(rigNotesSaveTimer);
+    rigNotesSaveTimer = window.setTimeout(flushRigNote, RIG_NOTES_SAVE_DEBOUNCE_MS);
+  });
+  rigNotesInput.addEventListener("blur", flushRigNote);
 }
 
 if (performanceSlotGrid) {
