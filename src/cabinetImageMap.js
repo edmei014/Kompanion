@@ -194,7 +194,9 @@ export const cabinetImageMap = [
       "1960av",
       "mars 1960",
       "marshall",
-      "mars 4x12"
+      "mars 4x12",
+      "nineteen sixty",
+      "mars nineteen sixty"
     ]
   },
 

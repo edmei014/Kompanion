@@ -49,7 +49,8 @@ const STRING_TAGS = {
   ampYearOfProduction: [0x00, 0x1b],
   cabinetName: [0x00, 0x20],
   cabinetManufacturer: [0x00, 0x25],
-  cabinetModel: [0x00, 0x2a]
+  cabinetModel: [0x00, 0x2a],
+  speakerConfiguration: [0x00, 0x29]
 };
 const NUMERIC_PARAMS = {
   gain: [0x0a, 0x04],
@@ -3256,6 +3257,14 @@ function matchCabinetImageMapEntry(manufacturer, model, configuration = "") {
   for (const entry of cabinetImageMap) {
     const entryConfiguration = getCabinetEntryConfiguration(entry);
 
+    if (
+      normalizedConfiguration &&
+      entryConfiguration &&
+      entryConfiguration !== normalizedConfiguration
+    ) {
+      continue;
+    }
+
     for (const alias of entry.aliases) {
       const normalizedAlias = normalizeCabinetSearch(alias);
 
@@ -3265,8 +3274,6 @@ function matchCabinetImageMapEntry(manufacturer, model, configuration = "") {
 
       if (normalizedConfiguration && entryConfiguration === normalizedConfiguration) {
         score += 1000;
-      } else if (normalizedConfiguration && entryConfiguration) {
-        score -= 1000;
       }
 
       if (score > bestScore) {
@@ -3288,7 +3295,9 @@ function getCabinetConfiguration(...values) {
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
-  const explicitMatch = searchText.match(/(?:^|[^0-9])([1-9])\s*x\s*(1[0-9]|[8-9])(?:$|[^0-9])/);
+  const explicitMatch = searchText.match(
+    /(?:^|[^0-9])([1-9])\s*[x*×]\s*(1[0-9]|[8-9])(?:$|[^0-9])/
+  );
 
   if (explicitMatch) {
     return `${explicitMatch[1]}x${explicitMatch[2]}`;
@@ -3358,6 +3367,7 @@ async function requestLiveKemperData() {
     liveCabinetName,
     liveCabinetManufacturer,
     liveCabinetModel,
+    liveSpeakerConfiguration,
     liveGainValue,
     liveTempoValue
   ] =
@@ -3370,9 +3380,11 @@ async function requestLiveKemperData() {
       requestStringTag(STRING_TAGS.cabinetName),
       requestStringTag(STRING_TAGS.cabinetManufacturer),
       requestStringTag(STRING_TAGS.cabinetModel),
+      requestStringTag(STRING_TAGS.speakerConfiguration),
       requestNumericParam(NUMERIC_PARAMS.gain),
       requestNumericParam(NUMERIC_PARAMS.tempoBpm)
     ]);
+  console.info("[Live Companion] Speaker Configuration:", liveSpeakerConfiguration);
   const effects = await Promise.all(
   EFFECT_MODULES.map(module => requestEffectModule(module))
 );
@@ -3395,7 +3407,7 @@ async function requestLiveKemperData() {
   const mapEntry = matchCabinetImageMapEntry(
     liveCabinetManufacturer,
     liveCabinetModel || liveCabinetName,
-    liveCabinetName
+    liveSpeakerConfiguration || liveCabinetName
   );
   const recognizedCabinet = buildRecognizedCabinetView({
     libraryView: libraryCabinetView,
@@ -3430,6 +3442,7 @@ async function requestLiveKemperData() {
     cabinetName: String(liveCabinetName || "").trim(),
     cabinetManufacturer: String(liveCabinetManufacturer || "").trim(),
     cabinetModel: String(liveCabinetModel || "").trim(),
+    speakerConfiguration: String(liveSpeakerConfiguration ?? ""),
     recognizedCabinet,
     gain: formatGain(liveGainValue),
     gainRaw: liveGainValue,
